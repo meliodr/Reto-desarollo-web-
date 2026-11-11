@@ -55,6 +55,6 @@ El tablero actualiza periódicamente el estado y permite hacerlo manualmente. Un
 
 La versión 2 del portal está publicada. En el entorno de desarrollo se aprobaron **21 pruebas**: 17 del servicio del tablero con SQLite y 4 regresiones de interfaz en JavaScript aislado. TypeScript terminó sin errores.
 
-La revisión local en navegador comprobó lectura, filtros, ficha de tarea y checklist anónimo, prototipo y adaptación a 320 píxeles. La incorporación y los recorridos con las cinco cuentas reales siguen pendientes de que los integrantes se unan.
+La revisión local en navegador comprobó lectura, filtros, ficha de tarea y checklist anónimo, prototipo y adaptación a 320 píxeles. La lectura del sitio público también se comprobó en navegador: carga el snapshot real con 29 tareas y cinco plazas disponibles y presenta el enlace de inicio de sesión. No se crearon miembros ficticios en la base pública. La incorporación y los recorridos con las cinco cuentas reales siguen pendientes de que los integrantes se unan.
 
 El sistema institucional SISPLAN continúa **SIN INICIAR**. Estas verificaciones pertenecen al portal de organización, no a la implementación de los requisitos PEI-POA.

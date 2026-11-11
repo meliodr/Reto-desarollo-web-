@@ -22,7 +22,7 @@
 
 La publicación fue confirmada y se revisó el sitio público en navegador. La lectura anónima carga el estado compartido real, con 29 tareas y cinco plazas disponibles durante esta revisión. El enlace de inicio de sesión está visible. No se crearon miembros ficticios en la base pública.
 
-La versión publicada del portal corresponde al commit fuente `b099822bd8d48984fd58229a9cbc1481d97e4e43`. Esa referencia identifica el portal; este repositorio conserva la documentación para preparar el producto académico.
+La verificación corresponde a la versión 2 del portal. Este repositorio conserva la documentación para preparar el producto académico; el código y la publicación del portal se gestionan por separado.
 
 | Verificación del portal | Resultado |
 |---|---|

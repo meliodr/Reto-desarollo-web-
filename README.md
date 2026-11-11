@@ -30,7 +30,11 @@ Se ha solicitado incorporar el registro de **actividades no planificadas**. Esta
 
 ## Estado
 
-El portal de documentación está publicado. La implementación del sistema institucional está **SIN INICIAR** y sus pruebas **NO SE HAN EJECUTADO**. La arquitectura y las tecnologías todavía no se han seleccionado.
+El portal de trabajo v2 está publicado. Permite asignar tareas, completar checklists, compartir notas, crear encuestas y revisar entregables entre integrantes. Su lectura pública se comprobó con 29 tareas y cinco plazas disponibles.
+
+En el entorno de desarrollo se aprobaron **21 pruebas del portal**: 17 del servicio del tablero y 4 regresiones de interfaz. La incorporación y los recorridos con las cinco cuentas reales siguen pendientes.
+
+La implementación del sistema institucional está **SIN INICIAR** y sus pruebas **NO SE HAN EJECUTADO**. La arquitectura y las tecnologías de ese producto todavía no se han seleccionado.
 
 La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 23:59**. El objetivo de trabajo referido a la **semana 6** está pendiente de conciliar con ese plazo; todavía no se le asigna una fecha.
 
@@ -39,3 +43,7 @@ La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 2
 - [Estado del proyecto](docs/ESTADO.md)
 - [Método de trabajo](docs/METODO-DE-TRABAJO.md)
 - [Decisiones y asuntos pendientes](docs/DECISIONES.md)
+- [Uso del portal y participación del equipo](docs/PORTAL.md)
+- [Propuestas de identidad](docs/IDENTIDAD.md)
+- [Actividades no planificadas](docs/AMPLIACION-NO-PLANIFICADA.md)
+- [Referencia del reto anterior](docs/REFERENCIA-RETO-ANTERIOR.md)

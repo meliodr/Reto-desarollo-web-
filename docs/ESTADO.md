@@ -7,18 +7,36 @@
 | Consigna y SRS | Analizados | 11 páginas revisadas; 18 RF, 7 RN, 2 RNF y 3 casos de uso oficiales |
 | Catálogo DIGEMAPS | Analizado | 6 ejes y 20 objetivos con resultados, indicadores y líneas de acción |
 | POA TI 2026 | Analizado | 11 registros de productos con metas mensuales y datos pendientes |
-| Organización del equipo | En preparación | Cinco integrantes; distribución de responsabilidades pendiente |
-| Portal de documentación v1 | Publicado | [Portal público](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/) con requisitos, casos de uso, fuentes descargables y calendario |
-| Repositorio | Inicializado | README, método de trabajo, estado y registro de decisiones |
+| Organización del equipo | Cinco plazas configuradas | Incorporación y recorridos con las cinco cuentas reales pendientes |
+| Portal de trabajo v2 | Publicado y revisado | [Portal público](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/) con tareas compartidas, checklist, notas, encuestas y revisión cruzada |
+| Repositorio | Documentación de preparación | README, método, estado, decisiones, guía del portal, identidad, ampliación y referencia del reto anterior |
 | Nombre e identidad visual | En exploración | SISPLAN es el nombre empleado por el SRS; no se ha seleccionado un nombre final |
 | Arquitectura | Pendiente | Tecnologías y estructura de la aplicación por seleccionar |
 | Actividades no planificadas | Ampliación solicitada | Alcance y reglas por definir; se mantiene separada del SRS original |
 | Implementación del sistema institucional | **SIN INICIAR** | No hay código funcional del producto en este repositorio |
-| Pruebas del sistema institucional | **NO EJECUTADAS** | Los resultados del portal y de FuelTrack se registran por separado |
+| Pruebas del sistema institucional | **NO EJECUTADAS** | Las pruebas del portal se registran por separado de las del producto |
 | Despliegue del sistema institucional | Pendiente | El portal publicado contiene documentación del proyecto |
 | Cumplimiento global del SRS | Sin calcular | Todavía no hay implementación que permita medirlo |
 
-## Verificación del portal v1
+## Publicación y verificación del portal v2
+
+La publicación fue confirmada y se revisó el sitio público en navegador. La lectura anónima carga el estado compartido real, con 29 tareas y cinco plazas disponibles durante esta revisión. El enlace de inicio de sesión está visible. No se crearon miembros ficticios en la base pública.
+
+La versión publicada del portal corresponde al commit fuente `b099822bd8d48984fd58229a9cbc1481d97e4e43`. Esa referencia identifica el portal; este repositorio conserva la documentación para preparar el producto académico.
+
+| Verificación del portal | Resultado |
+|---|---|
+| Servicio del tablero | 17 pruebas con SQLite aprobadas |
+| Regresiones de interfaz | 4 pruebas JavaScript aisladas aprobadas |
+| Total automatizado | **21 aprobadas, 0 fallidas y 0 omitidas** |
+| TypeScript | Sin errores |
+| Navegador local | Lectura, filtros, detalle de tarea y checklist anónimo, prototipo y adaptación a 320 píxeles comprobados |
+| Navegador público | Carga del snapshot real, lectura anónima, cinco plazas y enlace de inicio de sesión comprobados |
+| Cinco cuentas reales | Pendiente de incorporación y recorrido de cada integrante |
+
+Las pruebas automatizadas se ejecutaron en el entorno de desarrollo del portal. No equivalen a una validación completa con las cinco cuentas ni a pruebas del sistema institucional. La guía de participación está en [PORTAL.md](PORTAL.md).
+
+## Revisión anterior del portal v1
 
 La revisión del **10 de noviembre de 2026, hora de República Dominicana**, registró estas comprobaciones:
 

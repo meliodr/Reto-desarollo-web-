@@ -1,83 +1,76 @@
-# Estado del proyecto — SISPLAN
+# Estado del proyecto
 
-Corte de esta preparación: **10 de noviembre de 2026, hora de República Dominicana (UTC−4)**.
+## Situación actual
 
-Este documento diferencia el trabajo de análisis, la preparación del proyecto y la implementación del sistema. Sus estados deben actualizarse al incorporar evidencia nueva.
-
-## Situación acreditada
-
-| Elemento | Estado | Evidencia o límite |
+| Componente | Estado | Detalle |
 |---|---|---|
-| Consigna del reto | Analizada | Define una plataforma institucional PEI-POA y trazabilidad hasta actividades |
-| SRS SISPLAN | Analizado y catalogado en el portal | 11 páginas revisadas, incluidos diagramas; 18 RF, 7 RN, 2 RNF y 3 casos de uso oficiales |
+| Consigna y SRS | Analizados | 11 páginas revisadas; 18 RF, 7 RN, 2 RNF y 3 casos de uso oficiales |
 | Catálogo DIGEMAPS | Analizado | 6 ejes y 20 objetivos con resultados, indicadores y líneas de acción |
-| POA TI 2026 | Analizado | 11 registros de productos con programación mensual; faltantes documentados |
-| Referencia de FuelTrack | Revisada | Se estudiaron documentación, metodología, revisiones, pruebas e integración |
-| Equipo | Preparación | Equipo de cuatro integrantes; nombres y asignaciones no consignados aquí |
-| Repositorio | Inicializado | README, método de trabajo y este registro |
-| Portal del proyecto v1 | **PUBLICADO Y VERIFICADO** | [Portal público](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/); requisitos, casos de uso, documentos descargables, calendario y equipo de cuatro integrantes |
-| Arquitectura definitiva | Pendiente | No se ha fijado un stack |
-| Implementación de la aplicación | **SIN INICIAR** | No hay código funcional de SISPLAN en este repositorio |
-| Pruebas del producto SISPLAN | **NO EJECUTADAS** | La verificación del portal de seguimiento y las pruebas históricas de FuelTrack no son pruebas del producto institucional |
-| Despliegue del sistema institucional | No acreditado | El portal del proyecto es un recurso de seguimiento, no prueba de una aplicación institucional implementada |
-| Cumplimiento global del SRS | No calculado | No hay base para publicar un porcentaje de funcionalidad construida |
+| POA TI 2026 | Analizado | 11 registros de productos con metas mensuales y datos pendientes |
+| Organización del equipo | En preparación | Cinco integrantes; distribución de responsabilidades pendiente |
+| Portal de documentación v1 | Publicado | [Portal público](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/) con requisitos, casos de uso, fuentes descargables y calendario |
+| Repositorio | Inicializado | README, método de trabajo, estado y registro de decisiones |
+| Nombre e identidad visual | En exploración | SISPLAN es el nombre empleado por el SRS; no se ha seleccionado un nombre final |
+| Arquitectura | Pendiente | Tecnologías y estructura de la aplicación por seleccionar |
+| Actividades no planificadas | Ampliación solicitada | Alcance y reglas por definir; se mantiene separada del SRS original |
+| Implementación del sistema institucional | **SIN INICIAR** | No hay código funcional del producto en este repositorio |
+| Pruebas del sistema institucional | **NO EJECUTADAS** | Los resultados del portal y de FuelTrack se registran por separado |
+| Despliegue del sistema institucional | Pendiente | El portal publicado contiene documentación del proyecto |
+| Cumplimiento global del SRS | Sin calcular | Todavía no hay implementación que permita medirlo |
 
-## Portal público v1 y verificación
+## Verificación del portal v1
 
-El [portal del proyecto](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/) está publicado. Reúne **18 requisitos funcionales, 7 reglas de negocio, 2 requisitos no funcionales y 3 casos de uso oficiales**. Presenta además **9 casos de uso propuestos**, identificados por separado para que no se atribuyan al SRS del docente.
+La revisión del **10 de noviembre de 2026, hora de República Dominicana**, registró estas comprobaciones:
 
-Incluye documentos descargables, calendario y organización para un equipo de cuatro integrantes.
-
-En la revisión del portal v1 se comprobaron:
-
-| Comprobación del portal | Resultado observado |
+| Comprobación | Resultado |
 |---|---|
-| Navegación entre vistas | Funcional |
-| Filtros de requisitos y casos de uso | Funcionales |
-| Detalles y referencias a la fuente | Consultables |
-| Simulador de cumplimiento | Revisado en el límite del 70 % y con meta programada igual a cero |
+| Navegación | Las vistas se abren |
+| Filtros de requisitos y casos de uso | Funcionan |
+| Detalles de requisitos y referencias | Se pueden consultar |
+| Simulador de cumplimiento | Revisado en el límite de 70 % y con meta programada igual a cero |
 | Descargas | CSV, Excel y SRS comprobados |
 | Vistas estrechas | Revisadas a 375 y 305 píxeles, sin desbordamiento horizontal general |
 
-Estas comprobaciones corresponden **exclusivamente al portal de preparación y seguimiento**. No acreditan implementación, pruebas, despliegue ni cumplimiento funcional del producto institucional SISPLAN. El simulador es un recurso explicativo del portal; no sustituye la definición y validación de las reglas del producto.
+El portal reúne los requisitos del SRS y presenta **9 casos de uso propuestos**, identificados aparte de los **3 oficiales**. El simulador explica reglas de cumplimiento; su revisión no equivale a haber desarrollado el cálculo del sistema institucional.
 
-## Hallazgos de las fuentes
+## Hallazgos del análisis
 
-- El catálogo suministrado tiene seis ejes. Los cinco ejes enumerados en el SRS son ejemplos y no deben reemplazar automáticamente el catálogo real.
-- Los productos del POA no identifican explícitamente su objetivo e indicador estratégico; esos vínculos deben completarse sin inventarlos.
-- La plantilla del POA agrupa los meses en cuatro trimestres. El sistema debe generar las tres evaluaciones cuatrimestrales exigidas por el SRS.
-- El presupuesto de los once productos está vacío. Vacío no significa cero.
+- El catálogo tiene seis ejes. Los cinco nombres enumerados en el SRS son ejemplos.
+- Los productos del POA no identifican su objetivo e indicador estratégico.
+- La plantilla agrupa los meses en cuatro trimestres, mientras que el SRS exige tres evaluaciones cuatrimestrales.
+- Los presupuestos de los once productos están vacíos.
 - Solo dos productos tienen actividades detalladas en la columna correspondiente.
-- Hay dos registros rotulados «Producto 8». Los identificadores internos no pueden depender de ese rótulo.
-- Los medios de verificación del Excel describen evidencias esperadas; no acreditan que las actividades estén ejecutadas.
-- Las metas usan cantidades y porcentajes. Cada indicador requiere unidad y regla de cálculo propias.
+- Dos registros llevan el rótulo «Producto 8».
+- La columna de verificación describe las evidencias esperadas, sin acreditar ejecución.
+- Las metas incluyen cantidades y porcentajes que requieren reglas de cálculo diferentes.
 
-## Decisiones o aclaraciones pendientes
+## Reglas pendientes de precisar
 
-| Tema | Qué falta definir |
+| Tema | Definición pendiente |
 |---|---|
-| Cálculo de cumplimiento | Programado igual a cero, redondeos, valores negativos y ejecución superior a la meta |
-| Semaforización | Formalizar amarillo como desde 70 % hasta menos de 90 % para incluir decimales |
+| Cumplimiento | Meta programada en cero, redondeos, valores negativos y ejecución superior a la meta |
+| Semáforo | Tratamiento de decimales entre 89 % y 90 % |
 | Consolidación | Fórmula de cumplimiento por institución, eje, área, objetivo e indicador |
-| Aprobaciones | Matriz de permisos y estados para formular, revisar, aprobar, publicar y devolver |
-| Versionado | Tratamiento de cambios en registros aprobados y evidencias reemplazadas |
-| POA institucional y áreas | Precisar la organización del POA anual y su consolidación por dependencia |
-| Presupuesto | Nivel de detalle, ejecución, moneda y distribución entre productos y actividades |
-| Proyectos y riesgos | Profundidad funcional del alcance declarado en el SRS |
-| MFA | Resolver su aparición simultánea como requisito no funcional y elemento «A+» |
-| Arquitectura | Selección técnica y justificación documentada, sin convertir opciones recomendadas en obligaciones no confirmadas |
+| Aprobaciones | Permisos y estados para formular, revisar, aprobar, publicar y devolver |
+| Versionado | Cambios en registros aprobados y reemplazo de evidencias |
+| Organización del POA | Consolidación institucional y distribución por dependencia |
+| Presupuesto | Detalle, moneda, ejecución y distribución entre productos y actividades |
+| Proyectos y riesgos | Desarrollo del alcance mencionado en el SRS |
+| MFA | Su aparición como requisito no funcional y como elemento «A+» |
+| Actividades no planificadas | Registro, autorización, seguimiento y relación con metas y presupuesto |
 
-## Próximos entregables de preparación
+## Calendario de referencia
 
-1. Completar la matriz de requisitos del portal con criterios de aceptación y resolución de dudas.
-2. Modelo de datos y estados del proceso.
-3. Matriz de permisos de los seis roles funcionales.
-4. Decisión de arquitectura y plan de implementación por flujos.
-5. Reparto de tareas entre los cuatro integrantes.
-6. Plan de verificación y guion de demostración.
+La consigna disponible indica apertura el **1 de diciembre de 2026 a las 00:00** y cierre el **2 de diciembre de 2026 a las 23:59**.
 
-Estos puntos son **propuestas de organización del equipo**, no entregables adicionales atribuidos automáticamente al docente.
+El objetivo referido a la **semana 6** está pendiente de conciliar con ese plazo. Por ahora no se fija una fecha distinta de la visible en el aula.
 
-## Regla de actualización
+## Trabajo siguiente
 
-Actualizar este registro con enlaces a los cambios y evidencias correspondientes. No sustituir «pendiente» por «completado» solo porque existe una pantalla, un documento, una rama o un número de pruebas. Conservar fechas y commits cuando se cite una revisión histórica.
+1. Completar criterios de aceptación y resolver las dudas del SRS.
+2. Definir el alcance de las actividades no planificadas.
+3. Preparar el modelo de datos, los estados y los permisos.
+4. Seleccionar la arquitectura y distribuir tareas entre los cinco integrantes.
+5. Planificar pruebas y demostración.
+
+Estos puntos organizan el desarrollo del equipo. La relación entre requisitos originales y ampliaciones se mantiene en [DECISIONES.md](DECISIONES.md).

@@ -46,9 +46,13 @@ La consigna disponible establece cierre el **2 de diciembre de 2026 a las 23:59*
 
 **Estado:** criterio de seguimiento.
 
-El portal v1 está publicado y cuenta con una revisión funcional y visual registrada. La implementación del producto institucional está **SIN INICIAR** y sus pruebas **NO SE HAN EJECUTADO**. La arquitectura sigue pendiente de selección.
+El portal de trabajo está publicado y cuenta con una revisión funcional y visual registrada. La implementación del producto institucional está **SIN INICIAR** y sus pruebas **NO SE HAN EJECUTADO**.
 
 **Motivo:** comunicar el estado real del proyecto. La documentación, el simulador del portal y las pruebas históricas de FuelTrack no representan funcionalidades construidas de este sistema.
+
+## D-07. Usar Angular para el frontend institucional
+
+El equipo confirmó Angular el 12 de noviembre de 2026. El plan propone Angular 22 con Node 24 compatible, .NET 10 LTS y PostgreSQL 18. El proveedor de identidad y el entorno de despliegue quedan por elegir. [Plan de construcción](plan-sisplan/01-PLAN-DE-CONSTRUCCION.md)
 
 ## Actualizaciones
 

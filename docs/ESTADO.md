@@ -9,9 +9,9 @@
 | POA TI 2026 | Analizado | 11 registros de productos con metas mensuales y datos pendientes |
 | Organización del equipo | Cinco plazas configuradas | Incorporación y recorridos con las cinco cuentas reales pendientes |
 | Portal de trabajo v2 | Publicado y revisado | [Portal público](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/) con tareas compartidas, checklist, notas, encuestas y revisión cruzada |
-| Repositorio | Documentación de preparación | README, método, estado, decisiones, guía del portal, identidad, ampliación y referencia del reto anterior |
+| Repositorio | Plan técnico disponible | [Plan de construcción](plan-sisplan/01-PLAN-DE-CONSTRUCCION.md), flujos, contratos, frontend, pruebas y trazabilidad |
 | Nombre e identidad visual | En exploración | SISPLAN es el nombre empleado por el SRS; no se ha seleccionado un nombre final |
-| Arquitectura | Pendiente | Tecnologías y estructura de la aplicación por seleccionar |
+| Arquitectura | Angular confirmado | Angular 22, .NET 10 LTS y PostgreSQL 18 recomendados. Proveedor de identidad y despliegue por acordar |
 | Actividades no planificadas | Ampliación solicitada | Alcance y reglas por definir; se mantiene separada del SRS original |
 | Implementación del sistema institucional | **SIN INICIAR** | No hay código funcional del producto en este repositorio |
 | Pruebas del sistema institucional | **NO EJECUTADAS** | Las pruebas del portal se registran por separado de las del producto |
@@ -85,10 +85,10 @@ El objetivo referido a la **semana 6** está pendiente de conciliar con ese plaz
 
 ## Trabajo siguiente
 
-1. Completar criterios de aceptación y resolver las dudas del SRS.
-2. Definir el alcance de las actividades no planificadas.
-3. Preparar el modelo de datos, los estados y los permisos.
-4. Seleccionar la arquitectura y distribuir tareas entre los cinco integrantes.
-5. Planificar pruebas y demostración.
+1. Asignar los cinco frentes de trabajo y confirmar disponibilidad.
+2. Confirmar rúbrica, formatos, permisos, vigencia y reglas de cálculo.
+3. Revisar el contrato de la primera entrega y elegir proveedor de identidad.
+4. Arrancar Angular, API y base de datos con un escenario de demo común.
+5. Demostrar el recorrido PEI–POA–avance–evaluación y registrar la evidencia.
 
 Estos puntos organizan el desarrollo del equipo. La relación entre requisitos originales y ampliaciones se mantiene en [DECISIONES.md](DECISIONES.md).

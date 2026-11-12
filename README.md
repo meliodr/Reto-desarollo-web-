@@ -34,7 +34,7 @@ El portal de trabajo v2 está publicado. Permite asignar tareas, completar check
 
 En el entorno de desarrollo se aprobaron **21 pruebas del portal**: 17 del servicio del tablero y 4 regresiones de interfaz. La incorporación y los recorridos con las cinco cuentas reales siguen pendientes.
 
-La implementación del sistema institucional está **SIN INICIAR** y sus pruebas **NO SE HAN EJECUTADO**. El equipo eligió **Angular** para el frontend. El plan propone Angular 22, .NET 10 LTS y PostgreSQL 18 y registra las decisiones pendientes. [Plan de construcción](docs/plan-sisplan/01-PLAN-DE-CONSTRUCCION.md).
+El primer incremento del sistema institucional cubre los borradores de PEI. Angular consume una API .NET 10 y PostgreSQL guarda los datos. [Arranque local y verificación](docs/plan-sisplan/06-PRIMER-INCREMENTO.md). El equipo eligió **Angular** para el frontend. El plan propone Angular 22, .NET 10 LTS y PostgreSQL 18 y registra las decisiones pendientes. [Plan de construcción](docs/plan-sisplan/01-PLAN-DE-CONSTRUCCION.md).
 
 La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 23:59**. El objetivo de trabajo referido a la **semana 6** está pendiente de conciliar con ese plazo; todavía no se le asigna una fecha.
 

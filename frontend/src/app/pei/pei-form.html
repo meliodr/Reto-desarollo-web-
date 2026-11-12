@@ -1,0 +1,314 @@
+<a class="back-link" routerLink="/peis"
+  ><span aria-hidden="true">←</span> Todos los planes estratégicos</a
+>
+<section class="page-heading form-heading">
+  <div>
+    <div class="eyebrow">
+      <span></span>{{ isNew() ? 'NUEVO PLAN ESTRATÉGICO' : 'FORMULACIÓN DEL PEI' }}
+    </div>
+    <h1>{{ isNew() ? 'Demos forma al rumbo.' : 'Un plan en construcción.' }}</h1>
+    <p>
+      {{
+        isNew()
+          ? 'Comienza por el propósito y el período de tu institución.'
+          : 'Revisa y completa la base de tu Plan Estratégico Institucional.'
+      }}
+    </p>
+  </div>
+  <span class="badge-draft"><span aria-hidden="true"></span>Borrador</span>
+</section>
+@if (loading()) {
+  <div class="panel loading-state" role="status">
+    <span class="spinner" aria-hidden="true"></span>Abriendo el plan estratégico…
+  </div>
+} @else if (loadError()) {
+  <div class="panel empty-state">
+    <h2>No pudimos abrir este plan.</h2>
+    <p role="alert">{{ loadError() }}</p>
+    <button class="button button-secondary" (click)="load()">Volver a consultar</button>
+  </div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (saveError() || (submitted() && errors().length)) {
+      <div #errorSummary class="notice notice-error error-summary" tabindex="-1" role="alert">
+        <h2>{{ conflict() ? 'Hay una versión más reciente' : 'Revisa antes de guardar' }}</h2>
+        @if (saveError()) {
+          <p>{{ saveError() }}</p>
+        }
+        @if (errors().length) {
+          <ul>
+            @for (error of errors(); track error.field) {
+              <li>
+                <a [href]="'#' + error.field" (click)="focusField($event, error.field)">{{
+                  error.message
+                }}</a>
+              </li>
+            }
+          </ul>
+        }
+        @if (current() && (conflict() || requestUncertain())) {
+          <button
+            class="button button-secondary"
+            type="button"
+            [disabled]="checkingLatest()"
+            (click)="fetchLatest()"
+          >
+            {{ checkingLatest() ? 'Consultando…' : 'Comparar con la versión actual' }}
+          </button>
+        }
+        @if (requestUncertain()) {
+          <div class="uncertain-actions">
+            <a routerLink="/peis" target="_blank" rel="noopener"
+              >Consultar listado en otra pestaña ↗</a
+            ><button type="button" class="text-button" (click)="acknowledgeUncertain()">
+              Ya comprobé que no se guardó
+            </button>
+          </div>
+        }
+      </div>
+    }
+    @if (latest()) {
+      <section class="panel conflict-panel" aria-labelledby="comparison-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="comparison-heading">Tu edición y la versión guardada</h2>
+            <p>No se ha reemplazado ningún campo.</p>
+          </div>
+          <button type="button" class="button button-secondary" (click)="replaceWithLatest()">
+            Cargar versión del servidor
+          </button>
+        </div>
+        @if (differences().length) {
+          <div class="comparison-grid">
+            @for (difference of differences(); track difference.field) {
+              <article>
+                <h3>{{ difference.label }}</h3>
+                <div>
+                  <span>TU EDICIÓN</span>
+                  <p>{{ difference.local || 'Sin contenido' }}</p>
+                </div>
+                <div>
+                  <span>EN EL SERVIDOR</span>
+                  <p>{{ difference.server || 'Sin contenido' }}</p>
+                </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="muted">
+            Los campos coinciden. Puedes cargar esta versión para recuperar su referencia actual.
+          </p>
+        }
+      </section>
+    }
+    <div class="form-layout">
+      <div class="form-sections">
+        <section class="panel form-section" aria-labelledby="identification-heading">
+          <header class="form-section-heading">
+            <span class="section-number">01</span>
+            <div>
+              <h2 id="identification-heading">Identificación del plan</h2>
+              <p>Un nombre claro y un horizonte compartido.</p>
+            </div>
+          </header>
+          <div class="form-section-body">
+            <div class="field">
+              <label for="nombre">Nombre del plan <span aria-hidden="true">*</span></label
+              ><input
+                id="nombre"
+                formControlName="nombre"
+                autocomplete="off"
+                maxlength="200"
+                placeholder="Ej. Plan Estratégico Institucional 2026–2029"
+                [attr.aria-invalid]="!!fieldError('nombre')"
+                aria-describedby="nombre-help nombre-error"
+                (input)="clearFieldError('nombre')"
+              />
+              <div class="field-support">
+                <small id="nombre-help">Entre 3 y 200 caracteres.</small
+                ><small>{{ form.controls.nombre.value.length }}/200</small>
+              </div>
+              <p class="field-error" id="nombre-error">{{ fieldError('nombre') }}</p>
+            </div>
+            <fieldset class="type-fieldset">
+              <legend>Tipo de PEI <span aria-hidden="true">*</span></legend>
+              <div class="type-options">
+                <label
+                  class="type-option"
+                  [class.selected]="form.controls.tipo.value === 'ordinario'"
+                  ><input
+                    id="tipo"
+                    type="radio"
+                    formControlName="tipo"
+                    value="ordinario"
+                    (change)="clearFieldError('tipo')"
+                  /><span><strong>Ordinario</strong><small>Horizonte de 4 años</small></span
+                  ><span class="year-number" aria-hidden="true">04</span></label
+                ><label
+                  class="type-option"
+                  [class.selected]="form.controls.tipo.value === 'extraordinario'"
+                  ><input
+                    type="radio"
+                    formControlName="tipo"
+                    value="extraordinario"
+                    (change)="clearFieldError('tipo')"
+                  /><span><strong>Extraordinario</strong><small>Horizonte de 5 años</small></span
+                  ><span class="year-number" aria-hidden="true">05</span></label
+                >
+              </div>
+              <p class="field-error" id="tipo-error">{{ fieldError('tipo') }}</p>
+            </fieldset>
+            <div class="field-grid">
+              <div class="field">
+                <label for="fechaInicio">Fecha de inicio <span aria-hidden="true">*</span></label
+                ><input
+                  id="fechaInicio"
+                  type="date"
+                  min="0001-01-01"
+                  max="9999-12-31"
+                  formControlName="fechaInicio"
+                  [attr.aria-invalid]="!!fieldError('fechaInicio')"
+                  aria-describedby="fechaInicio-error"
+                  (change)="clearFieldError('fechaInicio')"
+                />
+                <p class="field-error" id="fechaInicio-error">{{ fieldError('fechaInicio') }}</p>
+              </div>
+              <div class="field">
+                <label for="fechaFin">Fecha de fin <span aria-hidden="true">*</span></label
+                ><input
+                  id="fechaFin"
+                  type="date"
+                  min="0001-01-01"
+                  max="9999-12-31"
+                  formControlName="fechaFin"
+                  [attr.aria-invalid]="!!fieldError('fechaFin')"
+                  aria-describedby="period-help fechaFin-error"
+                  (change)="clearFieldError('fechaFin')"
+                />
+                <p class="field-error" id="fechaFin-error">{{ fieldError('fechaFin') }}</p>
+              </div>
+            </div>
+            <p class="field-hint period-hint" id="period-help">
+              <span aria-hidden="true">i</span>Este incremento cuenta {{ years() }} años calendario,
+              incluyendo el inicial y el final. Ejemplo ordinario: 2026–2029.
+            </p>
+          </div>
+        </section>
+        <section class="panel form-section" aria-labelledby="purpose-heading">
+          <header class="form-section-heading">
+            <span class="section-number">02</span>
+            <div>
+              <h2 id="purpose-heading">Propósito institucional</h2>
+              <p>Las ideas que darán sentido a los objetivos y las acciones.</p>
+            </div>
+          </header>
+          <div class="form-section-body">
+            @for (field of narrativeFields; track field) {
+              <div class="field narrative-field">
+                <label [for]="field">{{ labels[field] }} <span aria-hidden="true">*</span></label>
+                <p class="field-description" [id]="field + '-help'">
+                  {{
+                    field === 'mision'
+                      ? '¿Para qué existe la institución y a quién sirve?'
+                      : field === 'vision'
+                        ? '¿Qué futuro aspira a construir la institución?'
+                        : '¿Qué principios orientan sus decisiones y su trabajo?'
+                  }}
+                </p>
+                <textarea
+                  [id]="field"
+                  [formControlName]="field"
+                  maxlength="4000"
+                  rows="4"
+                  [placeholder]="
+                    field === 'mision'
+                      ? 'Describe la razón de ser de la institución…'
+                      : field === 'vision'
+                        ? 'Describe el futuro al que aspira…'
+                        : 'Escribe los valores y su significado…'
+                  "
+                  [attr.aria-invalid]="!!fieldError(field)"
+                  [attr.aria-describedby]="field + '-help ' + field + '-error'"
+                  (input)="clearFieldError(field)"
+                ></textarea>
+                <div class="field-support">
+                  <small>Máximo 4.000 caracteres.</small
+                  ><small>{{ form.controls[field].value.length }}/4000</small>
+                </div>
+                <p class="field-error" [id]="field + '-error'">{{ fieldError(field) }}</p>
+              </div>
+            }
+          </div>
+        </section>
+        <div class="form-actions">
+          <div role="status" aria-live="polite">
+            <span [class]="saving() ? 'save-indicator saving' : 'save-indicator'"></span
+            >{{
+              saving()
+                ? 'Guardando en la API…'
+                : saved()
+                  ? 'Cambios guardados'
+                  : form.dirty
+                    ? 'Hay cambios sin guardar'
+                    : 'Completa los campos obligatorios (*)'
+            }}
+          </div>
+          <div>
+            <a class="button button-secondary" routerLink="/peis">Volver</a
+            ><button
+              class="button button-primary"
+              type="submit"
+              [disabled]="saving() || requestUncertain() || (!!current() && !etag())"
+            >
+              {{ saving() ? 'Guardando…' : isNew() ? 'Crear borrador' : 'Guardar cambios' }}
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <aside class="form-aside" aria-label="Resumen y ayuda">
+        <div class="summary-card">
+          <span class="small-label">TU PLAN, DE UN VISTAZO</span>
+          <div class="summary-symbol" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <h2>{{ form.controls.nombre.value || 'Un nuevo propósito' }}</h2>
+          <p class="summary-period">{{ periodLabel() }}</p>
+          <dl>
+            <div>
+              <dt>Tipo de plan</dt>
+              <dd>
+                {{ form.controls.tipo.value === 'ordinario' ? 'Ordinario' : 'Extraordinario' }}
+              </dd>
+            </div>
+            <div>
+              <dt>Duración</dt>
+              <dd>{{ years() }} años calendario</dd>
+            </div>
+            <div>
+              <dt>Estado</dt>
+              <dd>
+                <span class="badge-draft"><span aria-hidden="true"></span>Borrador</span>
+              </dd>
+            </div>
+          </dl>
+          <p class="summary-note">
+            Guardar un borrador conserva esta ficha. No aprueba ni publica el PEI.
+          </p>
+        </div>
+        <div class="help-card">
+          <h3>Una base que podrá crecer</h3>
+          <p>
+            En este primer incremento registramos la identidad del plan. Los ejes, objetivos e
+            indicadores se incorporarán en los siguientes pasos del desarrollo.
+          </p>
+          <div class="help-divider"></div>
+          <p>
+            <strong>Sobre el período</strong><br />La interpretación de años inclusivos es una regla
+            de trabajo de este incremento, pendiente de validación institucional.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </form>
+}

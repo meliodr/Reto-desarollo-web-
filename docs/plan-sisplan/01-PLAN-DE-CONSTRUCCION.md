@@ -8,6 +8,7 @@ El grupo eligió **Angular para el frontend**. La primera entrega interna será 
 
 | Documento | Para qué se usa |
 |---|---|
+| [Primer incremento](06-PRIMER-INCREMENTO.md) | Ejecutar y verificar la captura y edición de borradores PEI |
 | [Flujos y estados](02-FLUJOS.md) | Acordar qué hace cada rol, qué caminos existen y cuándo cambia un estado |
 | [Datos, API y pruebas](03-DATOS-API-QA.md) | Dividir el trabajo entre Angular y la API y comprobar la integración |
 | [Frontend Angular](04-FRONTEND-ANGULAR.md) | Construir rutas, pantallas, formularios y componentes coherentes |

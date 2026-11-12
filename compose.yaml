@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: sisplan
+      POSTGRES_USER: sisplan
+      POSTGRES_PASSWORD: ${SISPLAN_DB_PASSWORD:?Define SISPLAN_DB_PASSWORD en tu terminal o archivo .env local}
+    ports:
+      - '127.0.0.1:55432:5432'
+    volumes:
+      - sisplan-postgres:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sisplan -d sisplan']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+volumes:
+  sisplan-postgres:

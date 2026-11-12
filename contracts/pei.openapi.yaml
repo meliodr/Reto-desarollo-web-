@@ -1,0 +1,132 @@
+openapi: 3.1.0
+info:
+  title: SISPLAN — Borradores de PEI
+  version: 0.1.0
+  description: Contrato del primer incremento local. El período se deriva de las fechas y el servidor asigna el estado borrador.
+servers:
+  - url: http://127.0.0.1:5080/api/v1
+paths:
+  /peis:
+    get:
+      summary: Consultar borradores de PEI
+      responses:
+        '200':
+          description: Borradores registrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Pei' }
+    post:
+      summary: Crear el primer borrador de un PEI
+      requestBody: { $ref: '#/components/requestBodies/Pei' }
+      responses:
+        '201': { $ref: '#/components/responses/PeiCreado' }
+        '400': { description: JSON inválido }
+        '415': { description: Se requiere application/json }
+        '422': { $ref: '#/components/responses/Validacion' }
+  /peis/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Abrir un PEI y obtener la etiqueta de su versión
+      responses:
+        '200': { $ref: '#/components/responses/Pei' }
+        '404': { description: PEI no encontrado }
+  /pei-versiones/{versionId}:
+    parameters:
+      - name: versionId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      summary: Guardar los campos editables del borrador
+      parameters:
+        - name: If-Match
+          in: header
+          required: true
+          description: ETag fuerte devuelto al abrir o guardar el borrador, incluidas sus comillas.
+          schema: { type: string }
+      requestBody: { $ref: '#/components/requestBodies/Pei' }
+      responses:
+        '200': { $ref: '#/components/responses/Pei' }
+        '404': { description: Versión no encontrada }
+        '412': { description: Otro guardado modificó el borrador. Volver a consultar antes de reintentar. }
+        '400': { description: JSON inválido }
+        '415': { description: Se requiere application/json }
+        '422': { $ref: '#/components/responses/Validacion' }
+        '428': { description: Falta If-Match }
+components:
+  schemas:
+    DatosPei:
+      type: object
+      required: [nombre, tipo, fechaInicio, fechaFin, mision, vision, valores]
+      properties:
+        nombre: { type: string, minLength: 3, maxLength: 200 }
+        tipo: { type: string, enum: [ordinario, extraordinario] }
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date }
+        mision: { type: string, minLength: 1, maxLength: 4000 }
+        vision: { type: string, minLength: 1, maxLength: 4000 }
+        valores: { type: string, minLength: 1, maxLength: 4000 }
+      description: Las fechas son ISO YYYY-MM-DD y el fin es posterior o igual al inicio. El intervalo abarca cuatro años calendario inclusivos para un plan ordinario y cinco para uno extraordinario.
+    Pei:
+      allOf:
+        - $ref: '#/components/schemas/DatosPei'
+        - type: object
+          required: [id, versionId, estado]
+          properties:
+            id: { type: string, format: uuid }
+            versionId: { type: string, format: uuid }
+            estado: { type: string, const: borrador }
+    ProblemaValidacion:
+      type: object
+      required: [status, errors]
+      properties:
+        status: { type: integer, const: 422 }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+  requestBodies:
+    Pei:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/DatosPei' }
+          example:
+            nombre: PEI de demostración
+            tipo: ordinario
+            fechaInicio: '2026-01-01'
+            fechaFin: '2029-12-31'
+            mision: Fortalecer la planificación institucional.
+            vision: Dar seguimiento verificable a los resultados.
+            valores: Transparencia y responsabilidad.
+  responses:
+    Pei:
+      description: Borrador actualizado o consultado
+      headers:
+        ETag:
+          schema: { type: string }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Pei' }
+    PeiCreado:
+      description: Borrador creado
+      headers:
+        Location:
+          schema: { type: string }
+        ETag:
+          schema: { type: string }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Pei' }
+    Validacion:
+      description: Campos o fechas inválidos
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemaValidacion' }

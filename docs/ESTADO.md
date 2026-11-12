@@ -13,10 +13,10 @@
 | Nombre e identidad visual | En exploración | SISPLAN es el nombre empleado por el SRS; no se ha seleccionado un nombre final |
 | Arquitectura | Angular confirmado | Angular 22, .NET 10 LTS y PostgreSQL 18 recomendados. Proveedor de identidad y despliegue por acordar |
 | Actividades no planificadas | Ampliación solicitada | Alcance y reglas por definir; se mantiene separada del SRS original |
-| Implementación del sistema institucional | **SIN INICIAR** | No hay código funcional del producto en este repositorio |
-| Pruebas del sistema institucional | **NO EJECUTADAS** | Las pruebas del portal se registran por separado de las del producto |
+| Implementación del sistema institucional | En curso | Primer incremento de RF-001 con borradores de PEI y persistencia PostgreSQL |
+| Pruebas del sistema institucional | Primer incremento | [Recorrido y prueba de integración](plan-sisplan/06-PRIMER-INCREMENTO.md). La cobertura de los demás requisitos queda pendiente |
 | Despliegue del sistema institucional | Pendiente | El portal publicado contiene documentación del proyecto |
-| Cumplimiento global del SRS | Sin calcular | Todavía no hay implementación que permita medirlo |
+| Cumplimiento global del SRS | Sin calcular | Cobertura parcial de RF-001. Falta verificar el conjunto de requisitos |
 
 ## Publicación y verificación del portal v2
 

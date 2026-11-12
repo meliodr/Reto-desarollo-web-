@@ -46,7 +46,7 @@ La consigna disponible establece cierre el **2 de diciembre de 2026 a las 23:59*
 
 **Estado:** criterio de seguimiento.
 
-El portal de trabajo está publicado y cuenta con una revisión funcional y visual registrada. La implementación del producto institucional está **SIN INICIAR** y sus pruebas **NO SE HAN EJECUTADO**.
+El portal de trabajo está publicado y cuenta con una revisión funcional y visual registrada. El producto institucional avanza por incrementos. El estado y las pruebas de cada uno quedan en [Estado del proyecto](ESTADO.md).
 
 **Motivo:** comunicar el estado real del proyecto. La documentación, el simulador del portal y las pruebas históricas de FuelTrack no representan funcionalidades construidas de este sistema.
 

@@ -9,14 +9,14 @@
 | POA TI 2026 | Analizado | 11 registros de productos con metas mensuales y datos pendientes |
 | Organización del equipo | Cinco plazas configuradas | Incorporación y recorridos con las cinco cuentas reales pendientes |
 | Portal de trabajo v2 | Publicado y revisado | [Portal público](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/) con tareas compartidas, checklist, notas, encuestas y revisión cruzada |
-| Repositorio | Plan técnico disponible | [Plan de construcción](plan-sisplan/01-PLAN-DE-CONSTRUCCION.md), flujos, contratos, frontend, pruebas y trazabilidad |
-| Nombre e identidad visual | En exploración | SISPLAN es el nombre empleado por el SRS; no se ha seleccionado un nombre final |
-| Arquitectura | Angular confirmado | Angular 22, .NET 10 LTS y PostgreSQL 18 recomendados. Proveedor de identidad y despliegue por acordar |
-| Actividades no planificadas | Ampliación solicitada | Alcance y reglas por definir; se mantiene separada del SRS original |
-| Implementación del sistema institucional | **SIN INICIAR** | No hay código funcional del producto en este repositorio |
-| Pruebas del sistema institucional | **NO EJECUTADAS** | Las pruebas del portal se registran por separado de las del producto |
+| Repositorio | Base de trabajo v1.0 | [Plan base](plan-sisplan/01-PLAN-DE-CONSTRUCCION.md) con reglas, herramientas, tareas y criterios de aceptación |
+| Nombre de la aplicación | SISPLAN | Nombre de trabajo para la entrega académica |
+| Arquitectura | Definida en la base | Angular 22, .NET 10 LTS, PostgreSQL 18, Npgsql y Keycloak con MFA. Demo local reproducible |
+| Actividades no planificadas | Regla de trabajo definida | [Registro, autorización e incorporación](plan-sisplan/07-REGLAS-OPERATIVAS.md#trabajo-no-planificado-proyectos-riesgos-y-alertas) |
+| Implementación del sistema institucional | Prototipo en PR | [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) cubre borradores de PEI en desarrollo local |
+| Pruebas del sistema institucional | Verificación parcial del prototipo | 11 pruebas Angular e integración de borradores con PostgreSQL documentadas en el PR. La aceptación del SRS se mide sobre la entrega integrada |
 | Despliegue del sistema institucional | Pendiente | El portal publicado contiene documentación del proyecto |
-| Cumplimiento global del SRS | Sin calcular | Todavía no hay implementación que permita medirlo |
+| Cumplimiento global del SRS | Sin calcular | La versión integrada y sus criterios de aceptación siguen pendientes |
 
 ## Publicación y verificación del portal v2
 
@@ -62,20 +62,9 @@ El portal reúne los requisitos del SRS y presenta **9 casos de uso propuestos**
 - La columna de verificación describe las evidencias esperadas, sin acreditar ejecución.
 - Las metas incluyen cantidades y porcentajes que requieren reglas de cálculo diferentes.
 
-## Reglas pendientes de precisar
+## Reglas de trabajo
 
-| Tema | Definición pendiente |
-|---|---|
-| Cumplimiento | Meta programada en cero, redondeos, valores negativos y ejecución superior a la meta |
-| Semáforo | Tratamiento de decimales entre 89 % y 90 % |
-| Consolidación | Fórmula de cumplimiento por institución, eje, área, objetivo e indicador |
-| Aprobaciones | Permisos y estados para formular, revisar, aprobar, publicar y devolver |
-| Versionado | Cambios en registros aprobados y reemplazo de evidencias |
-| Organización del POA | Consolidación institucional y distribución por dependencia |
-| Presupuesto | Detalle, moneda, ejecución y distribución entre productos y actividades |
-| Proyectos y riesgos | Desarrollo del alcance mencionado en el SRS |
-| MFA | Su aparición como requisito no funcional y como elemento «A+» |
-| Actividades no planificadas | Registro, autorización, seguimiento y relación con metas y presupuesto |
+Vigencia, permisos, evaluación, presupuesto, alertas y trabajo adicional se implementan según las [reglas operativas de la base v1.0](plan-sisplan/07-REGLAS-OPERATIVAS.md). Cualquier aclaración del maestro se registra con el requisito y el caso de prueba afectado.
 
 ## Calendario de referencia
 
@@ -85,10 +74,7 @@ El objetivo referido a la **semana 6** está pendiente de conciliar con ese plaz
 
 ## Trabajo siguiente
 
-1. Asignar los cinco frentes de trabajo y confirmar disponibilidad.
-2. Confirmar rúbrica, formatos, permisos, vigencia y reglas de cálculo.
-3. Revisar el contrato de la primera entrega y elegir proveedor de identidad.
-4. Arrancar Angular, API y base de datos con un escenario de demo común.
-5. Demostrar el recorrido PEI–POA–avance–evaluación y registrar la evidencia.
-
-Estos puntos organizan el desarrollo del equipo. La relación entre requisitos originales y ampliaciones se mantiene en [DECISIONES.md](DECISIONES.md).
+1. Registrar en el tablero responsables, revisores y horas disponibles.
+2. Revisar la base v1.0 con el grupo y verificar la rúbrica, el formato de entrega y el plazo en el aula.
+3. Revisar el PR #1 frente a la base, reproducir el entorno y comprobar acceso con MFA.
+4. Ejecutar el primer corte de PEI publicado, POA generado y actividad programada.

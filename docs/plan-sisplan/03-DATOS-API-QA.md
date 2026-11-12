@@ -1,5 +1,7 @@
 # 03 · Datos, API, acceso y pruebas de SISPLAN
 
+> Referencia de diseño anterior a la base v1.0. Para implementar, aplica las decisiones del [plan base](01-PLAN-DE-CONSTRUCCION.md), [reglas](07-REGLAS-OPERATIVAS.md) y [herramientas](08-HERRAMIENTAS-Y-ENTORNOS.md).
+
 Angular es la decisión confirmada para el frontend. Este capítulo propone Angular 22, Node 24 desde 24.15, TypeScript 6.0, ASP.NET Core Web API sobre .NET 10 LTS y PostgreSQL 18. Para persistencia propone EF Core 10 con Npgsql 10. Las versiones se fijarán en los archivos de proyecto y CI al iniciar el desarrollo. La recomendación cumple los rangos .NET 9 o superior y PostgreSQL 16 o superior del SRS. [Compatibilidad de Angular](https://angular.dev/reference/versions) · [Soporte de .NET](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core) · [PostgreSQL 18](https://www.postgresql.org/docs/18/) · [Npgsql 10 para EF Core](https://www.npgsql.org/efcore/release-notes/10.0.html).
 
 El punto de partida es el SRS SISPLAN v1.0, sus diagramas de las páginas 4, 5 y 9 y los dos Excel de referencia. El repositorio registra la implementación institucional sin iniciar. Los contratos, las cardinalidades y los escenarios de este capítulo están propuestos para implementar y verificar. [Estado del proyecto](https://github.com/meliodr/Reto-desarollo-web-/blob/main/docs/ESTADO.md).

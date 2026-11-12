@@ -1,5 +1,7 @@
 # Flujos funcionales de SISPLAN
 
+> Referencia de diseño anterior a la base v1.0. Para implementar, aplica las decisiones del [plan base](01-PLAN-DE-CONSTRUCCION.md), [reglas](07-REGLAS-OPERATIVAS.md) y [herramientas](08-HERRAMIENTAS-Y-ENTORNOS.md).
+
 El Plan Estratégico Institucional (PEI) fija los objetivos y los indicadores. El Plan Operativo Anual (POA) traduce esa estrategia en productos y actividades con responsables, metas y presupuesto. Cada avance conserva el vínculo con su actividad, período y evidencia, de modo que el evaluador pueda comprobar qué se ejecutó y a qué objetivo contribuye.
 
 Este documento describe el diseño funcional para revisión. Los IDs `RF-`, `RN-`, `RNF-` y `CU-` corresponden al SRS. El prefijo `PROP-` identifica las propuestas para la ampliación de trabajo no planificado solicitada por el usuario. El repositorio registra la implementación del sistema institucional como **sin iniciar**. [Estado del proyecto](https://github.com/meliodr/Reto-desarollo-web-/blob/main/docs/ESTADO.md)

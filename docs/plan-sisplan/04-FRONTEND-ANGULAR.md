@@ -1,5 +1,7 @@
 # Plan de frontend Angular — SISPLAN
 
+> Referencia de diseño anterior a la base v1.0. Para implementar, aplica las decisiones del [plan base](01-PLAN-DE-CONSTRUCCION.md), [reglas](07-REGLAS-OPERATIVAS.md) y [herramientas](08-HERRAMIENTAS-Y-ENTORNOS.md).
+
 Fecha de revisión: 12 de noviembre de 2026. Equipo: cinco participantes. Estado: planificación para implementar; no se ha construido ni probado este frontend mediante este documento.
 
 Angular está confirmado por el usuario. El frontend descrito aquí es la **aplicación institucional SISPLAN**, que consumirá la API del producto. El portal académico existente sirve para organizar al equipo y presentar propuestas; sus votos, notas, checklist y simulaciones no son módulos ni datos institucionales de SISPLAN.

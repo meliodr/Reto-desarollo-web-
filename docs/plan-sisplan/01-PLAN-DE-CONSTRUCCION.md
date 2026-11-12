@@ -10,7 +10,7 @@ La aplicación usará el nombre **SISPLAN** para la entrega. SISPLAN gestiona el
 | [Herramientas y entornos](08-HERRAMIENTAS-Y-ENTORNOS.md) | Stack, autenticación, archivos, exportaciones, pruebas, CI y demo |
 | [Matriz de trazabilidad](05-TRAZABILIDAD.md) | Fuente, pantalla, tarea y criterio de aceptación de cada requisito |
 
-Las decisiones de estos tres documentos rigen la implementación. [Flujos iniciales](02-FLUJOS.md), [borrador de datos/API/QA](03-DATOS-API-QA.md) y [diseño inicial Angular](04-FRONTEND-ANGULAR.md) son referencias de diseño. Si una propuesta previa difiere de la base 1.0, se aplica la base 1.0. El SRS sigue siendo la fuente del alcance. Angular fue elegido por el grupo. Las demás decisiones son la base de trabajo de este plan, para que el grupo pueda revisarlas como un conjunto.
+Las decisiones de estos tres documentos rigen la implementación. [Flujos iniciales](02-FLUJOS.md), [borrador de datos/API/QA](03-DATOS-API-QA.md) y [diseño inicial Angular](04-FRONTEND-ANGULAR.md) son referencias de diseño. Si una propuesta previa difiere de la base 1.0, se aplica la base 1.0. El SRS sigue siendo la fuente del alcance. La [verificación de fuentes](05-TRAZABILIDAD.md#verificación-del-srs-y-los-excel) registra los límites de los Excel y las decisiones de diseño. Angular fue elegido por el grupo. Las demás decisiones son la base de trabajo de este plan, para que el grupo pueda revisarlas como un conjunto.
 
 ## Alcance acordado para construir
 
@@ -20,7 +20,7 @@ Las decisiones de estos tres documentos rigen la implementación. [Flujos inicia
 | Estrategia | PEI ordinario y extraordinario, ejes, objetivos, resultados, líneas de acción, indicadores, metas plurianuales y mapa | RF-001 a RF-004, CU-001 |
 | Operación | Un POA por año, productos vinculados, actividades con responsable, programación anual/mensual/cuatrimestral y presupuesto | RF-005 a RF-009, RN-001, RN-002 |
 | Seguimiento | Avance físico y financiero, comentarios y evidencias versionadas, evaluación de los tres cuatrimestres, semáforo y correctivos | RF-010 a RF-015, CU-002, CU-003, RN-005, RN-006, RN-008 |
-| Resultados | Dashboard, seis informes en PDF y XLSX y cuatro tipos de alertas internas | RF-016 a RF-018, RN-007 |
+| Resultados | Dashboard con los ocho indicadores clave de §9, seis informes en PDF y XLSX y cuatro tipos de alertas internas | RF-016 a RF-018, RN-007 |
 | Proyectos y riesgos | Portafolios, programas, proyectos, hitos, entregables y matriz de riesgo con mitigación | Alcance del SRS §1.3, T-06 y T-07 |
 | No planificadas | Solicitud, decisión, registro, evaluación e incorporación por revisión prospectiva con trazabilidad | Ampliación del equipo, NP-01 a NP-03 |
 

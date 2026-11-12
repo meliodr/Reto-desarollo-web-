@@ -26,7 +26,7 @@ Cada producto debe mantener su relación con el eje, el objetivo y el indicador 
 
 ## Ampliación solicitada
 
-Se ha solicitado incorporar el registro de **actividades no planificadas**. Esta ampliación se documenta aparte del SRS original. Su alcance, autorización, seguimiento e impacto en las metas y el presupuesto están por definir.
+Se ha solicitado incorporar el registro de **actividades no planificadas**. Esta ampliación se documenta aparte del SRS original. El registro, la autorización y el tratamiento de metas y presupuesto siguen las [reglas operativas de la base](docs/plan-sisplan/07-REGLAS-OPERATIVAS.md#trabajo-no-planificado-proyectos-riesgos-y-alertas).
 
 ## Estado
 
@@ -41,6 +41,7 @@ La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 2
 ## Documentación
 
 - [Plan base v1.0 con reglas, herramientas, responsables y entregables](docs/plan-sisplan/01-PLAN-DE-CONSTRUCCION.md)
+- [Verificación del SRS, los Excel y la consigna](docs/plan-sisplan/05-TRAZABILIDAD.md#verificación-del-srs-y-los-excel)
 - [Estado del proyecto](docs/ESTADO.md)
 - [Método de trabajo](docs/METODO-DE-TRABAJO.md)
 - [Decisiones y asuntos pendientes](docs/DECISIONES.md)

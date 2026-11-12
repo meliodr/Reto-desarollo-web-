@@ -2,7 +2,7 @@
 
 Proyecto académico de INTEC para un equipo de **cinco integrantes**.
 
-El sistema debe gestionar la planificación estratégica y operativa de una institución y relacionar los objetivos del PEI con los productos, las actividades, los avances y las evidencias del POA. El SRS utiliza el nombre **SISPLAN**; el nombre final y la identidad visual del proyecto están en exploración.
+El sistema debe gestionar la planificación estratégica y operativa de una institución y relacionar los objetivos del PEI con los productos, las actividades, los avances y las evidencias del POA. La aplicación se entrega con el nombre **SISPLAN**, que utiliza el SRS. La dirección visual propuesta está en la guía de identidad.
 
 [Portal del proyecto](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/)
 
@@ -46,6 +46,6 @@ La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 2
 - [Método de trabajo](docs/METODO-DE-TRABAJO.md)
 - [Decisiones y asuntos pendientes](docs/DECISIONES.md)
 - [Uso del portal y participación del equipo](docs/PORTAL.md)
-- [Propuestas de identidad](docs/IDENTIDAD.md)
+- [Identidad visual de SISPLAN](docs/IDENTIDAD.md)
 - [Actividades no planificadas](docs/AMPLIACION-NO-PLANIFICADA.md)
 - [Referencia del reto anterior](docs/REFERENCIA-RETO-ANTERIOR.md)

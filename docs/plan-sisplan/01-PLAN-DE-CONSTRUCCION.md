@@ -10,7 +10,7 @@ La aplicación usará el nombre **SISPLAN** para la entrega. SISPLAN gestiona el
 | [Herramientas y entornos](08-HERRAMIENTAS-Y-ENTORNOS.md) | Stack, autenticación, archivos, exportaciones, pruebas, CI y demo |
 | [Matriz de trazabilidad](05-TRAZABILIDAD.md) | Fuente, pantalla, tarea y criterio de aceptación de cada requisito |
 
-Las decisiones de estos tres documentos rigen la implementación. [Flujos iniciales](02-FLUJOS.md), [borrador de datos/API/QA](03-DATOS-API-QA.md) y [diseño inicial Angular](04-FRONTEND-ANGULAR.md) son referencias de diseño. Si una propuesta previa difiere de la base 1.0, se aplica la base 1.0. El SRS sigue siendo la fuente del alcance. La [verificación de fuentes](05-TRAZABILIDAD.md#verificación-del-srs-y-los-excel) registra los límites de los Excel y las decisiones de diseño. Angular fue elegido por el grupo. Las demás decisiones son la base de trabajo de este plan, para que el grupo pueda revisarlas como un conjunto.
+Las decisiones de estos tres documentos rigen la implementación. [Flujos iniciales](02-FLUJOS.md), [borrador de datos/API/QA](03-DATOS-API-QA.md) y [diseño inicial Angular](04-FRONTEND-ANGULAR.md) son referencias de diseño. Si una propuesta previa difiere de la base 1.0, se aplica la base 1.0. El SRS sigue siendo la fuente del alcance. La [identidad visual propuesta](../IDENTIDAD.md) define cómo se presentan el contexto del plan, los vínculos y las versiones. La [verificación de fuentes](05-TRAZABILIDAD.md#verificación-del-srs-y-los-excel) registra los límites de los Excel y las decisiones de diseño. Angular fue elegido por el grupo. Las demás decisiones son la base de trabajo de este plan, para que el grupo pueda revisarlas como un conjunto.
 
 ## Alcance acordado para construir
 

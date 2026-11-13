@@ -39,7 +39,11 @@
       </div>
       <label class="filter-field"
         ><span>Tipo de plan</span
-        ><select [value]="type()" (change)="type.set($any($event.target).value)">
+        ><select
+          aria-label="Tipo de plan"
+          [value]="type()"
+          (change)="type.set($any($event.target).value)"
+        >
           <option value="todos">Todos los tipos</option>
           <option value="ordinario">Ordinario · 4 años</option>
           <option value="extraordinario">Extraordinario · 5 años</option>

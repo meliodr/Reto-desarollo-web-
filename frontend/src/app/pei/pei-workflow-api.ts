@@ -28,7 +28,9 @@ export class PeiWorkflowApi {
   private readonly http = inject(HttpClient);
 
   actions(versionId: string) {
-    return this.http.get<{ acciones: PeiAction[] }>(this.transitionsUrl(versionId));
+    return this.http.get<{ acciones: PeiAction[]; motivoDevolucion?: string | null }>(
+      this.transitionsUrl(versionId),
+    );
   }
 
   transition(versionId: string, accion: PeiAction, etag: string, motivo?: string) {

@@ -1,10 +1,12 @@
 openapi: 3.1.0
 info:
   title: SISPLAN — Planificación estratégica y POA anuales
-  version: 0.3.0
-  description: Contrato local. El período se deriva de las fechas y el servidor asigna el estado borrador. Cada eje pertenece a la versión actual del PEI, con revisiones consultables. Los objetivos se registran bajo ejes activos y conservan el vínculo a su revisión de origen.
+  version: 0.4.0
+  description: Contrato institucional. En loopback sin OIDC se permite formular borradores sin token. Publicación y consulta de POA requieren sesión incluso en local. El período se deriva de las fechas y el servidor asigna el estado borrador. Cada eje pertenece a la versión actual del PEI, con revisiones consultables. Los objetivos se registran bajo ejes activos y conservan el vínculo a su revisión de origen.
 servers:
   - url: http://127.0.0.1:5080/api/v1
+security:
+  - AccesoInstitucional: []
 paths:
   /peis:
     get:
@@ -156,7 +158,7 @@ paths:
               schema: { $ref: '#/components/schemas/Objetivo' }
         '400': { description: JSON inválido }
         '404': { description: Eje no encontrado en la versión actual del PEI }
-        '409': { description: Código ya registrado en el eje, eje inactivo o PEI fuera de borrador }
+        '409': { description: 'Código ya registrado en el eje, eje inactivo o PEI fuera de borrador' }
         '415': { description: Se requiere application/json }
         '422': { $ref: '#/components/responses/Validacion' }
   /peis/{peiId}/ejes/{ejeId}/objetivos/{objetivoId}:
@@ -198,6 +200,8 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/DatosIndicador' }
       responses:
+        '400': { description: JSON inválido }
+        '415': { description: Se requiere application/json }
         '201':
           description: Indicador registrado
           content:
@@ -229,17 +233,17 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/DatosMedicion' }
       responses:
+        '400': { description: JSON inválido }
+        '415': { description: Se requiere application/json }
         '201':
           description: Medición registrada
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Medicion' }
         '404': { description: Indicador ajeno al objetivo }
-        '409': { description: Fecha duplicada, eje inactivo o PEI fuera de borrador }
+        '409': { description: 'Fecha duplicada, eje inactivo o PEI fuera de borrador' }
         '422': { $ref: '#/components/responses/Validacion' }
   /pei-versiones/{versionId}/transiciones:
-    security:
-      - AccesoInstitucional: []
     parameters:
       - { name: versionId, in: path, required: true, schema: { type: string, format: uuid } }
     get:
@@ -254,6 +258,7 @@ paths:
                 required: [acciones]
                 properties:
                   acciones: { type: array, items: { $ref: '#/components/schemas/AccionPei' } }
+                  motivoDevolucion: { type: [string, 'null'] }
         '401': { description: Sesión requerida }
         '403': { description: Rol Planificador requerido }
         '404': { description: Versión no encontrada }
@@ -275,14 +280,14 @@ paths:
         '200': { $ref: '#/components/responses/Pei' }
         '401': { description: Sesión requerida }
         '403': { description: Rol Planificador requerido o autoaprobación impedida }
+        '400': { description: JSON inválido }
+        '415': { description: Se requiere application/json }
         '404': { description: Versión no encontrada }
-        '409': { description: Estado incompatible, estructura incompleta o vigencia solapada }
+        '409': { description: 'Estado incompatible, estructura incompleta o vigencia solapada' }
         '412': { description: ETag obsoleto }
         '422': { $ref: '#/components/responses/Validacion' }
         '428': { description: Falta If-Match }
   /peis/{peiId}/poas:
-    security:
-      - AccesoInstitucional: []
     parameters:
       - $ref: '#/components/parameters/PeiId'
     get:
@@ -321,10 +326,9 @@ components:
       schema: { type: string, format: uuid }
   schemas:
     DecimalIndicador:
-      type: number
-      minimum: -999999999999.9999
-      maximum: 999999999999.9999
-      multipleOf: 0.0001
+      type: string
+      pattern: '^-?[0-9]{1,12}(\.[0-9]{1,4})?$'
+      description: Decimal exacto en formato de texto. La API también acepta números JSON en solicitudes existentes.
     DatosIndicador:
       type: object
       required: [nombre, formula, unidad, lineaBase, meta, frecuencia]

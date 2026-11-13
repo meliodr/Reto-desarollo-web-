@@ -168,11 +168,11 @@
             </div>
             <div>
               <dt>Línea base</dt>
-              <dd>{{ indicador.lineaBase | number: '1.0-4' }}</dd>
+              <dd>{{ indicador.lineaBase.replace('.', ',') }}</dd>
             </div>
             <div>
               <dt>Meta</dt>
-              <dd>{{ indicador.meta | number: '1.0-4' }}</dd>
+              <dd>{{ indicador.meta.replace('.', ',') }}</dd>
             </div>
             <div>
               <dt>Frecuencia</dt>
@@ -211,7 +211,7 @@
                           <td>
                             <time [attr.datetime]="medicion.periodo">{{ medicion.periodo }}</time>
                           </td>
-                          <td>{{ medicion.valor | number: '1.0-4' }}</td>
+                          <td>{{ medicion.valor.replace('.', ',') }}</td>
                         </tr>
                       }
                     </tbody>

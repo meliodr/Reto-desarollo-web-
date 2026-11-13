@@ -26,7 +26,7 @@ it('guarda un indicador y vuelve a consultar la medición registrada', () => {
     nombre: 'Servicios digitalizados',
     formula: 'Total de trámites en línea',
     unidad: 'trámites',
-    lineaBase: '2,5',
+    lineaBase: '999999999999,0003',
     meta: '10',
     frecuencia: 'Cuatrimestral',
   });
@@ -37,8 +37,8 @@ it('guarda un indicador y vuelve a consultar la medición registrada', () => {
     nombre: 'Servicios digitalizados',
     formula: 'Total de trámites en línea',
     unidad: 'trámites',
-    lineaBase: 2.5,
-    meta: 10,
+    lineaBase: '999999999999.0003',
+    meta: '10',
     frecuencia: 'Cuatrimestral',
   };
   const create = http.expectOne({ method: 'POST', url });
@@ -49,10 +49,10 @@ it('guarda un indicador y vuelve a consultar la medición registrada', () => {
   const measurements = `${url}/${id}/mediciones`;
   component.select(indicator);
   http.expectOne({ method: 'GET', url: measurements }).flush([]);
-  component.medicionForm.setValue({ periodo: '2026-04-30', valor: '7.25' });
+  component.medicionForm.setValue({ periodo: '2026-04-30', valor: '999999999999.0003' });
   component.saveMeasurement(indicator);
   const request = http.expectOne({ method: 'POST', url: measurements });
-  const saved = { id: 'medicion-1', periodo: '2026-04-30', valor: 7.25 };
+  const saved = { id: 'medicion-1', periodo: '2026-04-30', valor: '999999999999.0003' };
   expect(request.request.body).toEqual({ periodo: saved.periodo, valor: saved.valor });
   request.flush(saved);
   http.expectOne({ method: 'GET', url: measurements }).flush([saved]);
@@ -60,6 +60,6 @@ it('guarda un indicador y vuelve a consultar la medición registrada', () => {
 
   const view: HTMLElement = fixture.nativeElement;
   expect(view.querySelector('time')?.textContent).toBe(saved.periodo);
-  expect(view.querySelector('tbody')?.textContent).toContain('7.25');
+  expect(view.querySelector('tbody')?.textContent).toContain('999999999999,0003');
   http.verify();
 });

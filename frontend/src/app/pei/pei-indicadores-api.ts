@@ -11,8 +11,8 @@ export interface IndicadorWrite {
   nombre: string;
   formula: string;
   unidad: string;
-  lineaBase: number;
-  meta: number;
+  lineaBase: string;
+  meta: string;
   frecuencia: string;
 }
 
@@ -22,7 +22,7 @@ export interface Indicador extends IndicadorWrite {
 
 export interface MedicionWrite {
   periodo: string;
-  valor: number;
+  valor: string;
 }
 
 export interface Medicion extends MedicionWrite {

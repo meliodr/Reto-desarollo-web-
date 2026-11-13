@@ -1,4 +1,3 @@
-import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -18,7 +17,7 @@ const maxText = (limit: number) => [trimmedRequired, Validators.maxLength(limit)
 
 @Component({
   selector: 'app-pei-indicadores',
-  imports: [DecimalPipe, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './pei-indicadores.html',
   styleUrl: './pei-indicadores.css',
 })
@@ -130,8 +129,8 @@ export class PeiIndicadores implements OnInit {
       nombre: raw.nombre.trim(),
       formula: raw.formula.trim(),
       unidad: raw.unidad.trim(),
-      lineaBase: Number(raw.lineaBase.replace(',', '.')),
-      meta: Number(raw.meta.replace(',', '.')),
+      lineaBase: raw.lineaBase.replace(',', '.'),
+      meta: raw.meta.replace(',', '.'),
       frecuencia: raw.frecuencia.trim(),
     };
     this.saving.set(true);
@@ -159,7 +158,7 @@ export class PeiIndicadores implements OnInit {
     this.api
       .createMedicion(this.ruta(), indicador.id, {
         periodo: raw.periodo,
-        valor: Number(raw.valor.replace(',', '.')),
+        valor: raw.valor.replace(',', '.'),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

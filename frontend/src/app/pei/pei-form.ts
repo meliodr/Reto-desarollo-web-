@@ -151,7 +151,7 @@ export class PeiForm implements OnInit {
     }
   }
   private syncFormDisabled() {
-    if (this.isReadOnly() || this.workflowPending()) {
+    if (this.isReadOnly() || this.workflowPending() || this.saving()) {
       this.form.disable({ emitEvent: false });
     } else {
       this.form.enable({ emitEvent: false });
@@ -228,6 +228,7 @@ export class PeiForm implements OnInit {
       return;
     }
     this.saving.set(true);
+    this.syncFormDisabled();
     this.saved.set(false);
     const request = existing
       ? this.api.update(existing.versionId, this.form.getRawValue(), etag!)
@@ -235,6 +236,7 @@ export class PeiForm implements OnInit {
     request.subscribe({
       next: (value) => {
         this.saving.set(false);
+        this.syncFormDisabled();
         this.form.markAsPristine();
         this.feedback.message.set(
           `El borrador «${value.data.nombre}» está disponible en el listado.`,
@@ -248,6 +250,7 @@ export class PeiForm implements OnInit {
       },
       error: (error: HttpErrorResponse) => {
         this.saving.set(false);
+        this.syncFormDisabled();
         if (error.status === 422) {
           const errors = error.error?.errors;
           if (errors && typeof errors === 'object') {

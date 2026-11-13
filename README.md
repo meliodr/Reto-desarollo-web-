@@ -2,7 +2,7 @@
 
 Proyecto académico de INTEC para un equipo de **cinco integrantes**.
 
-El sistema debe gestionar la planificación estratégica y operativa de una institución y relacionar los objetivos del PEI con los productos, las actividades, los avances y las evidencias del POA. El SRS utiliza el nombre **SISPLAN**; el nombre final y la identidad visual del proyecto están en exploración.
+El sistema debe gestionar la planificación estratégica y operativa de una institución y relacionar los objetivos del PEI con los productos, las actividades, los avances y las evidencias del POA. La aplicación se entrega con el nombre **SISPLAN**, que utiliza el SRS. La dirección visual propuesta está en la guía de identidad.
 
 [Portal del proyecto](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/)
 
@@ -26,7 +26,7 @@ Cada producto debe mantener su relación con el eje, el objetivo y el indicador 
 
 ## Ampliación solicitada
 
-Se ha solicitado incorporar el registro de **actividades no planificadas**. Esta ampliación se documenta aparte del SRS original. Su alcance, autorización, seguimiento e impacto en las metas y el presupuesto están por definir.
+Se ha solicitado incorporar el registro de **actividades no planificadas**. Esta ampliación se documenta aparte del SRS original. El registro, la autorización y el tratamiento de metas y presupuesto siguen las [reglas operativas de la base](docs/plan-sisplan/07-REGLAS-OPERATIVAS.md#trabajo-no-planificado-proyectos-riesgos-y-alertas).
 
 ## Estado
 
@@ -34,17 +34,21 @@ El portal de trabajo v2 está publicado. Permite asignar tareas, completar check
 
 En el entorno de desarrollo se aprobaron **21 pruebas del portal**: 17 del servicio del tablero y 4 regresiones de interfaz. La incorporación y los recorridos con las cinco cuentas reales siguen pendientes.
 
-El primer incremento del sistema institucional cubre los borradores de PEI. Angular consume una API .NET 10 y PostgreSQL guarda los datos. [Arranque local y verificación](docs/plan-sisplan/06-PRIMER-INCREMENTO.md). El equipo eligió **Angular** para el frontend. El plan propone Angular 22, .NET 10 LTS y PostgreSQL 18 y registra las decisiones pendientes. [Plan de construcción](docs/plan-sisplan/01-PLAN-DE-CONSTRUCCION.md).
+El plan base v1.0 fija el alcance, las reglas operativas, el reparto y las herramientas. El equipo eligió **Angular**. La base técnica usa .NET 10, PostgreSQL 18 y Keycloak con MFA. El recorrido de formulación, publicación del PEI y generación de POA está en [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1), en revisión.
 
 La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 23:59**. El objetivo de trabajo referido a la **semana 6** está pendiente de conciliar con ese plazo; todavía no se le asigna una fecha.
 
 ## Documentación
 
-- [Plan de construcción con Angular, flujos, datos, API y trazabilidad](docs/plan-sisplan/01-PLAN-DE-CONSTRUCCION.md)
+- [Arranque local y pruebas de la aplicación](docs/plan-sisplan/06-PRIMER-INCREMENTO.md)
+- [QA del recorrido PEI–POA](docs/plan-sisplan/09-QA-PEI-POA.md)
+
+- [Plan base v1.0 con reglas, herramientas, responsables y entregables](docs/plan-sisplan/01-PLAN-DE-CONSTRUCCION.md)
+- [Verificación del SRS, los Excel y la consigna](docs/plan-sisplan/05-TRAZABILIDAD.md#verificación-del-srs-y-los-excel)
 - [Estado del proyecto](docs/ESTADO.md)
 - [Método de trabajo](docs/METODO-DE-TRABAJO.md)
 - [Decisiones y asuntos pendientes](docs/DECISIONES.md)
 - [Uso del portal y participación del equipo](docs/PORTAL.md)
-- [Propuestas de identidad](docs/IDENTIDAD.md)
+- [Identidad visual de SISPLAN](docs/IDENTIDAD.md)
 - [Actividades no planificadas](docs/AMPLIACION-NO-PLANIFICADA.md)
 - [Referencia del reto anterior](docs/REFERENCIA-RETO-ANTERIOR.md)

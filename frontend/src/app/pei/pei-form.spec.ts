@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { PeiForm } from './pei-form';
-import { Pei, PeiApi } from './pei-api';
+import { Pei, PeiApi, VersionedPei } from './pei-api';
 import { Feedback } from './feedback';
 
 const example: Pei = {
@@ -69,6 +69,16 @@ describe('PeiForm save failure recovery', () => {
     expect(component.fieldError('nombre')).toBe('Ese nombre necesita revisión.');
     expect(component.form.controls.nombre.value).toBe(example.nombre);
     expect(component.saved()).toBe(false);
+  });
+  it('locks the fields while the save is pending and unlocks after the response', () => {
+    const response = new Subject<VersionedPei>();
+    api.update.mockReturnValue(response);
+    component.submit();
+    expect(component.form.disabled).toBe(true);
+    response.next({ data: example, etag: '"rev-2"' });
+    response.complete();
+    expect(component.form.enabled).toBe(true);
+    expect(component.saved()).toBe(true);
   });
   it('fetching a newer version does not silently replace local changes', () => {
     component.form.controls.vision.setValue('Mi visión aún no guardada.');

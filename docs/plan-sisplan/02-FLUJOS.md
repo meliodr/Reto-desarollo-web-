@@ -1,5 +1,7 @@
 # Flujos funcionales de SISPLAN
 
+> Referencia de diseño anterior a la base v1.0. Para implementar, aplica las decisiones del [plan base](01-PLAN-DE-CONSTRUCCION.md), [reglas](07-REGLAS-OPERATIVAS.md) y [herramientas](08-HERRAMIENTAS-Y-ENTORNOS.md).
+
 El Plan Estratégico Institucional (PEI) fija los objetivos y los indicadores. El Plan Operativo Anual (POA) traduce esa estrategia en productos y actividades con responsables, metas y presupuesto. Cada avance conserva el vínculo con su actividad, período y evidencia, de modo que el evaluador pueda comprobar qué se ejecutó y a qué objetivo contribuye.
 
 Este documento describe el diseño funcional para revisión. Los IDs `RF-`, `RN-`, `RNF-` y `CU-` corresponden al SRS. El prefijo `PROP-` identifica las propuestas para la ampliación de trabajo no planificado solicitada por el usuario. El repositorio registra la implementación del sistema institucional como **sin iniciar**. [Estado del proyecto](https://github.com/meliodr/Reto-desarollo-web-/blob/main/docs/ESTADO.md)
@@ -36,7 +38,7 @@ En el POA del año correspondiente se registra cada producto con su descripción
 | Fuente de trabajo | Dato disponible | Qué debe resolver el equipo |
 |---|---|---|
 | Catálogo de ejes | Ejes, objetivos, resultados, indicadores y líneas de acción. | Identificar de forma única los objetivos cuya numeración se repite por eje. |
-| POA TIC 2026 | Productos, responsables, unidades, metas mensuales y medios de verificación. | Validar el eje, objetivo e indicador de cada producto. Diferenciar rótulos repetidos, presupuesto ausente y actividades pendientes de detalle. |
+| POA TIC 2026 | Productos, cargo de seguimiento, involucrados, unidades, metas mensuales y medios de verificación. | Validar el eje, objetivo e indicador de cada producto. Diferenciar rótulos repetidos, presupuesto ausente y actividades pendientes de detalle. |
 | Programación del POA | Meses agrupados visualmente en cuatro trimestres en el Excel. | Aplicar los tres cuatrimestres del SRS para evaluar. Acordar cómo se agregan cantidades, porcentajes e hitos. |
 
 Fuentes de datos del reto. [Ejes y Objetivos DIGEMAPS](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/docs/Ejes_y_Objetivos_DIGEMAPS.xlsx) · [POA TI 2026 V2](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/docs/POA_TI_2026.xlsx)
@@ -163,7 +165,7 @@ RN-0098 protege los registros aprobados frente a eliminación y RNF-002 exige re
 |---|---|---|
 | PEI ordinario 2026–2029 con datos de demostración. | Se crean cuatro POA, uno por año, con referencia al mismo PEI. | RF-001, RF-005 y RN-001. |
 | Crear una actividad sin responsable o dejar vencer una con cronograma. | La primera requiere responsable. La segunda genera la alerta automática prevista. | RF-008, RF-018, RN-002 y RN-007. |
-| Programar tres jornadas y ejecutar dos en enero–abril con acta de respaldo. | El cálculo de ejemplo es 66,67 %, estado rojo y solicitud de plan correctivo. El registro permite volver al producto y a sus vínculos estratégicos. | RF-006, RF-010 a RF-015, RN-005 y RN-008. |
+| Programar tres jornadas y ejecutar dos en enero–abril con acta de respaldo. | El cálculo de ejemplo es 66,66 % mostrado, estado rojo y solicitud de plan correctivo. El registro permite volver al producto y a sus vínculos estratégicos. | RF-006, RF-010 a RF-015, RN-005 y RN-008. |
 | Evaluar sin evidencia o intentar eliminar un aprobado. | El primer caso queda pendiente de evidencia. El registro aprobado se conserva. | RN-005 y RN-0098. |
 | Registrar una actividad adicional sin meta numérica ni incorporación aprobada. | Se consulta su ejecución y evidencia por origen. El cumplimiento queda sin denominador aplicable y el POA conserva su versión de referencia. | PROP-RF-NP-004, PROP-RF-NP-008 y PROP-RN-NP-002 a PROP-RN-NP-004. |
 | Incorporar por revisión una actividad adicional con ejecución registrada. | Se pueden consultar original, revisión, motivo, responsable de la decisión y fecha. La ejecución y el costo se contabilizan una vez. | PROP-RF-NP-007, PROP-RN-NP-001, PROP-RN-NP-006 y RNF-002. |

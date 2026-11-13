@@ -43,11 +43,13 @@ export class PeiWorkflow {
   readonly notice = signal('');
   readonly confirmAction = signal<PeiAction | null>(null);
   readonly reason = signal('');
+  readonly returnReason = signal<string | null>(null);
   readonly actionLabels = actionLabels;
 
   constructor() {
     effect((cleanup) => {
       const plan = this.pei();
+      this.returnReason.set(null);
       if (!this.session.canPlan() || plan.estado === 'publicado') {
         this.actions.set([]);
         this.loading.set(false);
@@ -59,6 +61,7 @@ export class PeiWorkflow {
       const request = this.api.actions(plan.versionId).subscribe({
         next: (response) => {
           this.actions.set(response.acciones);
+          this.returnReason.set(response.motivoDevolucion ?? null);
           this.loading.set(false);
         },
         error: () => {

@@ -1,6 +1,6 @@
 # SISPLAN · Frontend del primer incremento
 
-Aplicación Angular 22 para listar, crear y editar borradores de Plan Estratégico Institucional. Consume la API local; no contiene datos simulados ni funciones del portal de trabajo del equipo. Este incremento no incorpora aún autenticación, aprobación, publicación, ejes ni objetivos.
+Aplicación Angular 22 para formular y publicar el PEI, registrar ejes, objetivos e indicadores y consultar los POA generados. El flujo de revisión requiere acceso institucional local. [Guía del incremento](../docs/plan-sisplan/06-PRIMER-INCREMENTO.md).
 
 ## Ejecución local
 

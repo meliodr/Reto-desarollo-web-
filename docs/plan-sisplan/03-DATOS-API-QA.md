@@ -1,5 +1,7 @@
 # 03 · Datos, API, acceso y pruebas de SISPLAN
 
+> Referencia de diseño anterior a la base v1.0. Para implementar, aplica las decisiones del [plan base](01-PLAN-DE-CONSTRUCCION.md), [reglas](07-REGLAS-OPERATIVAS.md) y [herramientas](08-HERRAMIENTAS-Y-ENTORNOS.md).
+
 Angular es la decisión confirmada para el frontend. Este capítulo propone Angular 22, Node 24 desde 24.15, TypeScript 6.0, ASP.NET Core Web API sobre .NET 10 LTS y PostgreSQL 18. Para persistencia propone EF Core 10 con Npgsql 10. Las versiones se fijarán en los archivos de proyecto y CI al iniciar el desarrollo. La recomendación cumple los rangos .NET 9 o superior y PostgreSQL 16 o superior del SRS. [Compatibilidad de Angular](https://angular.dev/reference/versions) · [Soporte de .NET](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core) · [PostgreSQL 18](https://www.postgresql.org/docs/18/) · [Npgsql 10 para EF Core](https://www.npgsql.org/efcore/release-notes/10.0.html).
 
 El punto de partida es el SRS SISPLAN v1.0, sus diagramas de las páginas 4, 5 y 9 y los dos Excel de referencia. El repositorio registra la implementación institucional sin iniciar. Los contratos, las cardinalidades y los escenarios de este capítulo están propuestos para implementar y verificar. [Estado del proyecto](https://github.com/meliodr/Reto-desarollo-web-/blob/main/docs/ESTADO.md).
@@ -40,7 +42,7 @@ erDiagram
     AVANCE ||--o{ EVIDENCIA : "se respalda con"
 ```
 
-`ACTIVIDAD_PLAN` define cronograma, responsable, metas, presupuesto asociado y **medio de verificación esperado**. `EVIDENCIA` guarda los documentos o enlaces entregados, con su versión y revisión. Por ejemplo, «lista de asistencia» es un medio esperado y el PDF específico firmado es una evidencia entregada. La referencia al indicador del producto acompaña la actividad durante el seguimiento.
+`PRODUCTO_PLAN` conserva metas, presupuesto y medio de verificación del producto. `ACTIVIDAD_PLAN` define cronograma y responsable, y permite su propio medio y programación o un desglose vinculado. Para sumar el plan se toma el total del producto o su desglose según lo aprobado, sin duplicarlo. `EVIDENCIA` guarda los documentos o enlaces entregados, con su versión y revisión. Por ejemplo, «lista de asistencia» es un medio esperado y el PDF específico firmado es una evidencia entregada. La referencia al indicador del producto acompaña la actividad durante el seguimiento.
 
 ```mermaid
 erDiagram
@@ -57,7 +59,7 @@ erDiagram
 | Estrategia | `pei`, `pei_version`, `eje`, `objetivo`, `resultado`, `linea_accion`, `linea_resultado`, `indicador`, `meta_estrategica`. Las filas versionadas conservan una clave lógica para comparar revisiones. |
 | Operación | `poa`, `poa_version`, `producto`, `producto_plan`, `actividad`, `actividad_plan`, `meta_programada`, `medio_verificacion`. Meta anual y metas por mes o cuatrimestre identifican unidad, período y regla de consolidación. |
 | Organización | `dependencia`, `usuario`, `rol`, `asignacion_rol`. La identidad externa se vincula mediante `issuer` y `subject`. La asignación indica alcance institucional o dependencias autorizadas. |
-| Ejecución | `avance` identifica actividad y cuatrimestre. `avance_version` conserva el total informado del período, el avance declarado, el monto ejecutado, comentarios y estado de validación. Para el cálculo se toma una revisión aplicable por actividad y período. |
+| Ejecución | `avance` identifica actividad y mes. `avance_version` conserva la medición del mes, el avance declarado, el monto ejecutado, comentarios y validación. Se toma una revisión vigente validada por actividad y mes y se consolida por cuatrimestre según el método. |
 | Evidencias | `evidencia`, `evidencia_version` y vínculo con la revisión de avance. Guardar título, tipo, autor, fecha, referencia privada del archivo o enlace, suma de comprobación y estado. |
 | Evaluación | `cuatrimestre`, `evaluacion`, `evaluacion_version`, `resultado_eval`, `plan_correctivo`. Cada resultado conserva insumos, unidad, denominador, cálculo aplicado, semáforo y trazas de evidencia. |
 | Presupuesto | `asignacion_presupuestaria` por versión, dependencia y producto, con actividad opcional. Los importes aprobados y ejecutados se consultan por moneda y período. El detalle de partidas y reasignación requiere acuerdo. |
@@ -72,7 +74,7 @@ erDiagram
 - Las claves foráneas compuestas validan que indicador y POA correspondan a la misma versión estratégica. Las relaciones de organización, fechas dentro del año y transiciones se validan también en el servicio. [Restricciones de PostgreSQL](https://www.postgresql.org/docs/18/ddl-constraints.html).
 - Usar `numeric` para cantidades y dinero, `date` para calendario institucional y `timestamptz` para acciones. Los meses se agrupan de acuerdo con el cuatrimestre. La zona de calendario propuesta es `America/Santo_Domingo`. Los datos ausentes se conservan como `null`.
 - Las versiones aprobadas quedan protegidas de eliminación conforme a RN-0098. Una corrección genera una versión identificable. La autorización del cambio, la versión y la auditoría se guardan juntas. La emisión de un resultado rojo registra en la misma transacción el plan correctivo requerido y el evento de alerta.
-- Un token de concurrencia se actualiza en cada cambio del registro. Si una edición de un hijo afecta una aprobación o evaluación, también actualiza la versión del conjunto que se aprobará. EF Core compara el token al guardar. [Concurrencia en EF Core](https://learn.microsoft.com/en-us/ef/core/saving/concurrency).
+- Un token de concurrencia se actualiza en cada cambio del registro. Si una edición de un hijo afecta una aprobación o evaluación, también actualiza la versión del conjunto que se aprobará. La actualización parametrizada en Npgsql compara la revisión en la misma operación. Las herramientas vigentes están en el [capítulo de entornos](08-HERRAMIENTAS-Y-ENTORNOS.md).
 
 ### Cálculo y consistencia de reportes
 
@@ -80,19 +82,19 @@ RF-013 define `ejecutado / programado × 100`. Con meta positiva, la propuesta c
 
 RN-006 limita el avance al 100 %. Registrar por separado cantidad ejecutada y avance porcentual permite conservar la ejecución real. El tratamiento de sobreejecución, valores negativos y excepciones debe acordarse antes de cerrar la fórmula de evaluación. El correctivo se exige al emitir un resultado de cumplimiento inferior a 70 % con base válida.
 
-Cada indicador declara método de consolidación, unidad y fuente. Cantidades acumulables pueden sumarse por período. Tasas, tiempos, saldos y porcentajes requieren su regla particular. Mientras falten ponderaciones institucionales, el dashboard puede mostrar resultados individuales y el agregado como pendiente de definición. Los seis reportes, el dashboard y la exportación consumen la misma consulta de resultados publicados y su versión.
+Cada indicador declara método de consolidación, unidad y fuente. Cantidades acumulables pueden sumarse por período. Tasas, tiempos, saldos y porcentajes requieren su regla particular. El dashboard muestra la cobertura y agregación definida en las reglas operativas. El PEI y POA vigentes se obtienen de la planificación aprobada. Los reportes y el dashboard concilian cifras de ejecución con el mismo corte publicado y su versión.
 
 ## Persistencia y operación
 
-Proponer una API modular con módulos de estrategia, operación, evaluación, evidencias, presupuesto, proyectos, riesgos, reportes, alertas y acceso. En PostgreSQL se aplican migraciones EF Core revisadas y probadas desde una base vacía y desde la revisión anterior. El despliegue aplica el script o paquete de migración como paso explícito. Un respaldo y una restauración en un entorno aislado verifican recuperación. [Migraciones de EF Core](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/applying).
+Proponer una API modular con módulos de estrategia, operación, evaluación, evidencias, presupuesto, proyectos, riesgos, reportes, alertas y acceso. En PostgreSQL se aplican migraciones SQL versionadas y probadas desde una base vacía y desde la revisión anterior. El despliegue aplica el script o paquete de migración como paso explícito. Un respaldo y una restauración en un entorno aislado verifican recuperación.
 
-Los archivos se guardan en almacenamiento privado de objetos. PostgreSQL conserva metadatos y referencias. La API comprueba tipo, tamaño, permiso y asociación al avance. Un archivo queda disponible después de confirmar la escritura y su registro. Un fallo parcial deja un estado recuperable y permite limpiar objetos huérfanos. Los enlaces se validan como HTTPS y se presentan para consulta. La descarga requiere permiso sobre el registro y entrega un enlace temporal o un flujo autorizado.
+Los archivos se guardan en el volumen privado de la aplicación. PostgreSQL conserva metadatos y referencias. La API comprueba tipo, tamaño, permiso y asociación al avance. Un archivo queda disponible después de confirmar la escritura y su registro. Un fallo parcial deja un estado recuperable y permite limpiar objetos huérfanos. Los enlaces se validan como HTTPS y se presentan para consulta. La descarga requiere permiso sobre el registro y entrega un flujo autorizado como adjunto.
 
-La importación de Excel empieza en un área de revisión con documento, hoja, fila e identificación de origen. Se comprueba que los seis ejes y veinte objetivos conservan los textos originales. Los once productos conservan su numeración original como dato de fuente, incluso el rótulo repetido. Los vínculos a objetivo e indicador, las actividades faltantes y el presupuesto vacío requieren revisión antes de aceptar datos operativos. La demo usa registros ficticios identificados como tales.
+La preparación de datos de demostración registra documento, hoja, fila y procedencia de los Excel. La carga se prepara manualmente o con datos iniciales versionados. Se comprueba que los seis ejes y veinte objetivos conservan los textos originales. Los once productos conservan su numeración original como dato de fuente, incluso el rótulo repetido. Los vínculos a objetivo e indicador, las actividades faltantes y el presupuesto vacío requieren revisión antes de aceptar datos operativos. La demo usa registros ficticios identificados como tales.
 
 ## Autenticación y permisos
 
-Angular inicia la sesión con OpenID Connect mediante Authorization Code y PKCE. La biblioteca OIDC gestiona redirección, estado de la sesión y token de acceso en memoria. El proveedor de identidad aplica MFA y se seleccionará tras comprobar integración y operación. Si ofrece renovación a clientes públicos, aplicar el mecanismo seguro de rotación o vinculación que se configure. [IETF RFC 9700](https://www.rfc-editor.org/rfc/rfc9700.html).
+Angular inicia la sesión con OpenID Connect mediante Authorization Code y PKCE. La biblioteca OIDC gestiona redirección, estado de la sesión y token de acceso en memoria. Keycloak aplica MFA conforme a la base vigente. Si ofrece renovación a clientes públicos, aplicar el mecanismo seguro de rotación o vinculación que se configure. [IETF RFC 9700](https://www.rfc-editor.org/rfc/rfc9700.html).
 
 La API recibe el token de acceso mediante `Authorization: Bearer`, comprueba firma, emisor, audiencia y vigencia, y vincula la identidad al usuario activo. `GET /api/v1/me` devuelve sus roles, dependencias y capacidades de interfaz. Los permisos se comprueban en cada recurso, también en listados, descargas y reportes. Los guards de Angular organizan la navegación. [JWT bearer en ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/configure-jwt-bearer-authentication?view=aspnetcore-10.0).
 
@@ -183,6 +185,6 @@ La suite de dominio comprueba cálculos, períodos y transiciones. La suite de i
 | QA-13 | Experiencia de uso | Recorrer con teclado formularios, tablas, diálogos y mensajes. Revisar estados de carga, recuperación de errores, foco, adaptación a 320 px y significado del semáforo mediante texto. |
 | QA-14 | Operación | Aplicar migraciones desde cero y desde versión anterior. Simular fallo de almacenamiento, recuperar borrador y restaurar una copia para comprobar sus vínculos. |
 
-Para la primera demo, usar una actividad ficticia con tres jornadas programadas y dos ejecutadas en el mismo cuatrimestre. Recorrer PEI, POA, actividad, avance, evidencia, evaluación, correctivo y reporte. El resultado esperado es 66.7 % y rojo con correctivo requerido. El indicador institucional conserva su propio método de consolidación.
+Para la primera demo, usar una actividad ficticia con tres jornadas programadas y dos ejecutadas en el mismo cuatrimestre. Recorrer PEI, POA, actividad, avance, evidencia, evaluación, correctivo y reporte. El resultado esperado es 66,66 % mostrado y rojo con correctivo requerido. El indicador institucional conserva su propio método de consolidación.
 
 El registro de aceptación mantendrá estado pendiente, verificado, parcial o bloqueado por caso. Al cerrar un requisito se incluye enlace al cambio, prueba y evidencia de revisión. Las pruebas ya registradas en el repositorio corresponden al portal de trabajo. Esta matriz queda como plan de verificación de la futura aplicación institucional. [Estado y evidencia del portal](https://github.com/meliodr/Reto-desarollo-web-/blob/main/docs/ESTADO.md).

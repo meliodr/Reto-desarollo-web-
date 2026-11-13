@@ -6,6 +6,9 @@
     @if (notice()) {
       <p class="notice notice-success" role="status">{{ notice() }}</p>
     }
+    @if (returnReason(); as motivo) {
+      <p class="notice"><strong>Motivo de la última devolución</strong> {{ motivo }}</p>
+    }
     @if (transitionError()) {
       <p class="notice notice-error" role="alert">{{ transitionError() }}</p>
     }

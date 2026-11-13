@@ -1,124 +1,74 @@
-# Plan de construcción de SISPLAN
+# Plan base de SISPLAN
 
-12 de noviembre de 2026 · Reto Web PEI–POA · Equipo de cinco
+**Versión 1.0 · 12 de noviembre de 2026 · Equipo de cinco**
 
-El grupo eligió **Angular para el frontend**. La primera entrega interna será un recorrido con datos persistidos: formular un PEI, generar su POA, programar una actividad, guardar su avance con evidencia, evaluar y consultar el resultado. Sobre ese recorrido se incorporarán los módulos y casos restantes del SRS.
+La aplicación usará el nombre **SISPLAN** para la entrega. SISPLAN gestiona el ciclo institucional completo desde el PEI hasta la evaluación del POA. El primer recorrido integrado debe publicar un PEI, generar los POA, vincular una actividad con su objetivo, registrar un avance con evidencia y publicar una evaluación. Ese recorrido fija el contrato que comparten los cinco frentes.
 
-## Documentos de trabajo
-
-| Documento | Para qué se usa |
+| Documento vigente | Contenido |
 |---|---|
-| [Primer incremento](06-PRIMER-INCREMENTO.md) | Ejecutar y verificar la captura y edición de borradores PEI |
-| [Flujos y estados](02-FLUJOS.md) | Acordar qué hace cada rol, qué caminos existen y cuándo cambia un estado |
-| [Datos, API y pruebas](03-DATOS-API-QA.md) | Dividir el trabajo entre Angular y la API y comprobar la integración |
-| [Frontend Angular](04-FRONTEND-ANGULAR.md) | Construir rutas, pantallas, formularios y componentes coherentes |
-| [Matriz de trazabilidad](05-TRAZABILIDAD.md) | Comprobar cada RF, RN y RNF contra su fuente, tarea y criterio de aceptación |
+| [Reglas operativas](07-REGLAS-OPERATIVAS.md) | Roles, vigencia, estados, cálculos, reportes, presupuesto y actividades no planificadas |
+| [Herramientas y entornos](08-HERRAMIENTAS-Y-ENTORNOS.md) | Stack, autenticación, archivos, exportaciones, pruebas, CI y demo |
+| [Matriz de trazabilidad](05-TRAZABILIDAD.md) | Fuente, pantalla, tarea y criterio de aceptación de cada requisito |
 
-## Alcance de la entrega
+Las decisiones de estos tres documentos rigen la implementación. [Flujos iniciales](02-FLUJOS.md), [borrador de datos/API/QA](03-DATOS-API-QA.md) y [diseño inicial Angular](04-FRONTEND-ANGULAR.md) son referencias de diseño. Si una propuesta previa difiere de la base 1.0, se aplica la base 1.0. El SRS sigue siendo la fuente del alcance. La [identidad visual propuesta](../IDENTIDAD.md) define cómo se presentan el contexto del plan, los vínculos y las versiones. La [verificación de fuentes](05-TRAZABILIDAD.md#verificación-del-srs-y-los-excel) registra los límites de los Excel y las decisiones de diseño. Angular fue elegido por el grupo. Las demás decisiones son la base de trabajo de este plan, para que el grupo pueda revisarlas como un conjunto.
 
-- **Planificación estratégica.** PEI de 4 o 5 años, ejes, objetivos, resultados, indicadores, líneas de acción, metas plurianuales y mapa estratégico.
-- **Planificación operativa.** Un POA por año del PEI, productos vinculados con la estrategia, actividades, responsables, metas, cronograma y presupuesto.
-- **Seguimiento y evaluación.** Avances físicos y financieros, comentarios, evidencias con versiones, tres evaluaciones por POA, cálculo, semáforo y correctivos.
-- **Consulta y control.** Dashboard, seis informes en PDF y Excel, cuatro tipos de alerta, seguridad con MFA, catálogos y auditoría.
-- **Proyectos y riesgos.** Portafolios, programas, proyectos, cronogramas, hitos, entregables, riesgos estratégicos y operativos, matriz de probabilidad e impacto y mitigación. El SRS incluye estos conceptos en el alcance. Su comportamiento detallado requiere acuerdo.
-- **Actividades no planificadas.** Ampliación solicitada para registrar trabajo adicional con motivo, fechas reales e impacto, revisarlo y, si corresponde, incorporarlo en una revisión del POA. Definir primero el tratamiento presupuestario y de metas. El historial conserva el plan aprobado y el origen de la actividad.
+## Alcance acordado para construir
 
-El SRS también enumera mejoras A+: MFA, envío de correos y aprobación de documentos. MFA se incluye en la base porque figura en RNF-001. Correo y aprobación documental se estimarán como mejoras después del recorrido principal. Los Excel sirven como referencia y datos iniciales de demostración. Una importación automática queda por acordar.
-
-Los tres casos oficiales son crear PEI, registrar avance y evaluar cumplimiento. La matriz cubre los 18 RF, 7 RN y 2 RNF del documento, incluido el identificador literal `RN-0098`. La consigna visible fija el cierre del 2 de diciembre a las 23:59. La semana 6 indicada por el equipo requiere confirmación con el maestro.
-
-## Arquitectura propuesta
-
-| Decisión | Propuesta para el reto | Estado |
+| Bloque | Resultado exigible | Trazabilidad |
 |---|---|---|
-| Frontend | Angular 22, TypeScript 6.0 y Node 24 desde 24.15.0. Componentes standalone, formularios reactivos tipados y TailwindCSS | Angular elegido por el equipo. Versión y convenciones propuestas |
-| Backend | ASP.NET Core Web API sobre .NET 10 LTS. Un despliegue con módulos por dominio y separación de dominio, aplicación e infraestructura | Propuesta dentro de la recomendación del SRS de .NET 9 o superior |
-| Datos | PostgreSQL 18, EF Core con proveedor compatible y migraciones versionadas. Almacenamiento privado para los archivos de evidencia | Propuesta |
-| Identidad | OIDC, código de autorización con PKCE y MFA gestionado por proveedor. API con JWT y permisos por rol y dependencia | OAuth2, OIDC y MFA exigidos. Proveedor y entorno de demo por elegir |
-| API | OpenAPI en el repositorio, rutas `/api/v1`, errores y ejemplos acordados antes de integrar cada módulo | Propuesta |
-| Ejecución | Entorno local reproducible y un entorno de integración con datos de demo. Acordar plataforma y presupuesto antes del despliegue | Propuesta |
+| Acceso y administración | Seis roles, dependencias, catálogos, usuarios, OAuth2/OIDC con MFA y auditoría de cambios | RNF-001, RNF-002, T-01, T-04, T-05 |
+| Estrategia | PEI ordinario y extraordinario, ejes, objetivos, resultados, líneas de acción, indicadores, metas plurianuales y mapa | RF-001 a RF-004, CU-001 |
+| Operación | Un POA por año, productos vinculados, actividades con responsable, programación anual/mensual/cuatrimestral y presupuesto | RF-005 a RF-009, RN-001, RN-002 |
+| Seguimiento | Avance físico y financiero, comentarios y evidencias versionadas, evaluación de los tres cuatrimestres, semáforo y correctivos | RF-010 a RF-015, CU-002, CU-003, RN-005, RN-006, RN-008 |
+| Resultados | Dashboard con los ocho indicadores clave de §9, seis informes en PDF y XLSX y cuatro tipos de alertas internas | RF-016 a RF-018, RN-007 |
+| Proyectos y riesgos | Portafolios, programas, proyectos, hitos, entregables y matriz de riesgo con mitigación | Alcance del SRS §1.3, T-06 y T-07 |
+| No planificadas | Solicitud, decisión, registro, evaluación e incorporación por revisión prospectiva con trazabilidad | Ampliación del equipo, NP-01 a NP-03 |
 
-Angular 22 figura con soporte activo. La tabla oficial especifica las versiones compatibles de Node y TypeScript. .NET 10 es LTS y PostgreSQL 18 está soportado. Al iniciar, fijar parches y archivos de bloqueo que los cinco puedan instalar. Fuentes oficiales: [Versiones de Angular](https://angular.dev/reference/releases), [compatibilidad de Angular](https://angular.dev/reference/versions), [soporte de .NET](https://dotnet.microsoft.com/es-es/platform/support/policy) y [versiones de PostgreSQL](https://www.postgresql.org/support/versioning/).
+El alcance base contiene los **18 RF, 7 RN y 2 RNF**, conserva `RN-0098` y los tres casos de uso oficiales. El correo y la aprobación de documentos como flujo independiente quedan para una ampliación posterior a la entrega. El MFA va en el acceso base por RNF-001. Los Excel del reto se usan como referencia y datos de demostración curados. La importación masiva automática queda fuera de esta entrega.
 
-```mermaid
-flowchart TD
-  U[Usuarios institucionales] --> W[Aplicación Angular]
-  W --> I[Proveedor OIDC con MFA]
-  W --> A[API ASP.NET Core]
-  A --> I
-  A --> P[(PostgreSQL)]
-  A --> E[Archivos privados de evidencia]
-```
+## Reparto y esfuerzo de referencia
 
-Angular ofrece navegación, edición y vistas por rol. La API valida identidad, dependencia, reglas, estados y cálculos. PostgreSQL conserva relaciones, versiones, metas, ejecución y auditoría. El servidor autoriza cada consulta o descarga de evidencia. El portal académico se usa para asignaciones, acuerdos, revisión y seguimiento del desarrollo.
+| Frente | Responsable de entregar | Primera interfaz compartida | Revisión cruzada | Esfuerzo estimado |
+|---|---|---|---|---|
+| 1. Base y acceso | Infraestructura, CI, Keycloak/MFA, usuarios, permisos, catálogos, alertas | `/me`, roles y dependencias | 4 | 24 h |
+| 2. Estrategia y experiencia | Shell Angular, PEI, ejes, objetivos, indicadores, mapa y generación de POA | Contrato PEI publicado y POA generado | 3 | 28 h |
+| 3. Operación y proyectos | Productos, actividades, programación, portafolios, programas y proyectos | Producto y actividad aprobados con metas por período | 5 | 27 h |
+| 4. Seguimiento y evaluación | Avances, evidencias, validación, evaluación, correctivos y auditoría | Resultado publicado con trazabilidad | 2 | 30 h |
+| 5. Presupuesto y resultados | Presupuesto, dashboard, exportaciones, riesgos y ampliación no planificada | Modelo de consulta y exportación por corte | 1 | 30 h |
 
-## Reparto para cinco
+**Estimación inicial: 139 horas de equipo**, incluidas integración y revisión. Es un supuesto de planificación para cinco personas durante unas dos semanas y media, aproximadamente 11 horas semanales por integrante. Registrar horas reales y nombres en el tablero al iniciar. Los responsables de frente entregan pantalla, API, datos, contrato y verificación con apoyo de sus revisores. Todos participan en la integración. El frente 1 coordina el ensayo y el frente 4 mantiene el registro de resultados de aceptación.
 
-La asignación por frente es orientativa. Cada responsable entrega pantalla, contrato, comportamiento y evidencia de revisión de su módulo. El equipo decide los nombres en el tablero según disponibilidad y experiencia.
+## Fases y condiciones para avanzar
 
-| Frente | Trabajo principal | Tareas de referencia | Revisión cruzada |
-|---|---|---|---|
-| 1. Base y acceso | Repositorio, entorno, OIDC/MFA, usuarios, catálogos, autorización, alertas | T-01, T-03 compartida, T-04, RF-018 | Frente 4 |
-| 2. Estrategia y experiencia | Estructura Angular compartida, PEI, mapa, ejes, objetivos, indicadores y generación de POA | T-02, RF-001 a RF-005 | Frente 3 |
-| 3. Operación y proyectos | Productos y vínculos, actividades, metas, programación y estructura de proyectos | RF-006 a RF-009, T-06 | Frente 5 |
-| 4. Seguimiento y evaluación | Avances, evidencias, auditoría, evaluaciones, cumplimiento, semáforo y correctivos | RF-010 a RF-015, T-05 | Frente 2 |
-| 5. Presupuesto y resultados | Ejecución financiera junto al frente 4, dashboard, informes, riesgos y ampliación | RF-016, RF-017, T-07, NP-01 a NP-03 | Frente 1 |
-
-**Integración y QA corresponden a los cinco.** Una persona coordina T-08, ejecuta el guion con otro integrante y deja por escrito los fallos. Los frentes 1 y 2 arrancan el acceso y el diseño compartido. Los otros tres pueden definir contratos, modelos y pantallas con respuestas de prueba mientras se implementan los endpoints.
-
-## Orden de implementación y entregables
-
-Fechas internas propuestas, sujetas a disponibilidad real y a la fecha confirmada en el aula.
-
-| Tramo | Qué debe quedar demostrable | Dependencia |
+| Fecha interna | Entrega verificable | Condición de corte |
 |---|---|---|
-| 12–14 nov | Repositorio arrancable, primera revisión de permisos, convención de rutas, OpenAPI inicial, datos de demo y primera pantalla navegable. Definir contratos de auditoría, presupuesto, proyectos y riesgos | Confirmar rúbrica, formatos, versiones y responsables. Elegir proveedor de identidad y probar MFA temprano |
-| 15–19 nov | Crear y publicar un PEI según los permisos acordados. Generar POA y tres evaluaciones por año. Vincular un producto y guardar una actividad con programación | Esquema inicial, contratos de PEI y POA y acuerdos de vigencia |
-| 20–24 nov | Responsable registra avance y evidencia. Evaluador valida y emite resultado con semáforo y correctivo donde aplica. Administrador publica la evaluación | Programación persistida, autorización por dependencia y reglas de cálculo acordadas |
-| 25–28 nov | Dashboard conciliado, reportes, alertas, proyectos y riesgos. Incorporar el flujo no planificado si su política está acordada | Resultados evaluados, cálculos y permisos verificados |
-| 29–30 nov | Instalación en limpio, ensayo de entrega, guion y casos con SHA y evidencia, fallos críticos corregidos y demo reproducible | Recorrido integrado y pruebas con roles diferenciados |
-| 1–2 dic | Revalidar consigna y rúbrica, preparar paquete final, probar enlaces y entregar antes del cierre | Conformidad de los entregables y revisión del maestro cuando aplique |
+| 12–14 nov | Plan revisado, responsables asignados, entorno reproducible, flujo de acceso con MFA y contrato PEI/POA | Otro integrante instala en limpio y abre una pantalla autenticada con alcance correcto. El PR #1 se revisa contra esta base antes de integrar |
+| 15–19 nov | PEI con estructura publicado, POA por año, tres evaluaciones por POA, producto y actividad programados | Una ejecución reproducible demuestra vínculos y permisos. Repetir la generación no duplica registros. Revisar horas restantes y reasignar apoyo si hay desvíos |
+| 20–24 nov | Avance físico y financiero con evidencia, evaluación validada, emisión y publicación, correctivo rojo | Probar con cuentas distintas y verificar rechazo de evaluación sin evidencia, acceso fuera de dependencia y edición con versión obsoleta |
+| 25–28 nov | Dashboard, seis reportes en dos formatos, cuatro alertas, proyectos, riesgos y trabajo no planificado | Las cifras cuadran para el mismo corte. El flujo adicional conserva línea base y evita duplicar gastos. Marcar cobertura real en la matriz |
+| 29–30 nov | Cierre de funciones, instalación en limpio, ensayo y versión etiquetada | Arrancar en otro equipo, recorrer el guion con datos ficticios, guardar evidencia por requisito y corregir fallos que impidan la demo |
+| 1–2 dic | Preparar y entregar el paquete en el aula | Revisar rúbrica, formato, enlaces y cierre que muestre el aula. Registrar la entrega y el commit exacto |
 
-La ruta crítica pasa por acceso y permisos, PEI vigente, POA, programación, evidencia, evaluación y reporte. La UI puede avanzar con ejemplos de OpenAPI desde el primer tramo. Los contratos, las plantillas de exportación y los escenarios de alertas empiezan en paralelo al recorrido principal para llegar a integración con componentes probados. Si el grupo dispone de menos horas que las necesarias, medir el avance del recorrido el 19 de noviembre y acordar con el maestro el tratamiento del alcance que quede en riesgo. Reservar tiempo para integrar y corregir antes de la demo.
+La captura disponible muestra apertura el **1 de diciembre a las 00:00** y cierre el **2 de diciembre a las 23:59**. El objetivo interno es llegar al **30 de noviembre** con la demo reproducible. Se conserva la fecha visible del aula hasta que el maestro confirme cómo se relaciona con la semana 6. La zona horaria de la captura, la rúbrica completa y el formato exacto de subida se verifican en el aula. La implementación puede usar la base acordada mientras se obtiene esa información.
 
-## Primera sesión del equipo
+En paralelo al recorrido principal, preparar plantillas de informes y casos de alertas, proyectos y riesgos con datos ficticios. Si el 19 de noviembre el recorrido sigue bloqueado, el equipo reasigna tiempo al contrato o módulo responsable y simplifica presentación y automatizaciones secundarias. Si queda un requisito del SRS en riesgo, se registra y se consulta al maestro antes de recortarlo.
 
-| Tiempo propuesto | Acuerdo o entrega |
-|---|---|
-| 15 min | Cada integrante indica sus horas disponibles y elige un frente. Registrar también una persona revisora por frente. |
-| 20 min | Revisar qué rol aprueba y publica, cuándo se generan POA y cómo tratar meta cero. Registrar las preguntas para el maestro. |
-| 25 min | Acordar un ejemplo de PEI, POA, producto y actividad. Escribir el primer contrato con respuesta correcta, errores y permiso requerido. |
-| 30 min | Preparar ramas de arranque, verificar versiones en cada equipo y probar que Angular puede mostrar el ejemplo de la API. |
+## Cómo se inicia y se cierra una tarea
 
-La primera revisión conjunta debe poder abrir una pantalla de PEI, cargar el contrato y localizar su requisito en la matriz. El recorrido con respuestas de prueba se identifica como tal hasta integrar el servidor y la persistencia.
+1. Tomar la tarea en el tablero y registrar requisito, responsable, revisor, dependencia y escenario esperado. Acordar el DTO y sus errores en OpenAPI antes de construir en paralelo.
+2. Trabajar en una rama corta. Entregar PR con instrucciones de prueba, caso válido y caso de rechazo relevantes. Los cambios de esquema llevan migración. Los cambios de regla ajustan su prueba y su trazabilidad.
+3. Revisión por otro integrante, compilaciones y pruebas aplicables aprobadas y caso funcional reproducido. Para requisitos de permisos, probar también el caso denegado. Una migración se prueba sobre base vacía y base del incremento anterior.
+4. Guardar el SHA, resultado y evidencia en la tarea. La matriz mantiene `pendiente`, `en curso`, `verificado` o `bloqueado`. Solo `verificado` cuenta como cobertura probada.
 
-## Cómo se trabajará en GitHub
+En la primera sesión, dedicar 15 minutos a nombres y horas, 20 a revisar la base 1.0 y la consigna, 25 a revisar un ejemplo del contrato PEI/POA y 30 a preparar el entorno y probar el acceso. Los desacuerdos se anotan como cambios concretos a una decisión, con responsable y prueba afectada.
 
-1. Tomar una tarea del tablero y confirmar su requisito, dependencias, contrato y criterio de aceptación. El tablero registra la asignación y el avance. GitHub conserva código, revisiones y evidencia.
-2. Crear una rama por tarea y abrir un PR pequeño. En el PR indicar requisito, escenario, resultado esperado, prueba realizada y enlace a la evidencia. Si cambia el contrato, publicar el ejemplo actualizado y avisar en la tarea.
-3. Ejecutar la compilación de Angular y la API, comprobar permisos y correr las pruebas afectadas. Otra persona revisa el PR y el escenario funcional.
-4. Registrar el commit y el resultado en el tablero. Marcar la tarea como revisada cuando el escenario se pueda reproducir y se hayan atendido las observaciones.
+## Guion y paquete de entrega
 
-Estructura propuesta al iniciar la implementación: `frontend/`, `backend/`, `contracts/`, `tests/`, `docs/` e `infra/`. Agregar al README un procedimiento probado de instalación, configuración, migraciones, datos de demostración y arranque. Guardar secretos en las variables del entorno. Conservar un ejemplo de configuración sin credenciales.
+1. Con acceso MFA, formular un PEI y publicarlo con el rol autorizado. Mostrar sus POA, cuatrimestres y trazabilidad estratégica.
+2. Programar tres unidades de una actividad y registrar dos ejecutadas con evidencia. Con otra cuenta validar y emitir. Mostrar el resultado rojo de 66,66 %, el correctivo y el registro de auditoría. Publicar y comparar dashboard, PDF y XLSX del mismo corte.
+3. Mostrar alertas, un proyecto con hito y entregable, un riesgo con mitigación y una actividad adicional incorporada sin alterar la línea base. Reproducir un permiso denegado, un caso sin evidencia y un conflicto de versión.
+4. Entregar repositorio y versión etiquetada, instrucciones verificadas, configuración de ejemplo, migraciones, datos ficticios, diagramas, contrato API, matriz, guion y resultados de prueba. La rúbrica del aula determina qué archivos se suben.
 
-## Decisiones que bloquean módulos
+El [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) conserva un prototipo local de borradores PEI, con builds e integración local verificados. Se revisará contra este plan antes de incorporarlo a la rama principal. La cobertura oficial se medirá sobre la versión integrada.
 
-| Acordar | Antes de | Propuesta para discusión |
-|---|---|---|
-| Quién aprueba y publica PEI y evaluaciones | Implementar transiciones y permisos | Matriz por rol, recurso, dependencia y estado. Revisar CU-001 y responsabilidades del SRS con el maestro |
-| Cuándo un PEI está vigente y cuándo se generan los POA | Programar RF-005 | Validar duración y años, generar de forma idempotente en la transición acordada y conservar versiones aprobadas |
-| Meta cero, decimales, sobreejecución y agregación | Congelar cálculos y dashboard | RN-006 fija 100 % como máximo del avance. Acordar qué hacer con cantidades reales superiores a la meta y su cumplimiento calculado. Proponer «Sin base de cálculo» con denominador cero y amarillo desde 70 % hasta menos de 90 % |
-| Aprobación y corrección de datos históricos | Auditar y editar registros | Abrir revisiones con motivo y vínculo al original. Aplicar la prohibición de eliminación de aprobados |
-| Presupuesto e importación de Excel | Cargar datos de demo | Presupuesto vacío significa sin dato. Acordar moneda y partidas. Revisar manualmente el vínculo producto–objetivo–indicador y el rótulo duplicado de Producto 8 |
-| Autoridad e impacto del trabajo adicional | Incorporar cambios al POA | Registrar autorización y ejecución por separado y revisar cambios de meta y presupuesto antes de consolidar |
-| Entregables de la consigna y profundidad de proyectos/riesgos | Arrancar la implementación | Pedir al maestro la rúbrica completa, formatos y fecha, con lista de funciones que se mostrarán |
-
-## Demostración y entrega
-
-- Preparar cuentas de demo de Planificación, Área, Evaluación y Consulta. Incluir comprobaciones para Administración y Consulta Ejecutiva según su alcance.
-- Mostrar un PEI de prueba y el POA generado. Seguir un producto hasta su objetivo e indicador y una actividad hasta su responsable y fecha. Usar los Excel para contextualizar los datos y señalar las asociaciones acordadas para la demo.
-- Registrar un avance físico y financiero con evidencia. Evaluarlo con otra cuenta. Mostrar un resultado menor a 70 %, el correctivo, el dashboard y el informe del mismo corte. Conciliar las cifras y mostrar el evento de auditoría.
-- Recorrer proyectos, riesgos, alertas y la ampliación según la cobertura aprobada. Registrar por requisito qué se implementó, qué pasó la prueba y qué sigue pendiente.
-- Preparar como paquete de trabajo el repositorio, las instrucciones de ejecución, diagramas, matriz, pruebas, datos de demo y guía de presentación. Confirmar en el aula cuáles se deben entregar y en qué formato.
-
-[Consigna, SRS y Excel en el portal](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/#documentos) · [Tablero del equipo](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/#tablero)
+[Consigna y documentos del reto](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/#documentos) · [Tablero del equipo](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/#tablero)

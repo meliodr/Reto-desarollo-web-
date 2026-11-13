@@ -22,7 +22,18 @@ internal sealed class FlujoPeiRepository(NpgsqlDataSource source, PeiRepository 
             "aprobado" => new[] { "publicar" },
             _ => Array.Empty<string>()
         };
-        return new FlujoPeiOpciones(actions);
+        string? returnReason = null;
+        if (snapshot.Pei.Estado == "borrador")
+        {
+            await using var command = new NpgsqlCommand("""
+                SELECT motivo FROM sisplan.pei_transicion
+                WHERE pei_version_id = @id AND accion = 'devolver'
+                ORDER BY revision DESC LIMIT 1
+                """, connection);
+            command.Parameters.AddWithValue("id", versionId);
+            returnReason = await command.ExecuteScalarAsync(ct) as string;
+        }
+        return new FlujoPeiOpciones(actions, returnReason);
     }
 
     public async Task<FlujoPeiResult> ApplyAsync(Guid versionId, string expectedTag, string action, string? reason,

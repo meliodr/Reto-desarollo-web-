@@ -18,7 +18,7 @@ export const routes: Routes = [
   },
   {
     path: 'peis/:id',
-    title: 'Borrador PEI · SISPLAN',
+    title: 'Plan estratégico · SISPLAN',
     loadComponent: () => import('./pei/pei-form').then((m) => m.PeiForm),
     canDeactivate: [pendingChangesGuard],
   },

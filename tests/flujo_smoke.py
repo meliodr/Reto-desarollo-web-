@@ -122,6 +122,8 @@ def main():
         "accion": "devolver", "motivo": "Incluir objetivos e indicadores antes de aprobar.",
     }, second, submitted_tag)
     assert returned["estado"] == "borrador"
+    options, _ = call(base, path, 200, token=first)
+    assert options["motivoDevolucion"] == "Incluir objetivos e indicadores antes de aprobar."
 
     add_structure(base, first, plan)
     latest, current = call(base, f"/peis/{plan['id']}", 200, token=first)

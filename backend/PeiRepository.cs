@@ -82,20 +82,22 @@ internal sealed class PeiRepository(NpgsqlDataSource source)
         }
 
         await using (var measurements = new NpgsqlCommand("""
-            SELECT EXISTS (
-                SELECT 1 FROM sisplan.indicador_medicion m
+            SELECT min(m.periodo), max(m.periodo)
+                FROM sisplan.indicador_medicion m
                 JOIN sisplan.indicador i ON i.id = m.indicador_id
                 JOIN sisplan.objetivo o ON o.id = i.objetivo_id
                 JOIN sisplan.eje e ON e.id = o.eje_id
                 WHERE e.pei_version_id = @id AND m.periodo NOT BETWEEN @inicio AND @fin
-            )
             """, connection, transaction))
         {
             measurements.Parameters.AddWithValue("id", versionId);
             measurements.Parameters.AddWithValue("inicio", NpgsqlDbType.Date, fields.FechaInicio);
             measurements.Parameters.AddWithValue("fin", NpgsqlDbType.Date, fields.FechaFin);
-            if (await measurements.ExecuteScalarAsync(cancellationToken) is true)
-                throw new PeriodoConMedicionesException();
+            await using var reader = await measurements.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken) && !reader.IsDBNull(0))
+                throw new PeriodoConMedicionesException(
+                    reader.GetFieldValue<DateOnly>(0) < fields.FechaInicio,
+                    reader.GetFieldValue<DateOnly>(1) > fields.FechaFin);
         }
 
         var sql = $"""
@@ -139,4 +141,8 @@ internal sealed class PeiRepository(NpgsqlDataSource source)
         reader.GetInt64(10));
 }
 
-internal sealed class PeriodoConMedicionesException : Exception;
+internal sealed class PeriodoConMedicionesException(bool inicio, bool fin) : Exception
+{
+    public bool Inicio { get; } = inicio;
+    public bool Fin { get; } = fin;
+}

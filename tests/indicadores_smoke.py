@@ -47,8 +47,8 @@ def main():
         "nombre": "Trámites digitalizados",
         "formula": "(Trámites en línea / total de trámites) × 100",
         "unidad": "%",
-        "lineaBase": 0,
-        "meta": 92.125,
+        "lineaBase": "0",
+        "meta": "999999999999.0003",
         "frecuencia": "Cuatrimestral",
     }
     errors, _ = request(base, path, 422, "POST", dict(fields, frecuencia=" ", meta=1.00001))
@@ -66,7 +66,7 @@ def main():
         f"{eje_path}/objetivos/{other_objective['id']}/indicadores/{indicator['id']}/mediciones"
     )
     assert request(base, measurements, 200)[0] == []
-    measurement = {"periodo": "2026-02-01", "valor": 55.25}
+    measurement = {"periodo": "2026-02-01", "valor": "999999999999.0003"}
     request(base, wrong_objective, 404)
     request(base, wrong_objective, 404, "POST", measurement)
     for date in ("2026-01-31", "2029-10-01"):
@@ -79,9 +79,9 @@ def main():
     _, headers = request(base, f"/peis/{pei['id']}", 200)
     errors, _ = request(base, f"/pei-versiones/{pei['versionId']}", 422, "PATCH",
                         dict(draft, fechaInicio="2026-02-02"), headers["ETag"])
-    assert "fechaFin" in errors["errors"]
+    assert set(errors["errors"]) == {"fechaInicio"}
     second, _ = request(
-        base, measurements, 201, "POST", {"periodo": "2029-09-30", "valor": 92.125}
+        base, measurements, 201, "POST", {"periodo": "2029-09-30", "valor": "92.125"}
     )
     assert request(base, measurements, 200)[0] == [second, first]
 

@@ -154,12 +154,14 @@ api.MapPatch("/pei-versiones/{versionId:guid}", async (Guid versionId, HttpReque
     {
         saved = await repository.UpdateAsync(versionId, current.Revision, fields!, cancellationToken);
     }
-    catch (PeriodoConMedicionesException)
+    catch (PeriodoConMedicionesException exception)
     {
-        return Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["fechaFin"] = ["El período debe incluir las fechas de las mediciones ya registradas."],
-        }, statusCode: 422);
+        var errors = new Dictionary<string, string[]>();
+        if (exception.Inicio)
+            errors["fechaInicio"] = ["El inicio debe incluir las mediciones ya registradas."];
+        if (exception.Fin)
+            errors["fechaFin"] = ["El fin debe incluir las mediciones ya registradas."];
+        return Results.ValidationProblem(errors, statusCode: 422);
     }
     if (saved is null)
         return StaleVersion();

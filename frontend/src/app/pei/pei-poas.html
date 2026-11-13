@@ -1,0 +1,52 @@
+<section class="panel form-section" aria-labelledby="pei-poas-heading">
+  <header class="form-section-heading">
+    <div><h2 id="pei-poas-heading">Planes operativos anuales</h2></div>
+  </header>
+  <div class="form-section-body">
+    @if (loading()) {
+      <p role="status">Consultando POA…</p>
+    } @else if (error()) {
+      <p class="notice notice-error" role="alert">{{ error() }}</p>
+      <button type="button" class="button button-secondary" (click)="retry()">Reintentar</button>
+    } @else if (!poas().length) {
+      <p>Este PEI todavía no tiene planes operativos anuales.</p>
+    } @else {
+      <ul class="poa-list">
+        @for (poa of poas(); track poa.id) {
+          <li>
+            <details>
+              <summary>
+                <span class="poa-year">POA {{ poa.anio }}</span>
+                <span class="poa-state">{{
+                  poa.estado === 'formulacion' ? 'En formulación' : poa.estado
+                }}</span>
+                @if (poa.vigente) {
+                  <span class="poa-current">Vigente</span>
+                }
+              </summary>
+              <div class="poa-detail">
+                <p>
+                  Período del POA: {{ poa.fechaInicio | date: 'dd/MM/yyyy' }} –
+                  {{ poa.fechaFin | date: 'dd/MM/yyyy' }}
+                </p>
+                <h3>Evaluaciones cuatrimestrales</h3>
+                <ul>
+                  @for (periodo of poa.evaluaciones; track periodo.id) {
+                    <li>
+                      <strong>Cuatrimestre {{ periodo.cuatrimestre }}</strong>
+                      <span
+                        >{{ periodo.fechaInicio | date: 'dd/MM/yyyy' }} –
+                        {{ periodo.fechaFin | date: 'dd/MM/yyyy' }}</span
+                      >
+                      <span>{{ periodLabel(periodo.estado) }}</span>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </details>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</section>

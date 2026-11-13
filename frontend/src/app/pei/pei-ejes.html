@@ -1,0 +1,207 @@
+<section class="panel form-section" aria-labelledby="pei-ejes-heading">
+  <header class="form-section-heading eje-heading">
+    <div>
+      <h2 id="pei-ejes-heading">Ejes estratégicos</h2>
+      <p>Consulta los ejes de este PEI y las versiones de cada uno.</p>
+    </div>
+    @if (!readOnly()) {
+      <button
+        type="button"
+        class="button button-primary"
+        [disabled]="loading() || !!loadError() || !!editor() || editLoading()"
+        (click)="startCreate()"
+      >
+        Agregar eje
+      </button>
+    }
+  </header>
+  <div class="form-section-body">
+    @if (notice()) {
+      <p class="notice notice-success" role="status">{{ notice() }}</p>
+    }
+    @if (saveError()) {
+      <p class="notice notice-error" role="alert">{{ saveError() }}</p>
+    }
+    @if (!readOnly() && editor(); as mode) {
+      <form class="eje-editor" [formGroup]="form" (ngSubmit)="save()">
+        <h3>{{ mode === 'create' ? 'Nuevo eje' : 'Editar eje' }}</h3>
+        <fieldset [disabled]="saving() || blocked() || confirmation()">
+          <div class="field">
+            <label for="eje-nombre">Nombre <span aria-hidden="true">*</span></label>
+            <input
+              id="eje-nombre"
+              formControlName="nombre"
+              maxlength="200"
+              aria-required="true"
+              [attr.aria-invalid]="form.controls.nombre.touched && form.controls.nombre.invalid"
+              aria-describedby="eje-nombre-error"
+            />
+            <p id="eje-nombre-error" class="field-error">
+              @if (form.controls.nombre.touched && form.controls.nombre.invalid) {
+                Escribe un nombre de 3 a 200 caracteres.
+              }
+            </p>
+          </div>
+          <div class="field">
+            <label for="eje-descripcion">Descripción (opcional)</label>
+            <textarea
+              id="eje-descripcion"
+              formControlName="descripcion"
+              maxlength="4000"
+              rows="3"
+            ></textarea>
+          </div>
+        </fieldset>
+        @if (confirmation()) {
+          <p>¿Inactivar «{{ editing()?.nombre }}»? Sus versiones seguirán disponibles.</p>
+          <div class="eje-actions">
+            <button
+              type="button"
+              class="button button-secondary"
+              [disabled]="saving()"
+              (click)="confirmation.set(false)"
+            >
+              Volver a editar
+            </button>
+            <button
+              type="button"
+              class="button button-primary"
+              [disabled]="saving()"
+              (click)="inactivate()"
+            >
+              Confirmar inactivación
+            </button>
+          </div>
+        } @else {
+          <div class="eje-actions">
+            @if (mode === 'edit' && !blocked()) {
+              <button
+                type="button"
+                class="button button-secondary"
+                [disabled]="saving()"
+                (click)="confirmation.set(true)"
+              >
+                Inactivar eje
+              </button>
+            }
+            <button
+              type="button"
+              class="button button-secondary"
+              [disabled]="saving()"
+              (click)="cancel()"
+            >
+              {{ blocked() ? 'Cerrar y consultar listado' : 'Cancelar' }}
+            </button>
+            <button type="submit" class="button button-primary" [disabled]="saving() || blocked()">
+              {{ saving() ? 'Guardando…' : 'Guardar eje' }}
+            </button>
+          </div>
+        }
+      </form>
+    }
+
+    @if (loading()) {
+      <p role="status">Cargando ejes…</p>
+    } @else if (loadError()) {
+      <p class="notice notice-error" role="alert">{{ loadError() }}</p>
+      <button type="button" class="button button-secondary" (click)="load()">Reintentar</button>
+    } @else if (!ejes().length) {
+      <p class="eje-muted">Este PEI todavía no tiene ejes.</p>
+    } @else {
+      <ul class="eje-list">
+        @for (eje of ejes(); track eje.id) {
+          <li>
+            <div>
+              <h3>{{ eje.nombre }}</h3>
+              <p class="eje-muted">
+                Versión {{ eje.revision }} · {{ eje.activo ? 'Activo' : 'Inactivo' }}
+              </p>
+              @if (eje.descripcion) {
+                <p class="eje-description">{{ eje.descripcion }}</p>
+              }
+            </div>
+            <div class="eje-actions">
+              @if (eje.activo && !readOnly()) {
+                <button
+                  type="button"
+                  class="button button-secondary"
+                  [disabled]="!!editor() || editLoading()"
+                  (click)="startEdit(eje)"
+                >
+                  Editar<span class="sr-only"> {{ eje.nombre }}</span>
+                </button>
+              }
+              <button
+                type="button"
+                class="button button-secondary"
+                [attr.aria-expanded]="objetivosEjeId() === eje.id"
+                [attr.aria-controls]="'objetivos-eje-' + eje.id"
+                (click)="toggleObjetivos(eje.id)"
+              >
+                {{ objetivosEjeId() === eje.id ? 'Cerrar objetivos' : 'Ver objetivos'
+                }}<span class="sr-only"> de {{ eje.nombre }}</span>
+              </button>
+              <button
+                type="button"
+                class="button button-secondary"
+                [disabled]="loadingHistory()"
+                (click)="showHistory(eje)"
+              >
+                Ver historial<span class="sr-only"> de {{ eje.nombre }}</span>
+              </button>
+            </div>
+            @if (objetivosEjeId() === eje.id) {
+              <app-pei-objetivos
+                [id]="'objetivos-eje-' + eje.id"
+                [peiId]="peiId()"
+                [eje]="eje"
+                [readOnly]="readOnly()"
+              />
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    @if (history(); as eje) {
+      <section class="eje-history" aria-labelledby="pei-eje-history-heading">
+        <div class="eje-heading">
+          <h3 id="pei-eje-history-heading">Historial de {{ eje.nombre }}</h3>
+          <button
+            type="button"
+            class="button button-secondary"
+            [disabled]="loadingHistory()"
+            (click)="history.set(null)"
+          >
+            Cerrar historial
+          </button>
+        </div>
+        @if (loadingHistory()) {
+          <p role="status">Consultando versiones…</p>
+        } @else if (historyError()) {
+          <p class="notice notice-error" role="alert">{{ historyError() }}</p>
+          <button type="button" class="button button-secondary" (click)="showHistory(eje)">
+            Reintentar
+          </button>
+        } @else {
+          <ol class="eje-list">
+            @for (revision of revisions(); track revision.revision) {
+              <li>
+                <div>
+                  <h4>Versión {{ revision.revision }} · {{ revision.nombre }}</h4>
+                  <p class="eje-muted">
+                    {{ revision.activo ? 'Activo' : 'Inactivo' }} ·
+                    {{ revision.actualizadoEn | date: 'dd/MM/yyyy, HH:mm' }}
+                  </p>
+                  @if (revision.descripcion) {
+                    <p class="eje-description">{{ revision.descripcion }}</p>
+                  }
+                </div>
+              </li>
+            }
+          </ol>
+        }
+      </section>
+    }
+  </div>
+</section>

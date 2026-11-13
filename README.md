@@ -34,11 +34,14 @@ El portal de trabajo v2 está publicado. Permite asignar tareas, completar check
 
 En el entorno de desarrollo se aprobaron **21 pruebas del portal**: 17 del servicio del tablero y 4 regresiones de interfaz. La incorporación y los recorridos con las cinco cuentas reales siguen pendientes.
 
-El plan base v1.0 fija el alcance, las reglas operativas, el reparto y las herramientas. El equipo eligió **Angular**. La base técnica usa .NET 10, PostgreSQL 18 y Keycloak con MFA. El prototipo de borradores de PEI está en [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1), en revisión.
+El plan base v1.0 fija el alcance, las reglas operativas, el reparto y las herramientas. El equipo eligió **Angular**. La base técnica usa .NET 10, PostgreSQL 18 y Keycloak con MFA. El recorrido de formulación, publicación del PEI y generación de POA está en [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1), en revisión.
 
 La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 23:59**. El objetivo de trabajo referido a la **semana 6** está pendiente de conciliar con ese plazo; todavía no se le asigna una fecha.
 
 ## Documentación
+
+- [Arranque local y pruebas de la aplicación](docs/plan-sisplan/06-PRIMER-INCREMENTO.md)
+- [QA del recorrido PEI–POA](docs/plan-sisplan/09-QA-PEI-POA.md)
 
 - [Plan base v1.0 con reglas, herramientas, responsables y entregables](docs/plan-sisplan/01-PLAN-DE-CONSTRUCCION.md)
 - [Verificación del SRS, los Excel y la consigna](docs/plan-sisplan/05-TRAZABILIDAD.md#verificación-del-srs-y-los-excel)

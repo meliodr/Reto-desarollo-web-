@@ -1,0 +1,59 @@
+<a class="skip-link" href="#main-content">Saltar al contenido</a>
+<div class="app-shell">
+  <header class="institutional-header">
+    <div class="institutional-header-inner">
+      <a class="brand" routerLink="/peis">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>SISPLAN<small>Sistema de Planificación Institucional</small></span>
+      </a>
+      <nav aria-label="Navegación principal">
+        <a class="institutional-nav-link" routerLink="/peis">Planes estratégicos</a>
+        @if (session.enabled() && session.authenticated()) {
+          <button class="button button-secondary" type="button" (click)="session.logout()">
+            Cerrar sesión
+          </button>
+        }
+      </nav>
+    </div>
+  </header>
+  <div class="workspace">
+    <main id="main-content" tabindex="-1">
+      @if (feedback.message()) {
+        <div class="notice notice-success global-notice" role="status">
+          <span><strong>Guardado correctamente.</strong> {{ feedback.message() }}</span
+          ><button
+            class="icon-button"
+            type="button"
+            (click)="feedback.message.set('')"
+            aria-label="Cerrar confirmación"
+          >
+            ×
+          </button>
+        </div>
+      }
+      @if (session.error()) {
+        <p class="notice notice-error" role="alert">{{ session.error() }}</p>
+      }
+      @if (!session.enabled() || session.canPlan()) {
+        <router-outlet />
+      } @else if (!session.error()) {
+        <section class="panel empty-state" aria-labelledby="session-title">
+          <h1 id="session-title">Acceso a SISPLAN</h1>
+          @if (session.authenticated()) {
+            <p>La cuenta {{ session.name() }} necesita el permiso Planificador.</p>
+          } @else {
+            <p>Inicia sesión con tu cuenta institucional para consultar y gestionar planes.</p>
+            <button class="button button-primary" type="button" (click)="session.login()">
+              Iniciar sesión
+            </button>
+          }
+        </section>
+      }
+    </main>
+    <footer class="footer">
+      <span
+        >SISPLAN <span class="footer-separator">/</span> Sistema de Gestión de Planificación</span
+      ><span>{{ session.enabled() ? 'Acceso institucional' : 'Entorno local de borradores' }}</span>
+    </footer>
+  </div>
+</div>

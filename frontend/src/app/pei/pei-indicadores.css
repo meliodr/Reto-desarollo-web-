@@ -1,0 +1,112 @@
+:host {
+  display: block;
+  margin-top: 12px;
+}
+
+.indicadores-panel {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  overflow-wrap: anywhere;
+}
+
+.indicadores-panel h6 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.indicadores-row,
+.indicadores-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.indicadores-row {
+  justify-content: space-between;
+}
+
+.indicadores-actions {
+  margin-top: 12px;
+}
+
+.indicadores-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+  gap: 8px 12px;
+}
+
+.indicadores-panel fieldset,
+.indicadores-list {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.indicadores-panel form,
+.mediciones-panel {
+  padding: 12px;
+  margin-top: 12px;
+  background: #edf4fc;
+}
+
+.indicadores-panel legend {
+  font-weight: 600;
+  padding: 0;
+}
+
+.indicadores-muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.indicadores-panel .field {
+  margin-top: 8px;
+  min-width: 0;
+}
+
+.indicadores-list {
+  list-style: none;
+  margin-top: 12px;
+}
+
+.indicadores-list > li + li {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.indicadores-list dl {
+  margin: 8px 0 0;
+}
+
+.indicadores-list dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.indicadores-list dd {
+  font-size: 14px;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.mediciones-panel table {
+  width: 100%;
+  table-layout: fixed;
+  margin-top: 8px;
+}
+
+.mediciones-panel form {
+  margin-top: 8px;
+  padding: 0;
+}
+
+.mediciones-panel th,
+.mediciones-panel td {
+  padding: 6px 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

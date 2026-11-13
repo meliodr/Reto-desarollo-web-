@@ -13,8 +13,8 @@
 | Nombre de la aplicación | SISPLAN | Nombre de trabajo para la entrega académica |
 | Arquitectura | Definida en la base | Angular 22, .NET 10 LTS, PostgreSQL 18, Npgsql y Keycloak con MFA. Demo local reproducible |
 | Actividades no planificadas | Regla de trabajo definida | [Registro, autorización e incorporación](plan-sisplan/07-REGLAS-OPERATIVAS.md#trabajo-no-planificado-proyectos-riesgos-y-alertas) |
-| Implementación del sistema institucional | Prototipo en PR | [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) cubre borradores de PEI en desarrollo local |
-| Pruebas del sistema institucional | Verificación parcial del prototipo | 11 pruebas Angular e integración de borradores con PostgreSQL documentadas en el PR. La aceptación del SRS se mide sobre la entrega integrada |
+| Implementación del sistema institucional | Prototipo en PR | [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) cubre formulación y publicación del PEI y generación de POA en desarrollo local |
+| Pruebas del sistema institucional | Verificación parcial del prototipo | 19 pruebas Angular e integración en Chromium con Keycloak, .NET y PostgreSQL. [Verificación de QA](plan-sisplan/09-QA-PEI-POA.md). La aceptación del SRS se mide sobre la entrega integrada |
 | Despliegue del sistema institucional | Pendiente | El portal publicado contiene documentación del proyecto |
 | Cumplimiento global del SRS | Sin calcular | La versión integrada y sus criterios de aceptación siguen pendientes |
 

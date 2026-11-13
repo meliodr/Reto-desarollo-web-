@@ -120,3 +120,28 @@ Los criterios NP se verifican contra la autorización, vigencia, cálculo y pres
 T-01 y T-03 trasladan las reglas de la base v1.0 a permisos, esquema y contrato. T-08 comprueba los casos de generación, estados, base cero, sobreejecución, semáforo, consolidación, presupuesto, versionado, MFA y notificaciones.
 
 T-08 registra por criterio el ID, estado, versión o commit probado, entorno, rol, datos, pasos, resultado esperado y observado, evidencia y revisor. El [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) acredita la prueba local de la cabecera de borradores de RF-001. La formulación completa, la aprobación y la publicación de CU-001 se verifican en el recorrido integrado. El tablero documenta 29 tareas de preparación y desarrollo. Sus pruebas verifican el funcionamiento del portal de trabajo. La aceptación de SISPLAN requiere ejecutar los casos contra el producto institucional. La captura del aula proporciona el plazo visible. La rúbrica y los formatos exigidos para la entrega siguen sin confirmarse en las fuentes disponibles. [Método del tablero y revisión](https://github.com/meliodr/Reto-desarollo-web-/blob/b1d7586d7e87e6544fc40e600551b7ba5fe6751a/docs/PORTAL.md)
+
+## Pruebas del incremento de planificación estratégica
+
+| Requisito | Resultado local del 13 de noviembre | Evidencia |
+|---|---|---|
+| RF-001 | Parcial. Crear, editar y recuperar el borrador. Aprobación y publicación pendientes. | `tests/pei_smoke.py` y recorrido Chromium |
+| RF-002 | Verificado en la rama del PR. Alta, edición, inactivación, historial persistente y conflicto entre ediciones. | `tests/ejes_smoke.py` y recorrido Chromium |
+| RF-003 | Verificado en la rama del PR. Los cinco campos se recuperan al volver a abrir el eje, incluso después de inactivarlo. | `tests/objetivos_smoke.py` y recorrido Chromium |
+
+La verificación se hizo con Angular, API .NET y PostgreSQL 18 de prueba. La revisión del equipo y la integración siguen pendientes. [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) · [Instrucciones de prueba](06-PRIMER-INCREMENTO.md)
+
+## Cobertura de publicación del PEI y generación del POA
+
+| Requisito | Resultado del 13 de noviembre en la rama del PR | Evidencia reproducible |
+|---|---|---|
+| RF-001 | Verificado. Crear el PEI, recuperar sus datos, enviar, devolver, aprobar con otro planificador y publicar. Actualiza el resultado parcial anterior. | `tests/pei_smoke.py`, `tests/flujo_smoke.py` y recorrido Chromium |
+| RF-004 | Verificado. Registrar los seis campos del indicador, guardar una medición por fecha y consultar su definición y valor. | `tests/indicadores_smoke.py`, pruebas Angular y recorrido Chromium |
+| RF-005 | Verificado. Generar cuatro POA para un PEI ordinario y cinco para uno extraordinario. Repetir publicación conserva los mismos registros. | `tests/flujo_smoke.py` y recorrido Chromium |
+| RN-001 | Verificado en la generación. Los POA nacen al publicar un PEI, quedan vinculados a esa versión y respetan su intervalo. Se comprueban POA vigentes y futuros, y el rechazo de publicaciones solapadas. | `tests/flujo_smoke.py` |
+| RF-012 | Parcial. Se generan tres evaluaciones por POA con meses oficiales y sin duplicados. Falta probar los avances por corte y la emisión con evidencia. | `tests/flujo_smoke.py` y vista de POA |
+| RNF-001 | Parcial. Se verificó OIDC con Keycloak, el rol Planificador y una cuenta sin permiso. Falta MFA y la verificación de los seis roles y su alcance. | Inicio de sesión en Chromium y `tests/flujo_smoke.py` |
+
+Con RF-002 y RF-003, la rama reúne seis de los 27 requisitos y reglas numerados con cobertura verificada (22,2 %). La integración en `main` y la revisión de otro integrante siguen pendientes. [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) · [Pasos de verificación](06-PRIMER-INCREMENTO.md)
+
+La verificación de QA conserva el **22,2 % del corte implementado** (seis de 27), con RF-005 y RN-001 comprobados en la generación. La activación y ejecución bajo vigencia siguen pendientes. [Evidencia y hallazgos](09-QA-PEI-POA.md)

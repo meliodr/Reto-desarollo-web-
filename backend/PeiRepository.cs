@@ -69,6 +69,35 @@ internal sealed class PeiRepository(NpgsqlDataSource source)
 
     public async Task<PeiSnapshot?> UpdateAsync(Guid versionId, long expectedRevision, PeiFields fields, CancellationToken cancellationToken)
     {
+        await using var connection = await source.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using (var locked = new NpgsqlCommand("""
+            SELECT revision FROM sisplan.pei_version
+            WHERE id = @id AND estado = 'borrador' FOR UPDATE
+            """, connection, transaction))
+        {
+            locked.Parameters.AddWithValue("id", versionId);
+            if (await locked.ExecuteScalarAsync(cancellationToken) is not long revision || revision != expectedRevision)
+                return null;
+        }
+
+        await using (var measurements = new NpgsqlCommand("""
+            SELECT EXISTS (
+                SELECT 1 FROM sisplan.indicador_medicion m
+                JOIN sisplan.indicador i ON i.id = m.indicador_id
+                JOIN sisplan.objetivo o ON o.id = i.objetivo_id
+                JOIN sisplan.eje e ON e.id = o.eje_id
+                WHERE e.pei_version_id = @id AND m.periodo NOT BETWEEN @inicio AND @fin
+            )
+            """, connection, transaction))
+        {
+            measurements.Parameters.AddWithValue("id", versionId);
+            measurements.Parameters.AddWithValue("inicio", NpgsqlDbType.Date, fields.FechaInicio);
+            measurements.Parameters.AddWithValue("fin", NpgsqlDbType.Date, fields.FechaFin);
+            if (await measurements.ExecuteScalarAsync(cancellationToken) is true)
+                throw new PeriodoConMedicionesException();
+        }
+
         var sql = $"""
             UPDATE sisplan.pei_version
             SET nombre = @nombre, tipo = @tipo, fecha_inicio = @fechaInicio, fecha_fin = @fechaFin,
@@ -77,11 +106,13 @@ internal sealed class PeiRepository(NpgsqlDataSource source)
             WHERE id = @id AND revision = @revision AND estado = 'borrador'
             RETURNING {Fields}
             """;
-        await using var command = source.CreateCommand(sql);
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("id", versionId);
         command.Parameters.AddWithValue("revision", expectedRevision);
         AddFields(command, fields);
-        return await ReadOneAsync(command, cancellationToken);
+        var saved = await ReadOneAsync(command, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return saved;
     }
 
     private static void AddFields(NpgsqlCommand command, PeiFields fields)
@@ -107,3 +138,5 @@ internal sealed class PeiRepository(NpgsqlDataSource source)
             reader.GetString(7), reader.GetString(8), reader.GetString(9)),
         reader.GetInt64(10));
 }
+
+internal sealed class PeriodoConMedicionesException : Exception;

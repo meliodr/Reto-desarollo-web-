@@ -1,0 +1,294 @@
+<section class="indicadores-panel" [attr.aria-labelledby]="formId() + '-heading'">
+  <header class="indicadores-row">
+    <h6 [id]="formId() + '-heading'">Indicadores estratégicos</h6>
+    @if (!readOnly() && !loading() && !loadError() && !editing()) {
+      <button
+        type="button"
+        class="button button-primary"
+        (click)="startCreate()"
+        [disabled]="saving()"
+      >
+        Agregar indicador
+      </button>
+    }
+  </header>
+
+  @if (notice()) {
+    <p class="notice notice-success" role="status">{{ notice() }}</p>
+  }
+  @if (saveError()) {
+    <p class="notice notice-error" role="alert">{{ saveError() }}</p>
+  }
+
+  @if (editing()) {
+    <form [formGroup]="form" (ngSubmit)="saveIndicator()">
+      <fieldset [disabled]="saving() || uncertain() || readOnly()">
+        <legend>Nuevo indicador</legend>
+        <p class="indicadores-muted">Todos los campos son obligatorios.</p>
+        <div class="field">
+          <label [for]="formId() + '-nombre'">Nombre del indicador</label>
+          <input
+            [id]="formId() + '-nombre'"
+            formControlName="nombre"
+            maxlength="200"
+            aria-required="true"
+            [attr.aria-invalid]="form.controls.nombre.touched && form.controls.nombre.invalid"
+          />
+          @if (form.controls.nombre.touched && form.controls.nombre.invalid) {
+            <p class="field-error">Escribe un nombre de entre 3 y 200 caracteres.</p>
+          }
+        </div>
+        <div class="field">
+          <label [for]="formId() + '-formula'">Fórmula</label>
+          <textarea
+            [id]="formId() + '-formula'"
+            formControlName="formula"
+            rows="2"
+            maxlength="4000"
+            aria-required="true"
+            [attr.aria-invalid]="form.controls.formula.touched && form.controls.formula.invalid"
+          ></textarea>
+          @if (form.controls.formula.touched && form.controls.formula.invalid) {
+            <p class="field-error">Escribe la fórmula de cálculo.</p>
+          }
+        </div>
+        <div class="indicadores-fields">
+          <div class="field">
+            <label [for]="formId() + '-unidad'">Unidad</label>
+            <input
+              [id]="formId() + '-unidad'"
+              formControlName="unidad"
+              maxlength="100"
+              aria-required="true"
+              [attr.aria-invalid]="form.controls.unidad.touched && form.controls.unidad.invalid"
+            />
+            @if (form.controls.unidad.touched && form.controls.unidad.invalid) {
+              <p class="field-error">Indica la unidad de medida.</p>
+            }
+          </div>
+          <div class="field">
+            <label [for]="formId() + '-frecuencia'">Frecuencia</label>
+            <input
+              [id]="formId() + '-frecuencia'"
+              formControlName="frecuencia"
+              maxlength="100"
+              aria-required="true"
+              [attr.aria-invalid]="
+                form.controls.frecuencia.touched && form.controls.frecuencia.invalid
+              "
+            />
+            @if (form.controls.frecuencia.touched && form.controls.frecuencia.invalid) {
+              <p class="field-error">Indica la frecuencia de medición.</p>
+            }
+          </div>
+          <div class="field">
+            <label [for]="formId() + '-base'">Línea base</label>
+            <input
+              [id]="formId() + '-base'"
+              formControlName="lineaBase"
+              inputmode="decimal"
+              aria-required="true"
+              [attr.aria-invalid]="
+                form.controls.lineaBase.touched && form.controls.lineaBase.invalid
+              "
+            />
+            @if (form.controls.lineaBase.touched && form.controls.lineaBase.invalid) {
+              <p class="field-error">Indica un número con hasta cuatro decimales.</p>
+            }
+          </div>
+          <div class="field">
+            <label [for]="formId() + '-meta'">Meta</label>
+            <input
+              [id]="formId() + '-meta'"
+              formControlName="meta"
+              inputmode="decimal"
+              aria-required="true"
+              [attr.aria-invalid]="form.controls.meta.touched && form.controls.meta.invalid"
+            />
+            @if (form.controls.meta.touched && form.controls.meta.invalid) {
+              <p class="field-error">Indica un número con hasta cuatro decimales.</p>
+            }
+          </div>
+        </div>
+      </fieldset>
+      <div class="indicadores-actions">
+        <button
+          type="button"
+          class="button button-secondary"
+          (click)="cancelIndicator()"
+          [disabled]="saving()"
+        >
+          {{ uncertain() ? 'Cerrar y consultar indicadores' : 'Cancelar indicador' }}
+        </button>
+        <button
+          type="submit"
+          class="button button-primary"
+          [disabled]="saving() || uncertain() || readOnly()"
+        >
+          Guardar indicador
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (loading()) {
+    <p role="status">Cargando indicadores…</p>
+  } @else if (loadError()) {
+    <p class="notice notice-error" role="alert">No pudimos consultar los indicadores.</p>
+    <button type="button" class="button button-secondary" (click)="load()">
+      Reintentar indicadores
+    </button>
+  } @else if (!indicadores().length && !editing()) {
+    <p class="indicadores-muted">Este objetivo todavía no tiene indicadores.</p>
+  } @else if (indicadores().length) {
+    <ul class="indicadores-list">
+      @for (indicador of indicadores(); track indicador.id) {
+        <li>
+          <div class="indicadores-row">
+            <strong>{{ indicador.nombre }}</strong>
+            <button
+              type="button"
+              class="button button-secondary"
+              (click)="select(indicador)"
+              [disabled]="saving() || editing()"
+              [attr.aria-expanded]="selected()?.id === indicador.id"
+            >
+              {{ selected()?.id === indicador.id ? 'Cerrar mediciones' : 'Ver mediciones'
+              }}<span class="sr-only"> de {{ indicador.nombre }}</span>
+            </button>
+          </div>
+          <dl class="indicadores-fields">
+            <div>
+              <dt>Fórmula</dt>
+              <dd>{{ indicador.formula }}</dd>
+            </div>
+            <div>
+              <dt>Unidad</dt>
+              <dd>{{ indicador.unidad }}</dd>
+            </div>
+            <div>
+              <dt>Línea base</dt>
+              <dd>{{ indicador.lineaBase | number: '1.0-4' }}</dd>
+            </div>
+            <div>
+              <dt>Meta</dt>
+              <dd>{{ indicador.meta | number: '1.0-4' }}</dd>
+            </div>
+            <div>
+              <dt>Frecuencia</dt>
+              <dd>{{ indicador.frecuencia }}</dd>
+            </div>
+          </dl>
+          @if (selected()?.id === indicador.id) {
+            <section
+              class="mediciones-panel"
+              [attr.aria-label]="'Mediciones de ' + indicador.nombre"
+            >
+              <strong>Mediciones</strong>
+              @if (loadingMediciones()) {
+                <p role="status">Cargando mediciones…</p>
+              } @else if (medicionesError()) {
+                <p class="notice notice-error" role="alert">No pudimos consultar las mediciones.</p>
+                <button
+                  type="button"
+                  class="button button-secondary"
+                  (click)="loadMediciones(indicador)"
+                >
+                  Reintentar mediciones
+                </button>
+              } @else {
+                @if (mediciones().length) {
+                  <table>
+                    <thead>
+                      <tr>
+                        <th scope="col">Fecha del período</th>
+                        <th scope="col">Valor ({{ indicador.unidad }})</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (medicion of mediciones(); track medicion.id) {
+                        <tr>
+                          <td>
+                            <time [attr.datetime]="medicion.periodo">{{ medicion.periodo }}</time>
+                          </td>
+                          <td>{{ medicion.valor | number: '1.0-4' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="indicadores-muted">Todavía no hay mediciones.</p>
+                }
+                @if (!readOnly()) {
+                  <form [formGroup]="medicionForm" (ngSubmit)="saveMeasurement(indicador)">
+                    <fieldset [disabled]="saving() || uncertain()">
+                      <legend>Registrar medición</legend>
+                      <div class="indicadores-fields">
+                        <div class="field">
+                          <label [for]="formId() + '-periodo'">Fecha del período</label>
+                          <input
+                            type="date"
+                            [id]="formId() + '-periodo'"
+                            formControlName="periodo"
+                            aria-required="true"
+                            [attr.aria-invalid]="
+                              medicionForm.controls.periodo.touched &&
+                              medicionForm.controls.periodo.invalid
+                            "
+                          />
+                          @if (
+                            medicionForm.controls.periodo.touched &&
+                            medicionForm.controls.periodo.invalid
+                          ) {
+                            <p class="field-error">Indica la fecha del período.</p>
+                          }
+                        </div>
+                        <div class="field">
+                          <label [for]="formId() + '-valor'">Valor medido</label>
+                          <input
+                            [id]="formId() + '-valor'"
+                            formControlName="valor"
+                            inputmode="decimal"
+                            aria-required="true"
+                            [attr.aria-invalid]="
+                              medicionForm.controls.valor.touched &&
+                              medicionForm.controls.valor.invalid
+                            "
+                          />
+                          @if (
+                            medicionForm.controls.valor.touched &&
+                            medicionForm.controls.valor.invalid
+                          ) {
+                            <p class="field-error">Indica un número con hasta cuatro decimales.</p>
+                          }
+                        </div>
+                      </div>
+                    </fieldset>
+                    <div class="indicadores-actions">
+                      @if (uncertain()) {
+                        <button
+                          type="button"
+                          class="button button-secondary"
+                          (click)="resetMeasurement(indicador)"
+                        >
+                          Consultar mediciones
+                        </button>
+                      }
+                      <button
+                        type="submit"
+                        class="button button-primary"
+                        [disabled]="saving() || uncertain()"
+                      >
+                        Guardar medición
+                      </button>
+                    </div>
+                  </form>
+                }
+              }
+            </section>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

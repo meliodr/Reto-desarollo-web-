@@ -10,12 +10,27 @@ import {
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Pei, PeiApi, PeiField, PeiWrite, VersionedPei, fieldLabels, fieldOrder } from './pei-api';
+import {
+  Pei,
+  PeiApi,
+  PeiField,
+  PeiWrite,
+  VersionedPei,
+  fieldLabels,
+  fieldOrder,
+  peiStateLabels,
+} from './pei-api';
 import { peiPeriodValidator, trimmedMinLength, trimmedRequired } from './pei-validation';
 import { Feedback } from './feedback';
 import { PeiEjes } from './pei-ejes';
+import { Session } from '../auth/session';
+import { PeiWorkflow } from './pei-workflow';
+import { PeiPoas } from './pei-poas';
 
-@Component({ imports: [RouterLink, ReactiveFormsModule, PeiEjes], templateUrl: './pei-form.html' })
+@Component({
+  imports: [RouterLink, ReactiveFormsModule, PeiEjes, PeiWorkflow, PeiPoas],
+  templateUrl: './pei-form.html',
+})
 export class PeiForm implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly api = inject(PeiApi);
@@ -36,7 +51,10 @@ export class PeiForm implements OnInit {
     },
     { validators: peiPeriodValidator },
   );
+  readonly session = inject(Session);
   readonly current = signal<Pei | null>(null);
+  readonly workflowPending = signal(false);
+  readonly stateLabels = peiStateLabels;
   readonly etag = signal<string | null>(null);
   readonly loading = signal(false);
   readonly loadError = signal('');
@@ -88,6 +106,7 @@ export class PeiForm implements OnInit {
       vision: p.vision,
       valores: p.valores,
     });
+    this.syncFormDisabled();
     this.submitted.set(false);
     this.serverErrors.set({});
     this.saveError.set('');
@@ -98,6 +117,45 @@ export class PeiForm implements OnInit {
       this.saveError.set(
         'La API no devolvió la versión del registro (ETag). Vuelve a consultar el PEI antes de editarlo.',
       );
+  }
+  isReadOnly() {
+    const current = this.current();
+    return (
+      (current !== null && current.estado !== 'borrador') ||
+      (this.session.enabled() && !this.session.canPlan())
+    );
+  }
+  workflowBlocked() {
+    return (
+      this.form.dirty ||
+      this.saving() ||
+      this.conflict() ||
+      this.requestUncertain() ||
+      !!this.ejes?.hasPendingChanges()
+    );
+  }
+  applyTransition(value: VersionedPei) {
+    this.apply(value);
+    this.saved.set(false);
+  }
+  setWorkflowPending(pending: boolean) {
+    this.workflowPending.set(pending);
+    this.syncFormDisabled();
+  }
+  refreshWorkflow() {
+    if (
+      !this.workflowBlocked() ||
+      window.confirm('Actualiza el estado del PEI y descarta los cambios sin guardar. ¿Continuar?')
+    ) {
+      this.load();
+    }
+  }
+  private syncFormDisabled() {
+    if (this.isReadOnly() || this.workflowPending()) {
+      this.form.disable({ emitEvent: false });
+    } else {
+      this.form.enable({ emitEvent: false });
+    }
   }
   isNew() {
     return !this.id;
@@ -150,7 +208,8 @@ export class PeiForm implements OnInit {
     setTimeout(() => this.errorSummary?.nativeElement.focus());
   }
   submit() {
-    if (this.saving() || this.requestUncertain()) return;
+    if (this.isReadOnly() || this.workflowPending() || this.saving() || this.requestUncertain())
+      return;
     this.submitted.set(true);
     this.saveError.set('');
     this.serverErrors.set({});
@@ -278,12 +337,12 @@ export class PeiForm implements OnInit {
   }
   canLeave() {
     return (
-      (!this.form.dirty && !this.ejes?.hasPendingChanges()) ||
+      (!this.workflowPending() && !this.form.dirty && !this.ejes?.hasPendingChanges()) ||
       window.confirm('Tienes cambios sin guardar. ¿Quieres salir y descartarlos?')
     );
   }
   @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent) {
-    if (this.form.dirty || this.ejes?.hasPendingChanges()) {
+    if (this.workflowPending() || this.form.dirty || this.ejes?.hasPendingChanges()) {
       event.preventDefault();
       event.returnValue = '';
     }

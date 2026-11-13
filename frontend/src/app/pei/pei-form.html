@@ -4,9 +4,19 @@
 <section class="page-heading form-heading">
   <div>
     <div class="eyebrow">Planificación estratégica / PEI</div>
-    <h1>{{ isNew() ? 'Crear borrador de PEI' : 'Editar borrador de PEI' }}</h1>
+    <h1>
+      {{
+        isNew()
+          ? 'Crear borrador de PEI'
+          : isReadOnly()
+            ? 'Consultar PEI'
+            : 'Editar borrador de PEI'
+      }}
+    </h1>
   </div>
-  <span class="badge-draft"><span aria-hidden="true"></span>Borrador</span>
+  <span class="badge-draft"
+    ><span aria-hidden="true"></span>{{ stateLabels[current()?.estado ?? 'borrador'] }}</span
+  >
 </section>
 @if (loading()) {
   <div class="panel loading-state" role="status">
@@ -235,23 +245,29 @@
             >{{
               saving()
                 ? 'Guardando en la API…'
-                : saved()
-                  ? 'Cambios guardados'
-                  : form.dirty
-                    ? 'Hay cambios sin guardar'
-                    : 'Completa los campos obligatorios (*)'
+                : isReadOnly()
+                  ? 'Plan en modo consulta'
+                  : saved()
+                    ? 'Cambios guardados'
+                    : form.dirty
+                      ? 'Hay cambios sin guardar'
+                      : 'Completa los campos obligatorios (*)'
             }}
           </div>
           <div>
-            <a class="button button-secondary" routerLink="/peis">Volver</a
-            ><button
-              class="button button-primary"
-              type="submit"
-              [disabled]="saving() || requestUncertain() || (!!current() && !etag())"
-            >
-              {{ saving() ? 'Guardando…' : isNew() ? 'Crear borrador' : 'Guardar cambios' }}
-              <span aria-hidden="true">→</span>
-            </button>
+            <a class="button button-secondary" routerLink="/peis">Volver</a>
+            @if (!isReadOnly()) {
+              <button
+                class="button button-primary"
+                type="submit"
+                [disabled]="
+                  workflowPending() || saving() || requestUncertain() || (!!current() && !etag())
+                "
+              >
+                {{ saving() ? 'Guardando…' : isNew() ? 'Crear borrador' : 'Guardar cambios' }}
+                <span aria-hidden="true">→</span>
+              </button>
+            }
           </div>
         </div>
       </div>
@@ -274,13 +290,13 @@
             <div>
               <dt>Estado</dt>
               <dd>
-                <span class="badge-draft"><span aria-hidden="true"></span>Borrador</span>
+                <span class="badge-draft"
+                  ><span aria-hidden="true"></span
+                  >{{ stateLabels[current()?.estado ?? 'borrador'] }}</span
+                >
               </dd>
             </div>
           </dl>
-          <p class="summary-note">
-            Guardar un borrador conserva esta ficha. No aprueba ni publica el PEI.
-          </p>
         </div>
         <div class="help-card">
           <p>
@@ -292,6 +308,19 @@
     </div>
   </form>
   @if (current(); as pei) {
-    <app-pei-ejes [peiId]="pei.id" />
+    @if (session.canPlan()) {
+      <app-pei-workflow
+        [pei]="pei"
+        [etag]="etag()"
+        [dirty]="workflowBlocked()"
+        (changed)="applyTransition($event)"
+        (pendingChange)="setWorkflowPending($event)"
+        (refresh)="refreshWorkflow()"
+      />
+      @if (pei.estado === 'publicado') {
+        <app-pei-poas [peiId]="pei.id" />
+      }
+    }
+    <app-pei-ejes [peiId]="pei.id" [readOnly]="isReadOnly() || workflowPending()" />
   }
 }

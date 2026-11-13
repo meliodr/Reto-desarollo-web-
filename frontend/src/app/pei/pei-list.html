@@ -2,16 +2,18 @@
   <div>
     <div class="eyebrow">Planificación estratégica</div>
     <h1>Planes estratégicos institucionales</h1>
-    <p>Consulta y edita los borradores de PEI.</p>
+    <p>Consulta los planes y su estado de publicación.</p>
   </div>
-  <a class="button button-primary" routerLink="/peis/nuevo"
-    ><span class="button-plus" aria-hidden="true">+</span> Crear nuevo PEI</a
-  >
+  @if (!session.enabled() || session.canPlan()) {
+    <a class="button button-primary" routerLink="/peis/nuevo">
+      <span class="button-plus" aria-hidden="true">+</span> Crear nuevo PEI
+    </a>
+  }
 </section>
 <section class="plans-section" aria-labelledby="plans-heading">
   <div class="section-heading">
     <div>
-      <h2 id="plans-heading">Borradores de PEI</h2>
+      <h2 id="plans-heading">Planes registrados</h2>
     </div>
     @if (!loading() && !error()) {
       <span class="count-label"
@@ -63,9 +65,12 @@
           Aún no hay planes estratégicos registrados.<br />Comienza con un nombre, un período y un
           propósito.
         </p>
-        <a class="button button-primary" routerLink="/peis/nuevo"
-          >Crear el primer PEI <span aria-hidden="true">→</span></a
-        ><small>El plan se guardará como borrador.</small>
+        @if (!session.enabled() || session.canPlan()) {
+          <a class="button button-primary" routerLink="/peis/nuevo">
+            Crear el primer PEI <span aria-hidden="true">→</span>
+          </a>
+          <small>El plan se guardará como borrador.</small>
+        }
       </div>
     } @else if (filtered().length === 0) {
       <div class="empty-state">
@@ -109,13 +114,15 @@
                 <td class="period-cell">{{ period(pei) }}</td>
                 <td>{{ pei.tipo === 'ordinario' ? 'Ordinario' : 'Extraordinario' }}</td>
                 <td>
-                  <span class="badge-draft"><span aria-hidden="true"></span>Borrador</span>
+                  <span class="badge-draft"
+                    ><span aria-hidden="true"></span>{{ stateLabels[pei.estado] }}</span
+                  >
                 </td>
                 <td>
                   <a
                     class="row-action"
                     [routerLink]="['/peis', pei.id]"
-                    [attr.aria-label]="'Abrir borrador ' + pei.nombre"
+                    [attr.aria-label]="'Abrir ' + pei.nombre"
                     >Abrir <span aria-hidden="true">↗</span></a
                   >
                 </td>

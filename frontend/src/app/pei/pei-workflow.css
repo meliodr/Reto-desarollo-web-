@@ -1,0 +1,15 @@
+:host {
+  display: block;
+  margin-top: 24px;
+}
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.workflow-actions:not(:first-child) {
+  margin-top: 12px;
+}
+.notice {
+  margin-bottom: 12px;
+}

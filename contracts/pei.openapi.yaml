@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: SISPLAN — Borradores de PEI, ejes y objetivos estratégicos
-  version: 0.2.0
+  title: SISPLAN — Planificación estratégica y POA anuales
+  version: 0.3.0
   description: Contrato local. El período se deriva de las fechas y el servidor asigna el estado borrador. Cada eje pertenece a la versión actual del PEI, con revisiones consultables. Los objetivos se registran bajo ejes activos y conservan el vínculo a su revisión de origen.
 servers:
   - url: http://127.0.0.1:5080/api/v1
@@ -54,6 +54,7 @@ paths:
       responses:
         '200': { $ref: '#/components/responses/Pei' }
         '404': { description: Versión no encontrada }
+        '409': { description: El PEI no está en borrador }
         '412': { description: Otro guardado modificó el borrador. Volver a consultar antes de reintentar. }
         '400': { description: JSON inválido }
         '415': { description: Se requiere application/json }
@@ -175,8 +176,139 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Objetivo' }
         '404': { description: Objetivo no encontrado en el eje de este PEI }
+  /peis/{peiId}/ejes/{ejeId}/objetivos/{objetivoId}/indicadores:
+    parameters:
+      - $ref: '#/components/parameters/PeiId'
+      - $ref: '#/components/parameters/EjeId'
+      - $ref: '#/components/parameters/ObjetivoId'
+    get:
+      summary: Consultar indicadores del objetivo
+      responses:
+        '200':
+          description: Indicadores registrados
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Indicador' } }
+        '404': { description: Objetivo ajeno a la versión actual del PEI }
+    post:
+      summary: Registrar un indicador en un eje activo de un PEI en borrador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DatosIndicador' }
+      responses:
+        '201':
+          description: Indicador registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Indicador' }
+        '404': { description: Objetivo ajeno a la versión actual del PEI }
+        '409': { description: Eje inactivo o PEI fuera de borrador }
+        '422': { $ref: '#/components/responses/Validacion' }
+  /peis/{peiId}/ejes/{ejeId}/objetivos/{objetivoId}/indicadores/{indicadorId}/mediciones:
+    parameters:
+      - $ref: '#/components/parameters/PeiId'
+      - $ref: '#/components/parameters/EjeId'
+      - $ref: '#/components/parameters/ObjetivoId'
+      - { name: indicadorId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: Consultar mediciones del indicador
+      responses:
+        '200':
+          description: Mediciones ordenadas por fecha descendente
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Medicion' } }
+        '404': { description: Indicador ajeno al objetivo }
+    post:
+      summary: Registrar una medición fechada dentro del PEI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DatosMedicion' }
+      responses:
+        '201':
+          description: Medición registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Medicion' }
+        '404': { description: Indicador ajeno al objetivo }
+        '409': { description: Fecha duplicada, eje inactivo o PEI fuera de borrador }
+        '422': { $ref: '#/components/responses/Validacion' }
+  /pei-versiones/{versionId}/transiciones:
+    security:
+      - AccesoInstitucional: []
+    parameters:
+      - { name: versionId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      summary: Consultar acciones habilitadas para el planificador autenticado
+      responses:
+        '200':
+          description: Acciones disponibles según el estado y el actor
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [acciones]
+                properties:
+                  acciones: { type: array, items: { $ref: '#/components/schemas/AccionPei' } }
+        '401': { description: Sesión requerida }
+        '403': { description: Rol Planificador requerido }
+        '404': { description: Versión no encontrada }
+    post:
+      summary: Enviar, devolver, aprobar o publicar la versión del PEI
+      parameters:
+        - { name: If-Match, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accion]
+              properties:
+                accion: { $ref: '#/components/schemas/AccionPei' }
+                motivo: { type: [string, 'null'], maxLength: 4000, description: Requerido para devolver. }
+      responses:
+        '200': { $ref: '#/components/responses/Pei' }
+        '401': { description: Sesión requerida }
+        '403': { description: Rol Planificador requerido o autoaprobación impedida }
+        '404': { description: Versión no encontrada }
+        '409': { description: Estado incompatible, estructura incompleta o vigencia solapada }
+        '412': { description: ETag obsoleto }
+        '422': { $ref: '#/components/responses/Validacion' }
+        '428': { description: Falta If-Match }
+  /peis/{peiId}/poas:
+    security:
+      - AccesoInstitucional: []
+    parameters:
+      - $ref: '#/components/parameters/PeiId'
+    get:
+      summary: Consultar POA anuales y cuatrimestres generados al publicar
+      responses:
+        '200':
+          description: POA ordenados por año
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Poa' } }
+        '401': { description: Sesión requerida }
+        '403': { description: Rol Planificador requerido }
+        '404': { description: PEI no encontrado }
 components:
+  securitySchemes:
+    AccesoInstitucional:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token de acceso OIDC con audiencia sisplan-api y rol de cliente Planificador. Si OIDC está configurado, se exige también en las demás rutas de la API.
   parameters:
+    ObjetivoId:
+      name: objetivoId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     PeiId:
       name: peiId
       in: path
@@ -188,6 +320,67 @@ components:
       required: true
       schema: { type: string, format: uuid }
   schemas:
+    DecimalIndicador:
+      type: number
+      minimum: -999999999999.9999
+      maximum: 999999999999.9999
+      multipleOf: 0.0001
+    DatosIndicador:
+      type: object
+      required: [nombre, formula, unidad, lineaBase, meta, frecuencia]
+      properties:
+        nombre: { type: string, minLength: 3, maxLength: 200 }
+        formula: { type: string, minLength: 1, maxLength: 4000 }
+        unidad: { type: string, minLength: 1, maxLength: 100 }
+        lineaBase: { $ref: '#/components/schemas/DecimalIndicador' }
+        meta: { $ref: '#/components/schemas/DecimalIndicador' }
+        frecuencia: { type: string, minLength: 1, maxLength: 100 }
+    Indicador:
+      allOf:
+        - $ref: '#/components/schemas/DatosIndicador'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string, format: uuid }
+    DatosMedicion:
+      type: object
+      required: [periodo, valor]
+      properties:
+        periodo: { type: string, format: date }
+        valor: { $ref: '#/components/schemas/DecimalIndicador' }
+    Medicion:
+      allOf:
+        - $ref: '#/components/schemas/DatosMedicion'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string, format: uuid }
+    AccionPei:
+      type: string
+      enum: [enviar, devolver, aprobar, publicar]
+    Poa:
+      type: object
+      required: [id, anio, estado, fechaInicio, fechaFin, vigente, evaluaciones]
+      properties:
+        id: { type: string, format: uuid }
+        anio: { type: integer, minimum: 1, maximum: 9999 }
+        estado: { type: string, enum: [formulacion, en_revision, aprobado, en_ejecucion, cerrado] }
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date }
+        vigente: { type: boolean }
+        evaluaciones:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            type: object
+            required: [id, cuatrimestre, fechaInicio, fechaFin, estado]
+            properties:
+              id: { type: string, format: uuid }
+              cuatrimestre: { type: integer, enum: [1, 2, 3] }
+              fechaInicio: { type: string, format: date }
+              fechaFin: { type: string, format: date }
+              estado: { type: string, enum: [generada, fuera_de_vigencia, en_revision, emitida, publicada] }
     DatosObjetivo:
       type: object
       required: [codigo, nombre, descripcion, resultadoEsperado, lineaAccion]
@@ -246,7 +439,7 @@ components:
           properties:
             id: { type: string, format: uuid }
             versionId: { type: string, format: uuid }
-            estado: { type: string, const: borrador }
+            estado: { type: string, enum: [borrador, en_revision, aprobado, publicado] }
     ProblemaValidacion:
       type: object
       required: [status, errors]

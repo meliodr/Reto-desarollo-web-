@@ -1,7 +1,7 @@
 <section class="objetivos-panel" aria-labelledby="pei-objetivos-heading">
   <div class="objetivos-heading">
     <h4 id="pei-objetivos-heading">Objetivos de {{ eje().nombre }}</h4>
-    @if (eje().activo && !editing() && !loading() && !loadError()) {
+    @if (!readOnly() && eje().activo && !editing() && !loading() && !loadError()) {
       <button type="button" class="button button-primary" (click)="startCreate()">
         Agregar objetivo
       </button>
@@ -17,7 +17,7 @@
       <p class="notice notice-error" role="alert">{{ saveError() }}</p>
     }
     <form [formGroup]="form" (ngSubmit)="save()">
-      <fieldset [disabled]="saving() || uncertain() || !eje().activo">
+      <fieldset [disabled]="saving() || uncertain() || !eje().activo || readOnly()">
         <legend>Nuevo objetivo</legend>
         <p class="objetivos-muted">Todos los campos son obligatorios.</p>
         @for (field of fields; track field.key) {
@@ -59,7 +59,7 @@
         <button
           type="submit"
           class="button button-primary"
-          [disabled]="saving() || uncertain() || !eje().activo"
+          [disabled]="saving() || uncertain() || !eje().activo || readOnly()"
         >
           {{ saving() ? 'Guardando…' : 'Guardar objetivo' }}
         </button>
@@ -83,7 +83,18 @@
     <ul class="objetivos-list">
       @for (objetivo of objetivos(); track objetivo.id) {
         <li>
-          <h5>{{ objetivo.codigo }} · {{ objetivo.nombre }}</h5>
+          <div class="objetivos-heading">
+            <h5>{{ objetivo.codigo }} · {{ objetivo.nombre }}</h5>
+            <button
+              type="button"
+              class="button button-secondary"
+              (click)="toggleIndicators(objetivo.id)"
+              [attr.aria-expanded]="selectedObjective() === objetivo.id"
+            >
+              {{ selectedObjective() === objetivo.id ? 'Cerrar indicadores' : 'Ver indicadores'
+              }}<span class="sr-only"> de {{ objetivo.nombre }}</span>
+            </button>
+          </div>
           <dl>
             <div>
               <dt>Descripción</dt>
@@ -98,6 +109,12 @@
               <dd>{{ objetivo.lineaAccion }}</dd>
             </div>
           </dl>
+          @if (selectedObjective() === objetivo.id) {
+            <app-pei-indicadores
+              [ruta]="{ peiId: peiId(), ejeId: eje().id, objetivoId: objetivo.id }"
+              [readOnly]="readOnly() || !eje().activo"
+            />
+          }
         </li>
       }
     </ul>

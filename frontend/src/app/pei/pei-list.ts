@@ -1,9 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Pei, PeiApi } from './pei-api';
+import { Pei, PeiApi, peiStateLabels } from './pei-api';
+import { Session } from '../auth/session';
 @Component({ imports: [RouterLink], templateUrl: './pei-list.html' })
 export class PeiList {
   private readonly api = inject(PeiApi);
+  readonly session = inject(Session);
+  readonly stateLabels = peiStateLabels;
   readonly peis = signal<Pei[]>([]);
   readonly loading = signal(true);
   readonly error = signal('');

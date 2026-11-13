@@ -14,5 +14,18 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.2
+    profiles: [institucional]
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${SISPLAN_KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${SISPLAN_KEYCLOAK_PASSWORD:-}
+    ports:
+      - '127.0.0.1:8080:8080'
+    volumes:
+      - ./infra/keycloak/sisplan-realm.json:/opt/keycloak/data/import/sisplan-realm.json:ro
+      - sisplan-keycloak:/opt/keycloak/data
 volumes:
+  sisplan-keycloak:
   sisplan-postgres:

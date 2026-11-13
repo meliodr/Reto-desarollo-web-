@@ -1,0 +1,88 @@
+<section class="panel form-section" aria-labelledby="pei-workflow-heading">
+  <header class="form-section-heading">
+    <div><h2 id="pei-workflow-heading">Revisión y publicación</h2></div>
+  </header>
+  <div class="form-section-body">
+    @if (notice()) {
+      <p class="notice notice-success" role="status">{{ notice() }}</p>
+    }
+    @if (transitionError()) {
+      <p class="notice notice-error" role="alert">{{ transitionError() }}</p>
+    }
+    @if (actionsError()) {
+      <p class="notice notice-error" role="alert">{{ actionsError() }}</p>
+    }
+    @if (requiresRefresh() || actionsError()) {
+      <button type="button" class="button button-secondary" (click)="refresh.emit()">
+        Actualizar PEI
+      </button>
+    } @else if (loading()) {
+      <p role="status">Consultando acciones…</p>
+    } @else if (pei().estado === 'publicado') {
+      <p>El PEI está publicado. Los POA generados se pueden consultar debajo.</p>
+    } @else if (!actions().length) {
+      <p>En esta sesión no hay acciones disponibles para el estado del PEI.</p>
+    } @else if (confirmAction(); as action) {
+      @if (action === 'devolver') {
+        <div class="field">
+          <label for="pei-return-reason">Motivo de devolución</label>
+          <textarea
+            id="pei-return-reason"
+            rows="3"
+            maxlength="4000"
+            required
+            [value]="reason()"
+            [disabled]="pending()"
+            (input)="reason.set($any($event.target).value)"
+          ></textarea>
+        </div>
+      } @else {
+        <p>Al publicar este PEI se generará un POA para cada año de su período.</p>
+      }
+      <div class="workflow-actions">
+        <button
+          type="button"
+          class="button button-secondary"
+          [disabled]="pending()"
+          (click)="confirmAction.set(null)"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="button button-primary"
+          [disabled]="
+            pending() || dirty() || !etag() || (action === 'devolver' && !reason().trim())
+          "
+          (click)="transition(action)"
+        >
+          {{
+            pending()
+              ? 'Procesando…'
+              : action === 'publicar'
+                ? 'Confirmar publicación'
+                : actionLabels[action]
+          }}
+        </button>
+      </div>
+    } @else {
+      @if (dirty()) {
+        <p class="muted">Guarda o descarta los cambios pendientes antes de continuar.</p>
+      }
+      <div class="workflow-actions">
+        @for (action of actions(); track action) {
+          <button
+            type="button"
+            class="button"
+            [class.button-secondary]="action === 'devolver'"
+            [class.button-primary]="action !== 'devolver'"
+            [disabled]="pending() || dirty() || !etag()"
+            (click)="select(action)"
+          >
+            {{ actionLabels[action] }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+</section>

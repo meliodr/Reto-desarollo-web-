@@ -8,6 +8,11 @@
       </a>
       <nav aria-label="Navegación principal">
         <a class="institutional-nav-link" routerLink="/peis">Planes estratégicos</a>
+        @if (session.enabled() && session.authenticated()) {
+          <button class="button button-secondary" type="button" (click)="session.logout()">
+            Cerrar sesión
+          </button>
+        }
       </nav>
     </div>
   </header>
@@ -26,12 +31,29 @@
           </button>
         </div>
       }
-      <router-outlet />
+      @if (session.error()) {
+        <p class="notice notice-error" role="alert">{{ session.error() }}</p>
+      }
+      @if (!session.enabled() || session.canPlan()) {
+        <router-outlet />
+      } @else if (!session.error()) {
+        <section class="panel empty-state" aria-labelledby="session-title">
+          <h1 id="session-title">Acceso a SISPLAN</h1>
+          @if (session.authenticated()) {
+            <p>La cuenta {{ session.name() }} necesita el permiso Planificador.</p>
+          } @else {
+            <p>Inicia sesión con tu cuenta institucional para consultar y gestionar planes.</p>
+            <button class="button button-primary" type="button" (click)="session.login()">
+              Iniciar sesión
+            </button>
+          }
+        </section>
+      }
     </main>
     <footer class="footer">
       <span
         >SISPLAN <span class="footer-separator">/</span> Sistema de Gestión de Planificación</span
-      ><span>Desarrollo local · acceso institucional pendiente</span>
+      ><span>{{ session.enabled() ? 'Acceso institucional' : 'Entorno local de borradores' }}</span>
     </footer>
   </div>
 </div>

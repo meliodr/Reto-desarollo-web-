@@ -4,14 +4,16 @@
       <h2 id="pei-ejes-heading">Ejes estratégicos</h2>
       <p>Consulta los ejes de este PEI y las versiones de cada uno.</p>
     </div>
-    <button
-      type="button"
-      class="button button-primary"
-      [disabled]="loading() || !!loadError() || !!editor() || editLoading()"
-      (click)="startCreate()"
-    >
-      Agregar eje
-    </button>
+    @if (!readOnly()) {
+      <button
+        type="button"
+        class="button button-primary"
+        [disabled]="loading() || !!loadError() || !!editor() || editLoading()"
+        (click)="startCreate()"
+      >
+        Agregar eje
+      </button>
+    }
   </header>
   <div class="form-section-body">
     @if (notice()) {
@@ -20,7 +22,7 @@
     @if (saveError()) {
       <p class="notice notice-error" role="alert">{{ saveError() }}</p>
     }
-    @if (editor(); as mode) {
+    @if (!readOnly() && editor(); as mode) {
       <form class="eje-editor" [formGroup]="form" (ngSubmit)="save()">
         <h3>{{ mode === 'create' ? 'Nuevo eje' : 'Editar eje' }}</h3>
         <fieldset [disabled]="saving() || blocked() || confirmation()">
@@ -119,7 +121,7 @@
               }
             </div>
             <div class="eje-actions">
-              @if (eje.activo) {
+              @if (eje.activo && !readOnly()) {
                 <button
                   type="button"
                   class="button button-secondary"
@@ -149,7 +151,12 @@
               </button>
             </div>
             @if (objetivosEjeId() === eje.id) {
-              <app-pei-objetivos [id]="'objetivos-eje-' + eje.id" [peiId]="peiId()" [eje]="eje" />
+              <app-pei-objetivos
+                [id]="'objetivos-eje-' + eje.id"
+                [peiId]="peiId()"
+                [eje]="eje"
+                [readOnly]="readOnly()"
+              />
             }
           </li>
         }

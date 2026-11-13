@@ -59,11 +59,15 @@ builder.WebHost.ConfigureKestrel(options =>
     options.Listen(IPAddress.Loopback, port, endpoint => endpoint.Protocols = HttpProtocols.Http1);
     options.Limits.MaxRequestBodySize = 128 * 1024;
 });
+var oidc = AccesoInstitucional.From(builder.Configuration);
+AccesoInstitucional.Configure(builder, oidc);
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
 builder.Services.AddSingleton<PeiRepository>();
 builder.Services.AddSingleton<EjeRepository>();
 builder.Services.AddSingleton<ObjetivoRepository>();
+builder.Services.AddSingleton<IndicadorRepository>();
+builder.Services.AddSingleton<FlujoPeiRepository>();
 
 var app = builder.Build();
 app.UseExceptionHandler();
@@ -91,8 +95,17 @@ app.Use(async (context, next) =>
     }
 });
 
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapGet("/api/configuracion", () => Results.Ok(new
+{
+    Oidc = oidc is null ? null : new { oidc.Url, oidc.Realm, oidc.ClientId },
+}));
 var api = app.MapGroup("/api/v1");
+if (oidc is not null)
+    api.RequireAuthorization("Planificador");
 api.MapEjes();
+api.MapFlujoPei();
 api.MapGet("/peis", async (PeiRepository repository, CancellationToken cancellationToken) =>
     Results.Ok(await repository.ListAsync(cancellationToken)));
 
@@ -129,11 +142,25 @@ api.MapPatch("/pei-versiones/{versionId:guid}", async (Guid versionId, HttpReque
     if (!string.Equals(expected, current.ETag, StringComparison.Ordinal))
         return StaleVersion();
 
+    if (current.Pei.Estado != "borrador")
+        return Results.Problem(statusCode: 409, title: "Solo se pueden editar borradores de PEI.");
+
     var (fields, error) = await ReadFieldsAsync(request, cancellationToken);
     if (error is not null)
         return error;
 
-    var saved = await repository.UpdateAsync(versionId, current.Revision, fields!, cancellationToken);
+    PeiSnapshot? saved;
+    try
+    {
+        saved = await repository.UpdateAsync(versionId, current.Revision, fields!, cancellationToken);
+    }
+    catch (PeriodoConMedicionesException)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["fechaFin"] = ["El período debe incluir las fechas de las mediciones ya registradas."],
+        }, statusCode: 422);
+    }
     if (saved is null)
         return StaleVersion();
     response.Headers.ETag = saved.ETag;

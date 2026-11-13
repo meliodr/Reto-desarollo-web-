@@ -17,6 +17,7 @@ export class PeiEjes implements OnInit {
   private readonly api = inject(PeiEjesApi);
   private readonly destroyRef = inject(DestroyRef);
   readonly peiId = input.required<string>();
+  readonly readOnly = input(false);
   readonly ejes = signal<Eje[]>([]);
   readonly loading = signal(false);
   readonly loadError = signal('');
@@ -45,7 +46,12 @@ export class PeiEjes implements OnInit {
   }
 
   hasPendingChanges() {
-    return this.saving() || this.form.dirty || !!this.objetivos?.hasPendingChanges();
+    return (
+      this.saving() ||
+      this.editLoading() ||
+      this.form.dirty ||
+      !!this.objetivos?.hasPendingChanges()
+    );
   }
 
   load() {
@@ -67,11 +73,13 @@ export class PeiEjes implements OnInit {
   }
 
   startCreate() {
+    if (this.readOnly()) return;
     this.resetEditor();
     this.editor.set('create');
   }
 
   startEdit(eje: Eje) {
+    if (this.readOnly()) return;
     this.resetEditor();
     this.editLoading.set(true);
     this.api
@@ -149,7 +157,7 @@ export class PeiEjes implements OnInit {
   }
 
   private submit(value: EjeWrite, activo: boolean) {
-    if (this.saving() || this.blocked() || !this.editor()) return;
+    if (this.readOnly() || this.saving() || this.blocked() || !this.editor()) return;
     const eje = this.editing();
     if (eje && !this.etag) return;
     const request = eje

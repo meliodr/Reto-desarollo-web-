@@ -1,14 +1,15 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PeiIndicadores } from './pei-indicadores';
 import { Eje } from './pei-ejes-api';
 import { Objetivo, ObjetivoWrite, PeiObjetivosApi } from './pei-objetivos-api';
 import { trimmedMinLength, trimmedRequired } from './pei-validation';
 
 @Component({
   selector: 'app-pei-objetivos',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PeiIndicadores],
   templateUrl: './pei-objetivos.html',
   styleUrl: './pei-objetivos.css',
 })
@@ -17,6 +18,9 @@ export class PeiObjetivos implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   readonly peiId = input.required<string>();
   readonly eje = input.required<Eje>();
+  readonly readOnly = input(false);
+  readonly selectedObjective = signal<string | null>(null);
+  private readonly indicadores = viewChild(PeiIndicadores);
   readonly objetivos = signal<Objetivo[]>([]);
   readonly loading = signal(false);
   readonly loadError = signal('');
@@ -45,7 +49,7 @@ export class PeiObjetivos implements OnInit {
   }
 
   hasPendingChanges() {
-    return this.saving() || this.form.dirty;
+    return this.saving() || this.form.dirty || !!this.indicadores()?.hasPendingChanges();
   }
 
   load() {
@@ -66,7 +70,16 @@ export class PeiObjetivos implements OnInit {
       });
   }
 
+  toggleIndicators(id: string) {
+    if (this.indicadores()?.hasPendingChanges()) {
+      window.alert('Guarda o cancela los cambios de indicadores antes de cambiar de objetivo.');
+      return;
+    }
+    this.selectedObjective.update((selected) => (selected === id ? null : id));
+  }
+
   startCreate() {
+    if (this.readOnly() || !this.eje().activo) return;
     this.notice.set('');
     this.editing.set(true);
   }
@@ -86,7 +99,7 @@ export class PeiObjetivos implements OnInit {
   }
 
   save() {
-    if (!this.eje().activo || this.saving() || this.uncertain()) return;
+    if (this.readOnly() || !this.eje().activo || this.saving() || this.uncertain()) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const fields = this.form.getRawValue();

@@ -10,6 +10,7 @@ internal static class ObjetivoEndpoints
         objetivos.MapGet("", ListAsync);
         objetivos.MapPost("", CreateAsync);
         objetivos.MapGet("/{objetivoId:guid}", FindAsync);
+        objetivos.MapIndicadores();
     }
 
     private static async Task<IResult> ListAsync(Guid peiId, Guid ejeId, ObjetivoRepository repository,

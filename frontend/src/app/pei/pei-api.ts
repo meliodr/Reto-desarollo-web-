@@ -10,10 +10,18 @@ export interface PeiWrite {
   vision: string;
   valores: string;
 }
+export type PeiState = 'borrador' | 'en_revision' | 'aprobado' | 'publicado';
+export const peiStateLabels: Record<PeiState, string> = {
+  borrador: 'Borrador',
+  en_revision: 'En revisión',
+  aprobado: 'Aprobado',
+  publicado: 'Publicado',
+};
+
 export interface Pei extends PeiWrite {
   id: string;
   versionId: string;
-  estado: 'borrador';
+  estado: PeiState;
 }
 export interface VersionedPei {
   data: Pei;

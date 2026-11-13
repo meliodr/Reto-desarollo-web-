@@ -1,6 +1,6 @@
 # Primer incremento de SISPLAN
 
-El recorrido permite listar, crear, abrir y editar borradores de PEI en Angular. La API guarda los datos en PostgreSQL. La pantalla muestra el período derivado de las fechas y el servidor asigna el estado borrador. Corresponde a la cabecera de RF-001. El siguiente tramo incorpora ejes, objetivos e indicadores y define las transiciones de revisión y publicación.
+El recorrido permite listar, crear, abrir y editar borradores de PEI en Angular. La API guarda los datos en PostgreSQL. La pantalla muestra el período derivado de las fechas y el servidor asigna el estado borrador. Corresponde a la cabecera de RF-001. En un PEI guardado se pueden gestionar ejes y registrar objetivos. Los indicadores y las transiciones de revisión y publicación corresponden a un incremento posterior.
 
 ## Arranque local
 
@@ -77,3 +77,19 @@ La prueba registra un borrador identificable en la base de desarrollo. Cubre cre
 El 12 de noviembre se comprobó la compilación de Angular y la API .NET 10. La prueba HTTP recorrió el proxy de Angular contra PostgreSQL 18 y recuperó el borrador editado tras reiniciar la API. También comprobó los períodos válidos, `422` para fechas inválidas, `428` sin etiqueta y `412` al usar una revisión anterior. Dos solicitudes concurrentes con la misma etiqueta devolvieron una actualización exitosa y un conflicto. La base de verificación fue desechable.
 
 Angular aprobó 11 pruebas automatizadas, incluidas validación de períodos, envío de `If-Match` y conservación de los campos editados ante `412`.
+
+## Ejes y objetivos del PEI
+
+En un borrador guardado, abre **Ejes estratégicos** y crea un eje. Al editarlo se agrega una revisión. La inactivación agrega otra revisión y conserva las anteriores. Desde **Ver objetivos** se puede guardar un objetivo con código, nombre, descripción, resultado esperado y línea de acción. El código es único dentro de su eje. Los objetivos existentes siguen disponibles para consulta si el eje se inactiva.
+
+Las migraciones `0002` y `0003` se aplican con el mismo comando `--migrate`. Para verificar el incremento con PostgreSQL local:
+
+```sh
+python3 tests/pei_smoke.py
+python3 tests/ejes_smoke.py
+python3 tests/objetivos_smoke.py
+```
+
+La prueba de ejes imprime dos identificadores separados por coma. Reinicia la API y vuelve a ejecutar la prueba con `--verify-ids ID_PEI,ID_EJE` para verificar que las revisiones siguen guardadas. Los endpoints de edición reciben la revisión y su `ETag` en `If-Match`; un conflicto devuelve `412`.
+
+El 13 de noviembre se comprobó el recorrido en Chromium con Angular, .NET y PostgreSQL 18: creación y edición del borrador, alta y modificación del eje, consulta de tres revisiones y registro del objetivo con los cinco campos. Se comprobó que el objetivo seguía visible tras recargar e inactivar el eje. Las pruebas HTTP cubrieron edición concurrente, rutas cruzadas entre PEI, duplicados y campos inválidos. También se probó actualizar una base con borradores previos y aplicar las migraciones dos veces. El formulario se comprobó a 1280, 390 y 320 píxeles para detectar desbordamiento horizontal.

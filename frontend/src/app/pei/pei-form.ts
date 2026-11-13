@@ -13,8 +13,9 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Pei, PeiApi, PeiField, PeiWrite, VersionedPei, fieldLabels, fieldOrder } from './pei-api';
 import { peiPeriodValidator, trimmedMinLength, trimmedRequired } from './pei-validation';
 import { Feedback } from './feedback';
+import { PeiEjes } from './pei-ejes';
 
-@Component({ imports: [RouterLink, ReactiveFormsModule], templateUrl: './pei-form.html' })
+@Component({ imports: [RouterLink, ReactiveFormsModule, PeiEjes], templateUrl: './pei-form.html' })
 export class PeiForm implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly api = inject(PeiApi);
@@ -22,6 +23,7 @@ export class PeiForm implements OnInit {
   private readonly router = inject(Router);
   private readonly feedback = inject(Feedback);
   @ViewChild('errorSummary') errorSummary?: ElementRef<HTMLElement>;
+  @ViewChild(PeiEjes) private ejes?: PeiEjes;
   readonly form = this.fb.group(
     {
       nombre: ['', [trimmedRequired, trimmedMinLength(3), Validators.maxLength(200)]],
@@ -276,12 +278,12 @@ export class PeiForm implements OnInit {
   }
   canLeave() {
     return (
-      !this.form.dirty ||
+      (!this.form.dirty && !this.ejes?.hasPendingChanges()) ||
       window.confirm('Tienes cambios sin guardar. ¿Quieres salir y descartarlos?')
     );
   }
   @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent) {
-    if (this.form.dirty) {
+    if (this.form.dirty || this.ejes?.hasPendingChanges()) {
       event.preventDefault();
       event.returnValue = '';
     }

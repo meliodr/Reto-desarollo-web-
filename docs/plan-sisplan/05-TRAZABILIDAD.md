@@ -90,3 +90,13 @@ Los criterios NP requieren definir autorización, vigencia, impacto en cálculo 
 T-01 y T-03 deben resolver el disparador de generación, alcance de roles y transiciones, denominador cero, redondeo, sobreejecución, rangos decimales del semáforo, agregación por unidad y período, consolidación institucional, detalle presupuestario, versionado, MFA y notificaciones. Cada definición pendiente afecta los casos señalados en su fila. [Decisiones y asuntos pendientes del proyecto](https://github.com/meliodr/Reto-desarollo-web-/blob/b1d7586d7e87e6544fc40e600551b7ba5fe6751a/docs/DECISIONES.md)
 
 T-08 registrará por criterio el ID, versión o commit probado, entorno, rol, datos, pasos, resultado esperado y observado, evidencia y revisor. El tablero documenta 29 tareas de preparación y desarrollo. Sus pruebas verifican el funcionamiento del portal de trabajo. La aceptación de SISPLAN requiere ejecutar los casos contra el producto institucional. La captura del aula proporciona el plazo visible. La rúbrica y los formatos exigidos para la entrega siguen sin confirmarse en las fuentes disponibles. [Método del tablero y revisión](https://github.com/meliodr/Reto-desarollo-web-/blob/b1d7586d7e87e6544fc40e600551b7ba5fe6751a/docs/PORTAL.md)
+
+## Pruebas del incremento de planificación estratégica
+
+| Requisito | Resultado local del 13 de noviembre | Evidencia |
+|---|---|---|
+| RF-001 | Parcial. Crear, editar y recuperar el borrador. Aprobación y publicación pendientes. | `tests/pei_smoke.py` y recorrido Chromium |
+| RF-002 | Verificado en la rama del PR. Alta, edición, inactivación, historial persistente y conflicto entre ediciones. | `tests/ejes_smoke.py` y recorrido Chromium |
+| RF-003 | Verificado en la rama del PR. Los cinco campos se recuperan al volver a abrir el eje, incluso después de inactivarlo. | `tests/objetivos_smoke.py` y recorrido Chromium |
+
+La verificación se hizo con Angular, API .NET y PostgreSQL 18 de prueba. La revisión del equipo y la integración siguen pendientes. [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) · [Instrucciones de prueba](06-PRIMER-INCREMENTO.md)

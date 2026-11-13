@@ -283,12 +283,6 @@
           </p>
         </div>
         <div class="help-card">
-          <h3>Una base que podrá crecer</h3>
-          <p>
-            En este primer incremento registramos la identidad del plan. Los ejes, objetivos e
-            indicadores se incorporarán en los siguientes pasos del desarrollo.
-          </p>
-          <div class="help-divider"></div>
           <p>
             <strong>Sobre el período</strong><br />La interpretación de años inclusivos es una regla
             de trabajo de este incremento, pendiente de validación institucional.
@@ -297,4 +291,7 @@
       </aside>
     </div>
   </form>
+  @if (current(); as pei) {
+    <app-pei-ejes [peiId]="pei.id" />
+  }
 }

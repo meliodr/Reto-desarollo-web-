@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: SISPLAN — Borradores de PEI
-  version: 0.1.0
-  description: Contrato del primer incremento local. El período se deriva de las fechas y el servidor asigna el estado borrador.
+  title: SISPLAN — Borradores de PEI, ejes y objetivos estratégicos
+  version: 0.2.0
+  description: Contrato local. El período se deriva de las fechas y el servidor asigna el estado borrador. Cada eje pertenece a la versión actual del PEI, con revisiones consultables. Los objetivos se registran bajo ejes activos y conservan el vínculo a su revisión de origen.
 servers:
   - url: http://127.0.0.1:5080/api/v1
 paths:
@@ -59,8 +59,173 @@ paths:
         '415': { description: Se requiere application/json }
         '422': { $ref: '#/components/responses/Validacion' }
         '428': { description: Falta If-Match }
+  /peis/{peiId}/ejes:
+    parameters:
+      - $ref: '#/components/parameters/PeiId'
+    get:
+      summary: Consultar los ejes activos e inactivos de la versión actual del PEI
+      responses:
+        '200': { $ref: '#/components/responses/Ejes' }
+        '404': { description: PEI no encontrado }
+    post:
+      summary: Crear un eje activo en la versión de trabajo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DatosEje' }
+      responses:
+        '201': { $ref: '#/components/responses/EjeCreado' }
+        '400': { description: JSON inválido }
+        '404': { description: PEI no encontrado }
+        '409': { description: El PEI no está en borrador }
+        '415': { description: Se requiere application/json }
+        '422': { $ref: '#/components/responses/Validacion' }
+  /peis/{peiId}/ejes/{ejeId}:
+    parameters:
+      - $ref: '#/components/parameters/PeiId'
+      - $ref: '#/components/parameters/EjeId'
+    get:
+      summary: Consultar la revisión actual del eje y su ETag
+      responses:
+        '200': { $ref: '#/components/responses/Eje' }
+        '404': { description: Eje no encontrado en la versión actual del PEI }
+    put:
+      summary: Guardar los cambios del eje, incluida su inactivación
+      description: Un cambio agrega una revisión y conserva las anteriores. Una solicitud sin cambios conserva la revisión actual.
+      parameters:
+        - name: If-Match
+          in: header
+          required: true
+          description: ETag fuerte correspondiente a la revisión enviada, incluidas sus comillas.
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActualizarEje' }
+      responses:
+        '200': { $ref: '#/components/responses/Eje' }
+        '400': { description: JSON inválido }
+        '404': { description: Eje no encontrado en la versión actual del PEI }
+        '409': { description: El PEI no está en borrador }
+        '412': { description: La revisión no corresponde al ETag o el eje cambió desde la consulta }
+        '415': { description: Se requiere application/json }
+        '422': { $ref: '#/components/responses/Validacion' }
+        '428': { description: Falta If-Match }
+  /peis/{peiId}/ejes/{ejeId}/versiones:
+    parameters:
+      - $ref: '#/components/parameters/PeiId'
+      - $ref: '#/components/parameters/EjeId'
+    get:
+      summary: Consultar las revisiones del eje, de la más reciente a la primera
+      responses:
+        '200': { $ref: '#/components/responses/Ejes' }
+        '404': { description: Eje no encontrado en la versión actual del PEI }
+  /peis/{peiId}/ejes/{ejeId}/objetivos:
+    parameters:
+      - $ref: '#/components/parameters/PeiId'
+      - $ref: '#/components/parameters/EjeId'
+    get:
+      summary: Consultar los objetivos de un eje activo o inactivo
+      responses:
+        '200':
+          description: Objetivos registrados en el eje
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Objetivo' }
+        '404': { description: Eje no encontrado en la versión actual del PEI }
+    post:
+      summary: Registrar un objetivo estratégico bajo un eje activo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DatosObjetivo' }
+      responses:
+        '201':
+          description: Objetivo registrado
+          headers:
+            Location:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Objetivo' }
+        '400': { description: JSON inválido }
+        '404': { description: Eje no encontrado en la versión actual del PEI }
+        '409': { description: Código ya registrado en el eje, eje inactivo o PEI fuera de borrador }
+        '415': { description: Se requiere application/json }
+        '422': { $ref: '#/components/responses/Validacion' }
+  /peis/{peiId}/ejes/{ejeId}/objetivos/{objetivoId}:
+    parameters:
+      - $ref: '#/components/parameters/PeiId'
+      - $ref: '#/components/parameters/EjeId'
+      - name: objetivoId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: Consultar un objetivo del eje
+      responses:
+        '200':
+          description: Objetivo registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Objetivo' }
+        '404': { description: Objetivo no encontrado en el eje de este PEI }
 components:
+  parameters:
+    PeiId:
+      name: peiId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    EjeId:
+      name: ejeId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
   schemas:
+    DatosObjetivo:
+      type: object
+      required: [codigo, nombre, descripcion, resultadoEsperado, lineaAccion]
+      properties:
+        codigo: { type: string, minLength: 1, maxLength: 50, description: Único dentro del eje. }
+        nombre: { type: string, minLength: 3, maxLength: 200 }
+        descripcion: { type: string, minLength: 1, maxLength: 4000 }
+        resultadoEsperado: { type: string, minLength: 1, maxLength: 4000 }
+        lineaAccion: { type: string, minLength: 1, maxLength: 4000 }
+    Objetivo:
+      allOf:
+        - $ref: '#/components/schemas/DatosObjetivo'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string, format: uuid }
+    DatosEje:
+      type: object
+      required: [nombre]
+      properties:
+        nombre: { type: string, minLength: 3, maxLength: 200 }
+        descripcion: { type: [string, 'null'], maxLength: 4000 }
+    ActualizarEje:
+      allOf:
+        - $ref: '#/components/schemas/DatosEje'
+        - type: object
+          required: [activo, revision]
+          properties:
+            activo: { type: boolean }
+            revision: { type: integer, format: int64, minimum: 1 }
+    Eje:
+      allOf:
+        - $ref: '#/components/schemas/ActualizarEje'
+        - type: object
+          required: [id, descripcion, actualizadoEn]
+          properties:
+            id: { type: string, format: uuid }
+            actualizadoEn: { type: string, format: date-time }
     DatosPei:
       type: object
       required: [nombre, tipo, fechaInicio, fechaFin, mision, vision, valores]
@@ -107,6 +272,31 @@ components:
             vision: Dar seguimiento verificable a los resultados.
             valores: Transparencia y responsabilidad.
   responses:
+    Ejes:
+      description: Lista de ejes o de revisiones
+      content:
+        application/json:
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/Eje' }
+    Eje:
+      description: Revisión actual del eje
+      headers:
+        ETag:
+          schema: { type: string }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Eje' }
+    EjeCreado:
+      description: Eje activo en revisión 1
+      headers:
+        Location:
+          schema: { type: string }
+        ETag:
+          schema: { type: string }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Eje' }
     Pei:
       description: Borrador actualizado o consultado
       headers:

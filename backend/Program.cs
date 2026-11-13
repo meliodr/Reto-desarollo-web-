@@ -62,6 +62,8 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
 builder.Services.AddSingleton<PeiRepository>();
+builder.Services.AddSingleton<EjeRepository>();
+builder.Services.AddSingleton<ObjetivoRepository>();
 
 var app = builder.Build();
 app.UseExceptionHandler();
@@ -90,6 +92,7 @@ app.Use(async (context, next) =>
 });
 
 var api = app.MapGroup("/api/v1");
+api.MapEjes();
 api.MapGet("/peis", async (PeiRepository repository, CancellationToken cancellationToken) =>
     Results.Ok(await repository.ListAsync(cancellationToken)));
 

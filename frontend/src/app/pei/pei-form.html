@@ -3,17 +3,8 @@
 >
 <section class="page-heading form-heading">
   <div>
-    <div class="eyebrow">
-      <span></span>{{ isNew() ? 'NUEVO PLAN ESTRATÉGICO' : 'FORMULACIÓN DEL PEI' }}
-    </div>
-    <h1>{{ isNew() ? 'Demos forma al rumbo.' : 'Un plan en construcción.' }}</h1>
-    <p>
-      {{
-        isNew()
-          ? 'Comienza por el propósito y el período de tu institución.'
-          : 'Revisa y completa la base de tu Plan Estratégico Institucional.'
-      }}
-    </p>
+    <div class="eyebrow">Planificación estratégica / PEI</div>
+    <h1>{{ isNew() ? 'Crear borrador de PEI' : 'Editar borrador de PEI' }}</h1>
   </div>
   <span class="badge-draft"><span aria-hidden="true"></span>Borrador</span>
 </section>
@@ -108,7 +99,6 @@
             <span class="section-number">01</span>
             <div>
               <h2 id="identification-heading">Identificación del plan</h2>
-              <p>Un nombre claro y un horizonte compartido.</p>
             </div>
           </header>
           <div class="form-section-body">
@@ -199,7 +189,6 @@
             <span class="section-number">02</span>
             <div>
               <h2 id="purpose-heading">Propósito institucional</h2>
-              <p>Las ideas que darán sentido a los objetivos y las acciones.</p>
             </div>
           </header>
           <div class="form-section-body">
@@ -268,11 +257,8 @@
       </div>
       <aside class="form-aside" aria-label="Resumen y ayuda">
         <div class="summary-card">
-          <span class="small-label">TU PLAN, DE UN VISTAZO</span>
-          <div class="summary-symbol" aria-hidden="true">
-            <span></span><span></span><span></span>
-          </div>
-          <h2>{{ form.controls.nombre.value || 'Un nuevo propósito' }}</h2>
+          <span class="small-label">Resumen del PEI</span>
+          <h2>{{ form.controls.nombre.value || 'PEI sin nombre' }}</h2>
           <p class="summary-period">{{ periodLabel() }}</p>
           <dl>
             <div>

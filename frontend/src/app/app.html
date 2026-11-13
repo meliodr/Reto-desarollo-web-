@@ -1,51 +1,17 @@
 <a class="skip-link" href="#main-content">Saltar al contenido</a>
 <div class="app-shell">
-  <aside class="sidebar" aria-label="Navegación principal">
-    <a class="brand" routerLink="/peis" aria-label="SISPLAN, planes estratégicos"
-      ><svg viewBox="0 0 38 42" fill="none" aria-hidden="true">
-        <path d="M9 5v30h21M9 16h16M25 16v12h5" stroke="currentColor" stroke-width="2.2" />
-        <rect x="5" y="2" width="8" height="8" rx="2" fill="currentColor" />
-        <rect x="21" y="12" width="8" height="8" rx="2" fill="#D3A176" />
-        <rect x="26" y="31" width="8" height="8" rx="2" fill="currentColor" /></svg
-      ><span>SISPLAN<small>PLANIFICACIÓN INSTITUCIONAL</small></span></a
-    >
-    <div class="sidebar-caption">ESPACIO DE TRABAJO</div>
-    <nav>
-      <a class="nav-active" routerLink="/peis"
-        ><svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <rect
-            x="3"
-            y="2"
-            width="14"
-            height="16"
-            rx="2"
-            stroke="currentColor"
-            stroke-width="1.5"
-          />
-          <path d="M7 6h6M7 10h6M7 14h3" stroke="currentColor" stroke-width="1.5" /></svg
-        >Planes estratégicos<span class="nav-tag">PEI</span></a
-      >
-    </nav>
-    <div class="sidebar-guide">
-      <span class="small-label">UNA BASE COMPARTIDA</span>
-      <p>La misión orienta.<br />La visión da rumbo.<br />Los valores nos guían.</p>
-      <div class="guide-line" aria-hidden="true"><i></i><i></i><i></i></div>
+  <header class="institutional-header">
+    <div class="institutional-header-inner">
+      <a class="brand" routerLink="/peis" aria-label="SISPLAN, planes estratégicos">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>SISPLAN<small>Sistema de Planificación Institucional</small></span>
+      </a>
+      <nav aria-label="Navegación principal">
+        <a class="institutional-nav-link" routerLink="/peis">Planes estratégicos</a>
+      </nav>
     </div>
-    <div class="sidebar-bottom">
-      <span class="status-dot"></span>Entorno de desarrollo local<small
-        >Primer incremento · borradores PEI</small
-      >
-    </div>
-  </aside>
+  </header>
   <div class="workspace">
-    <header class="topbar">
-      <div class="topbar-context">
-        Planificación <span aria-hidden="true">/</span> <strong>Estratégica</strong>
-      </div>
-      <div class="environment-label">
-        PROYECTO ACADÉMICO <span class="environment-dot" aria-hidden="true"></span>
-      </div>
-    </header>
     <main id="main-content" tabindex="-1">
       @if (feedback.message()) {
         <div class="notice notice-success global-notice" role="status">

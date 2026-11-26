@@ -235,6 +235,9 @@ def run(base, tokens, comprobar_poa=False):
     assert sum(i["listoParaMedir"] for i in copied_indicators) == 2 and copied_ready["id"] != ready["id"]
     fields = ("nombre", "formula", "unidad", "frecuencia", "sentido", "meta", "metodoCalculo")
     assert all(copied_ready[key] == ready[key] for key in fields)
+    copied_configured, = [i for i in copied_indicators if i["nombre"] == configured["nombre"]]
+    assert copied_configured["id"] != configured["id"] and copied_configured["listoParaMedir"]
+    assert all(copied_configured[key] == configured[key] for key in fields)
     assert api("07", f"{axes}/{copied_axis['id']}/objetivos/{copied_goal['id']}/indicadores/{copied_ready['id']}/mediciones",
                200)[0] == []
 

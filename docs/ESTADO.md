@@ -11,7 +11,7 @@ La [adaptación al SRS v2](plan-sisplan/10-ADAPTACION-SRS-V2.md) recoge el alcan
 | POA TI 2026 | Analizado | 11 registros de productos con metas mensuales y datos pendientes |
 | Organización del equipo | Cinco plazas configuradas | Incorporación y recorridos con las cinco cuentas reales pendientes |
 | Portal de trabajo v2 | Publicado y revisado | [Portal público](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/) con tareas compartidas, checklist, notas, encuestas y revisión cruzada |
-| Repositorio | Plan vigente para el SRS v2 | [Fases, dependencias y criterios de aceptación](plan-sisplan/11-PLAN-POR-FASES-SRS-V2.md) |
+| Repositorio | Plan vigente para el SRS v2 | [Fases, subfases y criterios de aceptación](plan-sisplan/11-PLAN-POR-FASES-SRS-V2.md) |
 | Nombre de la aplicación | SISPLAN | Nombre de trabajo para la entrega académica |
 | Arquitectura | Definida en la base | Angular 22, .NET 10 LTS, PostgreSQL 18, Npgsql y Keycloak con MFA. Demo local reproducible |
 | Actividades no planificadas | Regla de trabajo definida | [Registro, autorización e incorporación](plan-sisplan/07-REGLAS-OPERATIVAS.md#trabajo-no-planificado-proyectos-riesgos-y-alertas) |

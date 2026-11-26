@@ -6,6 +6,18 @@ El plan cubre PEI y POA para la entrega de INTEC. Ambos módulos funcionan de fo
 
 Fuentes de aceptación: SRS v2, págs. 2–4 y 6–11, archivos Ejes y Objetivos DIGEMAPS y POA TI 2026 V2, y aclaración del maestro del 26 de noviembre. El [estado técnico y las pruebas ya ejecutadas](10-ADAPTACION-SRS-V2.md) sirven de punto de partida. El [plan anterior](01-PLAN-DE-CONSTRUCCION.md) conserva los antecedentes de la v1.
 
+**Subfases por fase**
+
+- [F0 · Base institucional](#subfases-de-f0)
+- [F1 · Carga y publicación del PEI](#subfases-de-f1)
+- [F2 · Formulación y aprobación del POA](#subfases-de-f2)
+- [F3 · Seguimiento y cierre del PEI](#subfases-de-f3)
+- [F4 · Ejecución y cierre del POA](#subfases-de-f4)
+- [F5 · Integración PEI–POA](#subfases-de-f5)
+- [F6 · Aceptación y entrega](#subfases-de-f6)
+
+Cada subfase indica las entradas necesarias para cerrar, el trabajo y la evidencia esperada. Los requisitos para preparar una subfase se indican cuando puede avanzar antes con datos de prueba. Las pruebas y el criterio de éxito de cada fase siguen debajo de su desglose.
+
 ## Dependencias y trabajo en paralelo
 
 | Grupo | Fase | Qué necesita de otras fases | Qué habilita |
@@ -24,6 +36,17 @@ F1 y F2 pueden empezar con un contrato de institución, identidad y catálogos a
 
 **Trabajo y entregables.** Comparar el PR con el SRS v2. Definir el mínimo de instituciones, dependencias, usuarios, catálogos, períodos y módulos habilitados. Proteger el aislamiento en API y PostgreSQL mediante las políticas de filas previstas en el SRS. Acordar los contratos, la matriz de permisos, los estados y el registro de auditoría. Preparar dos instituciones ficticias, dependencias distintas, cuentas por rol y configuraciones de solo PEI, solo POA y ambos módulos. Migrar los datos existentes al ámbito institucional mediante una asignación verificable.
 
+### Subfases de F0
+
+| Subfase | Entrada para cerrar | Trabajo | Evidencia de cierre |
+|---|---|---|---|
+| **F0.1 · Alcance y contratos comunes** | SRS v2, archivos fuente y PR actual. | Revisar la rúbrica, acordar los contratos de institución, sesión, catálogos y auditoría, y registrar decisiones con su fase. Preparar datos de prueba con identificadores estables para Angular y API. | Contratos validados, casos obligatorios identificados y datos de prueba disponibles para F1 y F2. |
+| **F0.2 · Instituciones y organización** | F0.1. | Registrar instituciones, dependencias, catálogos y períodos. Configurar los módulos habilitados por institución. | Dos instituciones diferenciadas y las tres combinaciones de módulos comprobadas sin datos compartidos entre ellas. |
+| **F0.3 · Identidad y permisos** | F0.1. Para probar el alcance institucional necesita F0.2. | Configurar cuentas de prueba, roles y permisos por institución y por dependencia. Documentar la resolución sobre Comité y publicación oficial. | La matriz rol–acción cubre los ocho actores del SRS y el rol técnico del Comité. Se comprueban accesos concedidos y denegados, sesión expirada y consulta del Auditor. |
+| **F0.4 · Migración, aislamiento y auditoría** | F0.2 y F0.3. Se puede preparar la migración desde F0.1. | Aplicar políticas por institución en PostgreSQL y API. Asignar el ámbito de los datos anteriores y registrar los cambios que el contrato identifica como auditables. | Instalación limpia y actualización de datos previos verificadas. Reaplicar migraciones preserva los registros. Cero accesos indebidos en la batería entre instituciones y trazas completas en los casos auditables. |
+
+### Pruebas de F0
+
 | Área a revisar | Pruebas pertinentes |
 |---|---|
 | Identidad y permisos | Autenticación en Keycloak, cierre de sesión, expiración y ausencia de token. Probar cada permiso habilitado y su denegación con los ocho actores del SRS y el rol de Comité que hoy usa el flujo PEI. Verificar que el auditor solo pueda consultar y que los responsables vean el ámbito que les corresponde. Verificar MFA si forma parte de la configuración acordada. |
@@ -36,6 +59,17 @@ F1 y F2 pueden empezar con un contrato de institución, identidad y catálogos a
 ## F1 · PEI · Carga y publicación
 
 **Trabajo y entregables.** Completar la carga de la estructura estratégica, su consulta y los datos que hacen medibles los indicadores. Preparar el mapa de eje, objetivo, resultado, indicador, meta y línea de acción e incorporar los riesgos estratégicos asociados al objetivo conforme al alcance de carga que se acuerde. Cerrar el flujo de envío, revisión, observaciones, corrección, aprobación y publicación con historial de versiones. La carga DIGEMAPS y el recorrido de aprobación ya tienen una implementación parcial verificada en el PR. El arranque del reto utiliza estructura precargada, conforme a la pág. 9.
+
+### Subfases de F1
+
+| Subfase | Entrada para cerrar | Trabajo | Evidencia de cierre |
+|---|---|---|---|
+| **F1.1 · Períodos y carga DIGEMAPS** | F0.1. Validación institucional con F0.2 y F0.4. | Configurar períodos de cuatro y cinco años y conciliar el catálogo precargado con el archivo fuente. Probar reintentos y fallos de carga. | Coinciden seis ejes, veinte objetivos y veinte indicadores. Cero duplicados y cero registros parciales en las pruebas de reintento y fallos. |
+| **F1.2 · Mapa estratégico y metas** | F1.1. | Mostrar ejes, objetivos, resultados y líneas de acción. Completar los datos de medición de indicadores, metas y riesgos que apliquen al PEI del reto. | El mapa permite rastrear cada objetivo de prueba hasta sus datos de origen. Se verifican referencias, vigencia y avisos por datos faltantes. |
+| **F1.3 · Revisión y aprobación** | F1.2, F0.3 y F0.4. | Terminar la revisión por rol, observaciones, correcciones, reenvío, aprobación y control de versiones. | El 100 % de las transiciones acordadas tiene prueba positiva y denegación pertinente. La versión obsoleta se rechaza, y motivo y autor se conservan. |
+| **F1.4 · Publicación autónoma** | F1.3 y F0.2. | Publicar, consultar el PEI oficial y su historial y ejecutar el recorrido con solo PEI habilitado. | Un PEI publicado consultable, su versión disponible y cero POA generados al publicar o repetir la acción. |
+
+### Pruebas de F1
 
 | Área a revisar | Pruebas pertinentes |
 |---|---|
@@ -50,6 +84,17 @@ F1 y F2 pueden empezar con un contrato de institución, identidad y catálogos a
 
 **Trabajo y entregables.** Ampliar la apertura anual que ya existe con productos, actividades y tareas de la programación, metas físicas, unidad, indicadores operativos, dependencias, responsables y cronograma. Completar revisión de área, consolidación de Planificación y aprobación institucional por Máxima Autoridad conforme al flujo y la RACI. Publicar la versión aprobada. Mantener el presupuesto de referencia opcional y registrar el tratamiento de los campos faltantes del Excel.
 
+### Subfases de F2
+
+| Subfase | Entrada para cerrar | Trabajo | Evidencia de cierre |
+|---|---|---|---|
+| **F2.1 · Apertura y presupuesto opcional** | F0.1 para preparar. F0.2–F0.4 para certificar la apertura por institución. | Completar el alta anual autónoma, reglas de duplicados y presupuesto estimado opcional en RD$. | Pasan la apertura sin PEI y los casos campo omitido, nulo, cero y con centavos. La recarga conserva el monto exacto o muestra «Sin registrar». |
+| **F2.2 · Productos, actividades y programación** | F2.1 y catálogos de F0.2. | Mapear los 11 registros de referencia de POA TI. Completar productos, actividades, tareas, metas físicas, unidades, indicadores, responsables y cronograma. | Los 11 registros tienen mapeo o tratamiento documentado. Pasan pruebas de fechas, metas, responsables y persistencia. |
+| **F2.3 · Revisión de área y consolidación** | F2.2 y permisos de F0.3. | Enviar a revisión de área, registrar devoluciones y corregir. Consolidar con Planificación y versionar los cambios. | El flujo conserva motivo, ámbito y versión. Pasan el rechazo por dependencia, el reintento y la revisión concurrente. |
+| **F2.4 · Aprobación y publicación autónoma** | F2.3 y auditoría de F0.4. | Aplicar la aprobación institucional y publicar la versión oficial. Comprobar la entrega del estado de entrada para F4. | Se logra publicar con y sin presupuesto informado en una institución con solo POA. Los estados inválidos o fuera de orden quedan bloqueados en API. |
+
+### Pruebas de F2
+
 | Área a revisar | Pruebas pertinentes |
 |---|---|
 | Formulación y datos fuente | Crear un POA en una institución con solo POA. Cotejar los 11 registros de referencia de la hoja Matriz POA y documentar los campos vacíos, los rótulos repetidos y las metas con unidades distintas. Probar productos con y sin actividades detalladas si la regla admite ambos casos, fechas en los límites del año y responsables de otra dependencia. |
@@ -63,6 +108,17 @@ F1 y F2 pueden empezar con un contrato de institución, identidad y catálogos a
 
 **Trabajo y entregables.** Habilitar mediciones y evidencias por objetivo e indicador. Implementar evaluación y ajustes versionados, mapa y tablero de avance por eje y objetivo, informes por período y cierre con resultados y lecciones aprendidas. Acordar los métodos de cálculo antes de implementar agregados.
 
+### Subfases de F3
+
+| Subfase | Entrada para cerrar | Trabajo | Evidencia de cierre |
+|---|---|---|---|
+| **F3.1 · Períodos y reglas de medición** | F0.1 y contrato de indicadores de F1.2. Puede empezar con datos de prueba. | Definir períodos, fórmula, agregación, unidades, redondeo y tratamiento de la ausencia de meta o meta cero. | Resultados esperados registrados para las cuatro frecuencias, incluyendo casos límite. |
+| **F3.2 · Registro y validación de mediciones** | F3.1, PEI publicado de F1.4 y F0.4. | Registrar y validar mediciones y evidencias con la meta, versión y permisos que correspondan. | Pasa un recorrido por cada frecuencia. También se cubren duplicado, fechas límite, evidencia ajena y precisión decimal. |
+| **F3.3 · Evaluación y ajustes** | F3.2. | Evaluar por eje y objetivo, devolver o corregir mediciones y aplicar ajustes con historial. | El 100 % de la muestra de cálculo coincide con el resultado esperado. Una corrección conserva las mediciones y evaluaciones anteriores en su versión. |
+| **F3.4 · Informes y cierre autónomo** | F3.3. | Conciliar tablero e informes, registrar resultados y lecciones aprendidas y cerrar el PEI. | El reporte coincide con el tablero para el mismo período y versión. El historial se consulta después del cierre con solo PEI habilitado. |
+
+### Pruebas de F3
+
 | Área a revisar | Pruebas pertinentes |
 |---|---|
 | Medición y períodos | Registro y validación mensual, trimestral, semestral y anual. Probar inicio y fin de período, cambio de año, superposición y duplicados, indicador con datos pendientes, meta cero, distintas unidades, valores por encima de la meta y precisión decimal. Probar la regla aprobada para cada método de agregación. |
@@ -74,6 +130,17 @@ F1 y F2 pueden empezar con un contrato de institución, identidad y catálogos a
 ## F4 · Ejecución y cierre del POA
 
 **Trabajo y entregables.** Registrar avances por actividad y meta, adjuntar evidencias, dar seguimiento a plazos y validar avances. Implementar evaluación por período, ajustes de programación aprobados, reporte operativo y cierre anual. Definir el tratamiento de avances sin datos, metas en cero y reprogramaciones. Cuando una vista incluya el presupuesto de referencia, debe mantener esa etiqueta.
+
+### Subfases de F4
+
+| Subfase | Entrada para cerrar | Trabajo | Evidencia de cierre |
+|---|---|---|---|
+| **F4.1 · Reglas de avance y evaluación** | F0.1 y contrato de programación de F2.2. Puede empezar con datos de prueba. | Definir captura, evaluación, unidades y períodos. Acordar tratamiento de meta cero o ausente, sobrecumplimiento y doble conteo. | Los resultados esperados cubren cantidades, porcentajes y los cuatro períodos aplicables, con casos límite de la regla acordada. |
+| **F4.2 · Evidencias y permisos** | F0.3 y F0.4. La validación del vínculo a la actividad requiere F2.2. Puede avanzar en paralelo con F4.1. | Preparar adjuntos y enlaces, validación de tipos y límites, consulta y reemplazo con historial. | Pasan los formatos permitidos, el rechazo de entradas inválidas y la recuperación de fallos de carga. Cero lecturas o descargas indebidas en las pruebas. |
+| **F4.3 · Ejecución y validación de avances** | F2.4, F4.1 y F4.2. | Registrar, validar y corregir avances con evidencias. Mostrar metas, plazos y estado de ejecución. | Se verifican cálculos, permisos y edición concurrente. El avance validado conserva el vínculo a actividad, período y evidencia. |
+| **F4.4 · Reprogramación, informes y cierre autónomo** | F4.3. | Aprobar una reprogramación, preservar cortes anteriores, conciliar resultados y cerrar el año. | El informe coincide con los registros aprobados. Un POA autónomo sin presupuesto completa ejecución, evaluación y cierre. |
+
+### Pruebas de F4
 
 | Área a revisar | Pruebas pertinentes |
 |---|---|
@@ -88,6 +155,17 @@ F1 y F2 pueden empezar con un contrato de institución, identidad y catálogos a
 
 **Trabajo y entregables.** Partir del vínculo anual ya implementado. Agregar la relación entre líneas de acción y productos, y entre indicadores y metas cuando corresponda. Mostrar la trazabilidad desde POA hacia PEI y desde PEI hacia POA. Incorporar al seguimiento estratégico el aporte validado de avances y evidencias, con una regla explícita de correspondencia y medición.
 
+### Subfases de F5
+
+| Subfase | Entrada para cerrar | Trabajo | Evidencia de cierre |
+|---|---|---|---|
+| **F5.1 · Contrato de integración** | F0.1, estructura estratégica de F1.2 y programación de F2.2. Puede diseñarse con datos de prueba. | Acordar las referencias línea–producto e indicador–meta, la vigencia y el comportamiento cuando solo hay un módulo. | Los contratos cubren modos autónomos, vínculos válidos e inválidos y reglas de versión y pertenencia institucional. |
+| **F5.2 · Alineación de planes** | F5.1, F1.4 y F2.4. | Relacionar un producto operativo con su línea de acción y exponer el vínculo desde ambos módulos. | La navegación funciona en ambos sentidos. Se rechazan el borrador, el período incompatible, el vínculo duplicado y la institución ajena. |
+| **F5.3 · Aporte de avances y evidencias** | F5.2, F3.3 y F4.3. | Incorporar al seguimiento estratégico solo el aporte operativo validado y compatible con el indicador. Mantener la trazabilidad de las correcciones. | Una medición conserva el vínculo hasta la actividad y su evidencia. Pendientes, rechazados e incompatibles quedan fuera. Cero duplicados tras reintentar el aporte. |
+| **F5.4 · Regresión de los tres modos** | F5.3 y cierres autónomos F3.4 y F4.4. | Ejecutar PEI autónomo, POA autónomo y recorrido integrado. Probar también un POA sin vínculo en una institución con ambos módulos. | Pasan los tres recorridos. Los modos autónomos se pueden usar con el otro módulo deshabilitado dentro de los permisos previstos. |
+
+### Pruebas de F5
+
 | Área a revisar | Pruebas pertinentes |
 |---|---|
 | Vigencia y alcance de vínculos | Probar PEI publicado y vigente para el año del POA, períodos parciales, PEI en borrador o fuera de período, referencias cruzadas por institución y duplicados. Validar el vínculo con ambas consultas y conservar su contexto al publicar nuevas versiones. |
@@ -100,6 +178,17 @@ F1 y F2 pueden empezar con un contrato de institución, identidad y catálogos a
 ## F6 · Aceptación, despliegue y entrega
 
 **Trabajo y entregables.** Consolidar los resultados de QA, revisar el alcance con el equipo y preparar la versión final. Entregar el sitio o entorno acordado, instrucciones de arranque y demo, SRS o anexo de trazabilidad, diagramas de arquitectura, datos y procesos, y checklist con evidencias. Ensayar los tres recorridos y verificar los accesos antes de la presentación.
+
+### Subfases de F6
+
+| Subfase | Entrada para cerrar | Trabajo | Evidencia de cierre |
+|---|---|---|---|
+| **F6.1 · Matriz, casos y guiones** | Puede empezar con el SRS v2. Se consolida con los acuerdos de F0.1. | Identificar criterios, roles, datos de prueba y trazas. Preparar guiones de demo y revisión cruzada para los tres modos. | Cada criterio obligatorio tiene caso y resultado esperado. Los tres guiones están listos para ejecutar con el candidato. |
+| **F6.2 · Regresión y aceptación del candidato** | F6.1 y F0–F5 cerradas. | Ejecutar el catálogo contra un único commit. Revisar permisos, aislamiento, accesibilidad en móvil y escritorio y métricas de cálculo y rendimiento. | El 100 % de los criterios obligatorios tiene evidencia aprobada. Cero defectos críticos o altos abiertos. |
+| **F6.3 · Despliegue y recuperación** | F6.1 y candidato identificado. Cierra con el mismo commit verificado en F6.2. | Verificar instalación, actualización, respaldo, restauración, sesión y pruebas rápidas en el entorno de entrega. | El equipo reproduce el entorno y recupera el respaldo. Las pruebas rápidas pasan después de instalar y restaurar. |
+| **F6.4 · Paquete de entrega y ensayo** | F6.2 y F6.3. Los borradores de documentación avanzan desde F6.1. | Consolidar instructivo, trazabilidad, diagramas, evidencias y checklist. Ensayar la demo y verificar accesos y enlaces. | Paquete accesible, enlaces comprobados y tres recorridos de demo aprobados con el entorno y las cuentas acordados. |
+
+### Pruebas de F6
 
 | Área a revisar | Pruebas pertinentes |
 |---|---|

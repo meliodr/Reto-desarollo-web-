@@ -1,6 +1,8 @@
 # Identidad visual de SISPLAN
 
-**Propuesta para la aplicación académica · 12 de noviembre de 2026**
+**Antecedente de la propuesta visual · 12 de noviembre de 2026**
+
+La dirección visual vigente para esta rama es [SISPLAN Flow V4](FLOW-V4.md). Se conservan las reglas funcionales, semánticas y de trazabilidad descritas aquí; la marca y los colores históricos quedan sustituidos.
 
 SISPLAN usa la estructura de un expediente de planificación. Al abrir una actividad, el responsable puede ver a qué objetivo contribuye, qué se programó para el período y qué evidencia respalda lo ejecutado. El diseño conserva esa relación también en los cortes de evaluación.
 

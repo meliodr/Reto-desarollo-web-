@@ -34,13 +34,9 @@ SISPLAN identifica el sistema en el SRS. La base v1.0 usa SISPLAN como nombre pa
 
 **Motivo:** conservar el mismo nombre en el SRS, la aplicación y el paquete de entrega.
 
-## D-05. Conciliar la semana 6 con el plazo del aula
+## D-05. Preparar el candidato para la semana 7
 
-**Estado:** pendiente de conciliación.
-
-La consigna disponible establece cierre el **2 de diciembre de 2026 a las 23:59**. También se ha planteado un objetivo de trabajo para la **semana 6**, al que todavía no se asigna una fecha.
-
-**Motivo:** evitar calendarios contradictorios. El plazo del aula se conserva como referencia actual hasta aclarar cómo se relaciona con ese objetivo.
+La semana 4 está en curso. El primer ensayo está previsto para la semana 5 y la validación del candidato para el cierre de la semana 6. La entrega y presentación se programan para la semana 7. El cierre del 2 de diciembre a las 23:59 correspondía a la consigna anterior y se debe verificar en el aula durante la semana 4. [Hitos, capacidad y criterio de entrega](plan-sisplan/12-ENTREGA-SEMANA-7.md)
 
 ## D-06. Separar la preparación de la implementación
 

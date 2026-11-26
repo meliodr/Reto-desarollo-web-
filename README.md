@@ -31,7 +31,7 @@ En el entorno de desarrollo se aprobaron **21 pruebas del portal**: 17 del servi
 
 El [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) incorpora la carga DIGEMAPS, el nuevo flujo de aprobación del PEI y la creación de POA en ambas modalidades con presupuesto de referencia opcional. La aplicación usa Angular, .NET, PostgreSQL y Keycloak.
 
-La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 23:59**. El objetivo de trabajo referido a la **semana 6** está pendiente de conciliar con ese plazo; todavía no se le asigna una fecha.
+Estamos en la **semana 4**. El primer recorrido de punta a punta se ensaya en la semana 5 y el candidato debe quedar validado al terminar la semana 6, listo para la semana 7. El plazo oficial del aula sigue por verificar. [Calendario, capacidad y criterios de entrega](docs/plan-sisplan/12-ENTREGA-SEMANA-7.md)
 
 ## Documentación
 

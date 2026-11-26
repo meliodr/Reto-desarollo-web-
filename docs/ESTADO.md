@@ -70,13 +70,11 @@ El flujo actual y el presupuesto opcional se rigen por la [adaptación al SRS v2
 
 ## Calendario de referencia
 
-La consigna disponible indica apertura el **1 de diciembre de 2026 a las 00:00** y cierre el **2 de diciembre de 2026 a las 23:59**.
-
-El objetivo referido a la **semana 6** está pendiente de conciliar con ese plazo. Por ahora no se fija una fecha distinta de la visible en el aula.
+Estamos en la semana 4. El objetivo es entregar en la semana 7 con el candidato validado al cierre de la semana 6. La consigna anterior mostraba un cierre el 2 de diciembre de 2026 a las 23:59. La vigencia de esa fecha se verifica en el aula en semana 4. [Calendario de trabajo y capacidad del equipo](plan-sisplan/12-ENTREGA-SEMANA-7.md)
 
 ## Trabajo siguiente
 
-1. Registrar en el tablero responsables, revisores y horas disponibles.
-2. Revisar el SRS v2 con el grupo y verificar la rúbrica, el formato de entrega y el plazo en el aula.
-3. Revisar el PR #1 frente al SRS v2, reproducir el entorno y comprobar acceso con MFA.
-4. Completar la programación de productos y actividades sobre un POA en borrador.
+1. Confirmar responsables, revisores y horas del equipo al cerrar la semana 4.
+2. Verificar la rúbrica y el plazo del aula y cerrar las decisiones de publicación, Comité y MFA.
+3. Preparar las cuentas y los datos aislados para el primer ensayo.
+4. Construir y probar el POA mínimo de la semana 5 con un producto, una actividad, una meta y un responsable.

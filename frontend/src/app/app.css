@@ -41,3 +41,8 @@
 .flow-shell.guest .nav-text { display:block; }
 @media(max-width:760px) { .flow-shell { padding:8px;gap:8px; } .flow-shell .institutional-header { width:min(185px,42vw);flex-basis:min(185px,42vw);top:8px;height:calc(100vh - 16px); } .flow-shell.compact .institutional-header { width:52px;flex-basis:52px; } .compact .institutional-header-inner { padding:6px; } .flow-shell .brand>span { font-size:14px; } .flow-shell .institutional-nav-link { font-size:11px; } .flow-topbar { padding:8px; } }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important;transition:none!important; } }
+
+@media(max-width:500px) {
+  .flow-shell:not(.guest):not(.compact) .institutional-header { position:fixed; z-index:25; left:8px; width:min(220px,82vw); box-shadow:0 8px 40px #17203340; }
+  .flow-shell:not(.guest):not(.compact) .workspace { margin-left:0; }
+}

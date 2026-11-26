@@ -1349,3 +1349,18 @@ tbody tr:hover td,tbody tr:focus-within td { background:var(--soft); }
 .flow-access { max-width:580px;margin:7vh auto; }
 @media(max-width:760px) { .flow-dashboard-grid { grid-template-columns:1fr; } .flow-bento { grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); } .flow-tile { min-height:138px;padding:14px; } }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important;transition:none!important; } }
+
+/* Explicit foregrounds on shared controls and surfaces in both themes. */
+.skip-link { background:var(--surface);color:var(--ink); }
+.search-field svg { color:var(--muted); }
+input[type="checkbox"],input[type="radio"],input[type="range"] { accent-color:var(--blue); }
+.form-section-heading,.form-section-body,.form-aside { min-width:0; }
+.flow-dashboard-panel,.page-heading { overflow-wrap:anywhere; }
+.flow-tile { min-width:0;overflow-wrap:anywhere; }
+.flow-bento { grid-template-columns:repeat(auto-fit,minmax(min(165px,100%),1fr)); }
+.flow-dashboard-panel p { margin-top:12px; }
+@media(max-width:760px) {
+  .flow-bento { grid-template-columns:repeat(auto-fit,minmax(min(125px,100%),1fr)); }
+  .page-heading h1 { font-size:clamp(23px,6vw,34px); }
+  .button { white-space:normal; }
+}

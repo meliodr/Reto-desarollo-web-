@@ -1,12 +1,11 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, CanDeactivateFn, Router, Routes } from '@angular/router';
 import { Session } from './auth/session';
+import { InstitutionHome } from './institution-home';
 
 export interface PendingChanges {
   canLeave(): boolean;
 }
-
-import { InstitutionHome } from './institution-home';
 
 const pendingChangesGuard: CanDeactivateFn<PendingChanges> = (component) =>
   component?.canLeave() ?? true;

@@ -28,13 +28,14 @@ summary {
   color: var(--muted);
 }
 .poa-current {
-  color: #275842;
+  color: var(--accent);
 }
 .poa-detail {
   margin: 0 0 12px;
   border-left: 3px solid var(--blue);
   padding: 12px;
-  background: #edf4fc;
+  background: var(--soft);
+  border-radius: 12px;
 }
 .poa-detail h3 {
   margin-top: 12px;

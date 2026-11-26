@@ -69,7 +69,8 @@
 .mediciones-panel {
   padding: 12px;
   margin-top: 12px;
-  background: #edf4fc;
+  background: var(--soft);
+  border-radius: 12px;
 }
 
 .indicadores-panel legend {

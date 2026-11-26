@@ -57,17 +57,12 @@ internal sealed class SesionInstitucional(NpgsqlDataSource pool) : IAsyncDisposa
 
         const string sql = """
             SELECT i.id, i.nombre, m.rol, m.dependencia_id, i.pei_habilitado, i.poa_habilitado
-            FROM sisplan.membresia m JOIN sisplan.institucion i ON i.id = m.institucion_id
-            LEFT JOIN sisplan.dependencia d ON (d.institucion_id, d.id) = (m.institucion_id, m.dependencia_id)
-            WHERE m.emisor = @emisor AND m.sujeto = @sujeto AND m.activa AND i.activa
-              AND (m.dependencia_id IS NULL OR d.activa)
-              AND (m.rol NOT IN ('ResponsableArea', 'DirectorArea') OR d.activa)
+            FROM sisplan.membresias_actuales() m
+            JOIN sisplan.institucion i ON i.id = m.institucion_id
             ORDER BY i.id;
             """;
         await using (var memberships = CreateCommand(sql))
         {
-            memberships.Parameters.AddWithValue("emisor", emisor);
-            memberships.Parameters.AddWithValue("sujeto", sujeto);
             await using var reader = await memberships.ExecuteReaderAsync(ct);
             while (await reader.ReadAsync(ct))
                 Instituciones.Add(new(reader.GetGuid(0), reader.GetString(1), reader.GetString(2),

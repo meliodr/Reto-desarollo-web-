@@ -6,6 +6,20 @@ La [implementación F0](14-CONTRATO-F0.md) y el [arranque vigente](../../backend
 
 El primer objetivo de F0 es que PEI y POA puedan trabajar con un contrato común y datos aislados. El recorrido de semana 5 necesita dos instituciones, permisos efectivos y trazabilidad de las escrituras que se van a demostrar. El [plan completo](11-PLAN-POR-FASES-SRS-V2.md#subfases-de-f0) mantiene los criterios de cierre de F0 y el [calendario](12-ENTREGA-SEMANA-7.md) sitúa el candidato al final de la semana 6.
 
+## Verificación de la implementación
+
+El [PR #2](https://github.com/meliodr/Reto-desarollo-web-/pull/2) contiene el cambio completo sobre el primer incremento. La [ejecución del 26 de noviembre](https://github.com/meliodr/Reto-desarollo-web-/actions/runs/45903950040) verificó lo siguiente en un entorno desechable.
+
+| Caso | Comprobación ejecutada |
+|---|---|
+| F0-01 y F0-08 | Quince identidades de Keycloak, acceso con PKCE, token expirado, cierre de sesión y segundo factor TOTP de Máxima Autoridad en Chromium. |
+| F0-02 | Ocho actores y Comité. Acciones concedidas y denegadas en las transiciones PEI, escritura POA por área, consulta del auditor y rechazo de una dependencia inactiva. |
+| F0-03 a F0-05 | Dos POA del mismo año, duplicado institucional rechazado, relaciones y detalles en su ámbito. Solicitudes A y B alternadas con una sola conexión en el grupo de la API. |
+| F0-06 | Instalación limpia y actualización del ejecutable anterior con datos. Segunda ejecución de migraciones, conservación de IDs, vínculos y presupuestos y verificación del historial de escrituras. |
+| F0-07 | PEI y POA por separado y juntos. El cambio de institución en Angular actualiza las acciones y el historial visible. |
+
+Angular pasó 26 pruebas y la compilación de producción. Los cinco recorridos HTTP del primer incremento también pasaron. Las dos capturas del recorrido en navegador están en el artefacto **capturas-f0** de la ejecución. Los [controles de la revisión actual](https://github.com/meliodr/Reto-desarollo-web-/pull/2/checks) vuelven a ejecutar la matriz con cada cambio del PR.
+
 ## Punto de partida comprobado
 
 | Área | Evidencia del 26 de noviembre | Implicación para F0 |

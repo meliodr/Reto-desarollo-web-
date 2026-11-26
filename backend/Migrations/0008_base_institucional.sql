@@ -169,9 +169,10 @@ CREATE POLICY instituciones_propias ON sisplan.institucion FOR SELECT USING (
 );
 ALTER TABLE sisplan.dependencia ENABLE ROW LEVEL SECURITY;
 CREATE POLICY dependencias_propias ON sisplan.dependencia FOR SELECT USING (
-    EXISTS (SELECT FROM sisplan.membresias_actuales() m WHERE m.institucion_id=dependencia.institucion_id
-        AND (dependencia.id=m.dependencia_id OR
-            (dependencia.institucion_id=sisplan.institucion_actual() AND m.dependencia_id IS NULL)))
+    institucion_id=sisplan.institucion_actual() AND EXISTS (
+        SELECT FROM sisplan.membresias_actuales() m WHERE m.institucion_id=dependencia.institucion_id
+          AND (m.dependencia_id IS NULL OR dependencia.id=m.dependencia_id)
+    )
 );
 ALTER TABLE sisplan.periodo ENABLE ROW LEVEL SECURITY;
 CREATE POLICY periodos_propios ON sisplan.periodo FOR SELECT USING (
@@ -212,21 +213,26 @@ BEGIN
         lectura := format('(%s) AND (SELECT sisplan.rol_modulo(%L)) IS NOT NULL', alcance,modulo);
         escritores := CASE
             WHEN modulo='poa' THEN ARRAY['DirectorPlanificacion','AnalistaPlanificacion','Planificador','ResponsableArea']
-            WHEN tabla IN ('pei_version','pei_transicion') THEN ARRAY['DirectorPlanificacion','AnalistaPlanificacion','Planificador','MaximaAutoridad','ComiteEstrategico']
             ELSE ARRAY['AnalistaPlanificacion','Planificador'] END;
         escritura := format('(%s) AND (SELECT sisplan.rol_modulo(%L))=ANY(%L::text[])', alcance,modulo,escritores);
-
-        IF tabla='poa' THEN
-            escritura := escritura || ' AND (dependencia_id IS NULL OR EXISTS (SELECT FROM sisplan.dependencia d WHERE d.id=poa.dependencia_id AND d.activa))';
-        END IF;
 
         EXECUTE format('ALTER TABLE sisplan.%I ALTER COLUMN institucion_id SET NOT NULL, ALTER COLUMN institucion_id SET DEFAULT sisplan.institucion_actual()',tabla);
         EXECUTE format('ALTER TABLE sisplan.%I ENABLE ROW LEVEL SECURITY',tabla);
         EXECUTE format('ALTER TABLE sisplan.%I FORCE ROW LEVEL SECURITY',tabla);
         EXECUTE format('CREATE POLICY lectura ON sisplan.%I FOR SELECT TO sisplan_app USING (%s)',tabla,lectura);
+        IF tabla='pei_transicion' THEN
+            -- Su política de inserción se define abajo; el historial es de solo anexado.
+            GRANT SELECT,INSERT ON sisplan.pei_transicion TO sisplan_app;
+            CONTINUE;
+        END IF;
         EXECUTE format('CREATE POLICY alta ON sisplan.%I FOR INSERT TO sisplan_app WITH CHECK (%s)',tabla,escritura);
+        IF tabla='eje_version' THEN
+            -- Editar un eje agrega una revisión, igual que registrar una transición agrega un evento.
+            GRANT SELECT,INSERT ON sisplan.eje_version TO sisplan_app;
+            CONTINUE;
+        END IF;
         -- Las transiciones bloquean la raíz PEI y su versión antes de cambiar el estado.
-        IF tabla='pei' THEN
+        IF tabla IN ('pei','pei_version') THEN
             escritura := format('(%s) AND (SELECT sisplan.rol_modulo(''pei'')) IN (''DirectorPlanificacion'',''AnalistaPlanificacion'',''Planificador'',''MaximaAutoridad'',''ComiteEstrategico'')',alcance);
         END IF;
         EXECUTE format('CREATE POLICY cambio ON sisplan.%I FOR UPDATE TO sisplan_app USING (%s) WITH CHECK (%s)',tabla,escritura,escritura);
@@ -234,6 +240,54 @@ BEGIN
         EXECUTE format('GRANT SELECT,INSERT,UPDATE ON sisplan.%I TO sisplan_app',tabla);
     END LOOP;
 END $$;
+
+CREATE POLICY alta ON sisplan.pei_transicion FOR INSERT TO sisplan_app WITH CHECK (
+    institucion_id=sisplan.institucion_actual()
+    AND emisor=current_setting('sisplan.emisor',true) AND sujeto=current_setting('sisplan.sujeto',true)
+    AND CASE (SELECT sisplan.rol_modulo('pei'))
+        WHEN 'AnalistaPlanificacion' THEN accion IN ('enviar','corregir')
+        WHEN 'Planificador' THEN accion IN ('enviar','corregir')
+        WHEN 'DirectorPlanificacion' THEN accion IN ('revisar','devolver','publicar')
+        WHEN 'ComiteEstrategico' THEN accion IN ('validar_comite','devolver')
+        WHEN 'MaximaAutoridad' THEN accion IN ('aprobar','devolver')
+        ELSE false END
+);
+
+-- Se revisan las asignaciones nuevas o modificadas. Una baja posterior del
+-- módulo PEI o de la dependencia conserva el vínculo y los campos autónomos del POA.
+-- El bloqueo compartido impide que el catálogo cambie durante la asignación.
+CREATE FUNCTION sisplan.validar_asignacion_poa() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE
+    cambia_vinculo boolean;
+    asigna_dependencia boolean;
+BEGIN
+    IF TG_OP='INSERT' THEN
+        cambia_vinculo := NEW.pei_id IS NOT NULL;
+        asigna_dependencia := NEW.dependencia_id IS NOT NULL;
+    ELSE
+        cambia_vinculo := (NEW.pei_id,NEW.pei_version_id) IS DISTINCT FROM (OLD.pei_id,OLD.pei_version_id);
+        asigna_dependencia := NEW.dependencia_id IS NOT NULL
+            AND (NEW.institucion_id,NEW.dependencia_id) IS DISTINCT FROM (OLD.institucion_id,OLD.dependencia_id);
+    END IF;
+    IF cambia_vinculo THEN
+        PERFORM 1 FROM sisplan.institucion WHERE id=NEW.institucion_id AND pei_habilitado AND activa FOR SHARE;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'La institución no tiene habilitado el vínculo con un PEI.' USING ERRCODE='42501';
+        END IF;
+    END IF;
+    IF asigna_dependencia THEN
+        PERFORM 1 FROM sisplan.dependencia
+        WHERE institucion_id=NEW.institucion_id AND id=NEW.dependencia_id AND activa FOR SHARE;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'La dependencia de destino no está disponible en la institución.' USING ERRCODE='42501';
+        END IF;
+    END IF;
+    RETURN NULL;
+END $$;
+CREATE TRIGGER validar_asignacion AFTER INSERT OR UPDATE OF pei_id,pei_version_id,dependencia_id,institucion_id
+ON sisplan.poa FOR EACH ROW EXECUTE FUNCTION sisplan.validar_asignacion_poa();
+REVOKE ALL ON FUNCTION sisplan.validar_asignacion_poa() FROM PUBLIC;
 
 CREATE TABLE sisplan.auditoria (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

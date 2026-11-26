@@ -99,6 +99,63 @@ BEGIN
         RAISE EXCEPTION 'F0-02: el área inactiva obtuvo datos.';
     END IF;
 END $$;
+SELECT set_config('sisplan.sujeto','30000000-0000-4000-8000-000000000004',true);
+UPDATE sisplan.pei_version SET estado='publicado' WHERE id='50000000-0000-4000-8000-000000000002';
+INSERT INTO sisplan.pei_transicion(pei_version_id,revision,accion,estado_anterior,estado_nuevo,emisor,sujeto)
+VALUES ('50000000-0000-4000-8000-000000000002',2,'enviar','borrador','en_revision',
+        'http://127.0.0.1:8080/realms/sisplan','30000000-0000-4000-8000-000000000004');
+DO $$
+BEGIN
+    BEGIN
+        UPDATE sisplan.pei_transicion SET motivo='Nota posterior'
+        WHERE pei_version_id='50000000-0000-4000-8000-000000000002' AND revision=2;
+        IF FOUND THEN RAISE EXCEPTION 'F0-06: la API editó una transición histórica.'; END IF;
+    EXCEPTION WHEN insufficient_privilege THEN NULL;
+    END;
+    BEGIN
+        DELETE FROM sisplan.pei_transicion
+        WHERE pei_version_id='50000000-0000-4000-8000-000000000002' AND revision=2;
+        IF FOUND THEN RAISE EXCEPTION 'F0-06: la API eliminó una transición histórica.'; END IF;
+    EXCEPTION WHEN insufficient_privilege THEN NULL;
+    END;
+    IF NOT EXISTS (SELECT FROM sisplan.pei_transicion WHERE pei_version_id='50000000-0000-4000-8000-000000000002'
+                   AND revision=2 AND motivo IS NULL AND accion='enviar') THEN
+        RAISE EXCEPTION 'F0-06: no se conservó la transición original.';
+    END IF;
+    BEGIN
+        INSERT INTO sisplan.poa(id,anio,fecha_inicio,fecha_fin,dependencia_id)
+        VALUES ('50000000-0000-4000-8000-000000000010',2044,'2044-01-01','2044-12-31',
+                '00000000-0000-4000-8000-000000000103');
+        RAISE EXCEPTION 'F0-02: el analista asignó un POA a una dependencia inactiva.';
+    EXCEPTION WHEN insufficient_privilege THEN NULL;
+    END;
+END $$;
+INSERT INTO sisplan.poa(id,anio,fecha_inicio,fecha_fin,pei_id,pei_version_id)
+VALUES ('50000000-0000-4000-8000-000000000011',2043,'2043-01-01','2043-12-31',
+        '50000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000002');
+
+RESET ROLE;
+INSERT INTO sisplan.membresia(emisor,sujeto,institucion_id,rol,dependencia_id)
+VALUES ('http://127.0.0.1:8080/realms/sisplan','30000000-0000-4000-8000-000000000005',
+        '00000000-0000-4000-8000-000000000002','ResponsableArea','00000000-0000-4000-8000-000000000201');
+SET LOCAL ROLE sisplan_app;
+SELECT set_config('sisplan.sujeto','30000000-0000-4000-8000-000000000005',true);
+DO $$
+DECLARE
+    institucion uuid;
+    visibles uuid[];
+BEGIN
+    FOREACH institucion IN ARRAY ARRAY['00000000-0000-4000-8000-000000000001'::uuid,
+                                       '00000000-0000-4000-8000-000000000002'::uuid] LOOP
+        PERFORM set_config('sisplan.institucion_id',institucion::text,true);
+        SELECT array_agg(id) INTO visibles FROM sisplan.dependencia;
+        IF visibles IS DISTINCT FROM ARRAY[CASE institucion WHEN '00000000-0000-4000-8000-000000000001'
+               THEN '00000000-0000-4000-8000-000000000101'::uuid ELSE '00000000-0000-4000-8000-000000000201'::uuid END] THEN
+            RAISE EXCEPTION 'F0-04: la cuenta de dos áreas recibió dependencias ajenas al contexto %.', institucion;
+        END IF;
+    END LOOP;
+END $$;
+SELECT set_config('sisplan.institucion_id','00000000-0000-4000-8000-000000000001',true);
 RESET ROLE;
 UPDATE sisplan.institucion SET pei_habilitado=false WHERE id='00000000-0000-4000-8000-000000000001';
 SET LOCAL ROLE sisplan_app;
@@ -108,6 +165,18 @@ BEGIN
     IF EXISTS (SELECT FROM sisplan.pei) OR NOT EXISTS (SELECT FROM sisplan.poa WHERE id='50000000-0000-4000-8000-000000000003') THEN
         RAISE EXCEPTION 'F0-07: el modo solo POA no aisló los módulos.';
     END IF;
+    UPDATE sisplan.poa SET presupuesto_referencia=15.25 WHERE id='50000000-0000-4000-8000-000000000011';
+    IF NOT FOUND OR NOT EXISTS (SELECT FROM sisplan.poa WHERE id='50000000-0000-4000-8000-000000000011'
+                                AND presupuesto_referencia=15.25 AND pei_id='50000000-0000-4000-8000-000000000001') THEN
+        RAISE EXCEPTION 'F0-07: el POA anterior perdió su referencia o su operación autónoma.';
+    END IF;
+    BEGIN
+        INSERT INTO sisplan.poa(id,anio,fecha_inicio,fecha_fin,pei_id,pei_version_id)
+        VALUES ('50000000-0000-4000-8000-000000000012',2042,'2042-01-01','2042-12-31',
+                '50000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000002');
+        RAISE EXCEPTION 'F0-07: se creó un vínculo nuevo con el módulo PEI deshabilitado.';
+    EXCEPTION WHEN insufficient_privilege THEN NULL;
+    END;
 END $$;
 RESET ROLE;
 UPDATE sisplan.institucion SET pei_habilitado=true,poa_habilitado=false

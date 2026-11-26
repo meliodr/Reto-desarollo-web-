@@ -104,6 +104,10 @@ def check_workflow(api, draft):
     for action, owner, allowed in sequence:
         state, tag = advance(tag, action, owner, allowed)
     assert state == "publicado"
+    link = {"anio": int(draft["fechaInicio"][:4]), "peiId": pei["id"]}
+    linked, _ = api("04", "/poas", 201, "POST", link)
+    assert linked["peiId"] == pei["id"]
+    api("10", "/poas", 409, "POST", link, institution=B)
     print("F0-02: matriz de transiciones recorrida con los nueve actores y devoluciones en tres etapas.")
 
 

@@ -1,6 +1,6 @@
 # API de planificación estratégica
 
-La API .NET 10 usa PostgreSQL para formular, revisar y publicar PEI y para crear o consultar POA independientes o vinculados. [Configurar Keycloak para el flujo del SRS v2](../docs/plan-sisplan/10-ADAPTACION-SRS-V2.md#verificación-del-incremento).
+La API .NET 10 usa PostgreSQL para formular, revisar y publicar PEI y para crear o consultar POA independientes o vinculados. [Matriz de permisos del SRS v2](../docs/plan-sisplan/14-CONTRATO-F0.md#matriz-de-autorización-del-incremento).
 
 ## Arranque local de F0
 

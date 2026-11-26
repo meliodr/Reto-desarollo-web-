@@ -99,6 +99,8 @@ def crear_poa_de_area(page: Page):
         page.get_by_role("button", name="Guardar POA", exact=True).click()
     assert alta.value.status == 201 and alta.value.json()["dependenciaId"] == area
     expect(page.get_by_text("POA 2230 creado.", exact=True)).to_be_visible()
+    fila = page.get_by_role("row").filter(has=page.get_by_role("cell", name="2230", exact=True))
+    expect(fila.get_by_role("cell", name="Tecnología", exact=True)).to_be_visible()
     print("Angular: el analista asignó un POA a una dependencia activa de su institución.")
 
 
@@ -133,6 +135,7 @@ def verificar(page: Page, password: str, semilla: str, directory: Path | None, m
     expect(page.get_by_text("Consultando POA…", exact=True)).to_have_count(0)
     expect(page.get_by_role("heading", name="Planes operativos anuales")).to_be_visible()
     expect(page.get_by_role("button", name="Crear POA")).to_have_count(0)
+    expect(page.get_by_role("cell", name="2230", exact=True)).to_have_count(0)
 
     with page.expect_response(lambda r: r.url == WEB + "/api/v1/auditoria") as consulta:
         auditoria.click()

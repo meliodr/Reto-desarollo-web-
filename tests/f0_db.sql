@@ -24,6 +24,32 @@ VALUES ('50000000-0000-4000-8000-000000000002', '50000000-0000-4000-8000-0000000
 INSERT INTO sisplan.poa(id, anio, fecha_inicio, fecha_fin)
 VALUES ('50000000-0000-4000-8000-000000000003', 2040, '2040-01-01', '2040-12-31');
 
+-- La misma conexión pierde el acceso al desactivar la membresía o la institución.
+SAVEPOINT bajas_temporales;
+RESET ROLE;
+DO $$
+DECLARE
+    caso text;
+    visible boolean;
+BEGIN
+    FOREACH caso IN ARRAY ARRAY['activo','membresia_inactiva','institucion_inactiva'] LOOP
+        UPDATE sisplan.membresia SET activa = caso <> 'membresia_inactiva'
+        WHERE emisor=current_setting('sisplan.emisor') AND sujeto=current_setting('sisplan.sujeto')
+          AND institucion_id=sisplan.institucion_actual();
+        UPDATE sisplan.institucion SET activa = caso <> 'institucion_inactiva' WHERE id=sisplan.institucion_actual();
+        SET LOCAL ROLE sisplan_app;
+        visible := caso = 'activo';
+        IF EXISTS (SELECT FROM sisplan.membresias_actuales()) IS DISTINCT FROM visible
+           OR EXISTS (SELECT FROM sisplan.dependencia) IS DISTINCT FROM visible
+           OR EXISTS (SELECT FROM sisplan.pei) IS DISTINCT FROM visible
+           OR EXISTS (SELECT FROM sisplan.poa) IS DISTINCT FROM visible
+        THEN RAISE EXCEPTION 'F0-04: el acceso institucional o a dependencias discrepa en el caso %.', caso;
+        END IF;
+        RESET ROLE;
+    END LOOP;
+END $$;
+ROLLBACK TO SAVEPOINT bajas_temporales;
+
 SELECT set_config('sisplan.sujeto', '30000000-0000-4000-8000-000000000010', true),
        set_config('sisplan.institucion_id', '00000000-0000-4000-8000-000000000002', true);
 INSERT INTO sisplan.poa(id, anio, fecha_inicio, fecha_fin)

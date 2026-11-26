@@ -1,0 +1,192 @@
+[
+  {
+    "nombre": "Conducción",
+    "objetivos": [
+      {
+        "codigo": "DIG-04",
+        "nombre": "Liderar la reorientación de la gestión de la regulación de productos de consumo humano para asegurar su seguridad y eficacia, mediante la implementación de políticas y programas que intervengan en…",
+        "descripcion": "1. Liderar la reorientación de la gestión de la regulación de productos de consumo humano para asegurar su seguridad y eficacia, mediante la implementación de políticas y programas que intervengan en la gestión de los riesgos asociados a dichos productos.",
+        "resultadoEsperado": "Mayor seguridad y eficacia en los productos de consumo humano.",
+        "indicador": "Índice de seguridad y eficacia de los productos",
+        "lineaAccion": "Desarrollar y ejecutar políticas y programas que aborden los riesgos asociados a los productos."
+      },
+      {
+        "codigo": "DIG-05",
+        "nombre": "Desarrollar un enfoque de liderazgo orientado a la equidad, identificando y abordando las desigualdades en la exposición a riesgos y en las consecuencias derivadas de la utilización de productos de…",
+        "descripcion": "2. Desarrollar un enfoque de liderazgo orientado a la equidad, identificando y abordando las desigualdades en la exposición a riesgos y en las consecuencias derivadas de la utilización de productos de consumo humano, con programas adaptados a las necesidades específicas de diversos grupos de usuarios.",
+        "resultadoEsperado": "Reducción de desigualdades en la exposición a riesgos y consecuencias de los productos.",
+        "indicador": "Índice de desigualdad en la exposición a riesgos",
+        "lineaAccion": "Implementar programas adaptados a necesidades específicas de grupos de usuarios."
+      },
+      {
+        "codigo": "DIG-06",
+        "nombre": "Consolidar la agencia como un mecanismo eficiente de protección del consumidor, contribuyendo a la reducción de la inequidad en el acceso a productos seguros y de calidad, generando confianza y…",
+        "descripcion": "3. Consolidar la agencia como un mecanismo eficiente de protección del consumidor, contribuyendo a la reducción de la inequidad en el acceso a productos seguros y de calidad, generando confianza y satisfacción en la población, así como un respaldo gubernamental sólido.",
+        "resultadoEsperado": "Incremento en la confianza y satisfacción del consumidor, y respaldo gubernamental.",
+        "indicador": "Índice de confianza y satisfacción del consumidor",
+        "lineaAccion": "Fortalecer la eficiencia y transparencia de la agencia para generar confianza y satisfacción en la población."
+      },
+      {
+        "codigo": "DIG-07",
+        "nombre": "Implementar una cultura de excelencia en la regulación de productos, mediante el desarrollo y ejecución de políticas de calidad, junto con herramientas para la evaluación y mejora continua de los…",
+        "descripcion": "4. Implementar una cultura de excelencia en la regulación de productos, mediante el desarrollo y ejecución de políticas de calidad, junto con herramientas para la evaluación y mejora continua de los procesos reguladores.",
+        "resultadoEsperado": "Mejora en la calidad y eficacia de los procesos reguladores.",
+        "indicador": "Índice de mejora continua de procesos reguladores",
+        "lineaAccion": "Desarrollar y ejecutar políticas de calidad, y establecer mecanismos de evaluación y mejora continua."
+      },
+      {
+        "codigo": "DIG-08",
+        "nombre": "Promover la coordinación interinstitucional y la participación de diversos actores en la regulación de productos de consumo humano, integrando esfuerzos para garantizar la seguridad y eficacia de…",
+        "descripcion": "5. Promover la coordinación interinstitucional y la participación de diversos actores en la regulación de productos de consumo humano, integrando esfuerzos para garantizar la seguridad y eficacia de los mismos, así como para responder eficazmente a las emergencias sanitarias y proteger la salud pública.",
+        "resultadoEsperado": "Coordinación efectiva entre instituciones y actores para garantizar la seguridad y eficacia de los productos.",
+        "indicador": "Índice de coordinación interinstitucional",
+        "lineaAccion": "Fomentar la colaboración y coordinación entre instituciones y actores para abordar emergencias sanitarias."
+      }
+    ]
+  },
+  {
+    "nombre": "Regulación, Vigilancia y Control",
+    "objetivos": [
+      {
+        "codigo": "DIG-09",
+        "nombre": "Fortalecer los mecanismos de regulación y control sanitario.",
+        "descripcion": "1. Fortalecer los mecanismos de regulación y control sanitario.",
+        "resultadoEsperado": "Reducción de riesgos para la salud pública.",
+        "indicador": "Número de inspecciones realizadas",
+        "lineaAccion": "Reforzar la inspección y vigilancia en puntos críticos de control."
+      },
+      {
+        "codigo": "DIG-10",
+        "nombre": "Actualizar y mejorar los estándares y normativas vigentes.",
+        "descripcion": "2. Actualizar y mejorar los estándares y normativas vigentes.",
+        "resultadoEsperado": "Adecuación a estándares internacionales y avances científicos.",
+        "indicador": "Número de normativas actualizadas",
+        "lineaAccion": "Revisar y actualizar constantemente las regulaciones conforme a las mejores prácticas y avances de tecnologías sanitarias."
+      },
+      {
+        "codigo": "DIG-11",
+        "nombre": "Incrementar la eficacia en la detección y respuesta ante emergencias sanitarias.",
+        "descripcion": "3. Incrementar la eficacia en la detección y respuesta ante emergencias sanitarias.",
+        "resultadoEsperado": "Mejora en la capacidad de respuesta y coordinación en situaciones de emergencia.",
+        "indicador": "Tiempo de respuesta ante emergencias",
+        "lineaAccion": "Establecer protocolos de actuación ante situaciones de crisis y realizar simulacros periódicos."
+      }
+    ]
+  },
+  {
+    "nombre": "Atención al usuario",
+    "objetivos": [
+      {
+        "codigo": "DIG-12",
+        "nombre": "Mejorar la accesibilidad y la calidad en la atención al usuario.",
+        "descripcion": "1. Mejorar la accesibilidad y la calidad en la atención al usuario.",
+        "resultadoEsperado": "Aumento en la satisfacción y percepción positiva de los usuarios.",
+        "indicador": "Índice de satisfacción del usuario",
+        "lineaAccion": "Implementar canales de atención ágiles y eficientes, así como programas de retroalimentación y mejora continua."
+      },
+      {
+        "codigo": "DIG-13",
+        "nombre": "Facilitar el acceso a la información relevante sobre regulaciones y servicios.",
+        "descripcion": "2. Facilitar el acceso a la información relevante sobre regulaciones y servicios.",
+        "resultadoEsperado": "Mayor difusión y comprensión de las normativas y procesos.",
+        "indicador": "Número de consultas atendidas",
+        "lineaAccion": "Desarrollar plataformas y materiales informativos accesibles y comprensibles para el público en general."
+      },
+      {
+        "codigo": "DIG-14",
+        "nombre": "Garantizar la transparencia en los procesos de atención y trámites.",
+        "descripcion": "3. Garantizar la transparencia en los procesos de atención y trámites.",
+        "resultadoEsperado": "Mayor confianza y credibilidad por parte de los usuarios.",
+        "indicador": "Índice de transparencia en trámites",
+        "lineaAccion": "Implementar sistemas de seguimiento y rendición de cuentas en la gestión de trámites y servicios."
+      }
+    ]
+  },
+  {
+    "nombre": "Fortalecimiento y desarrollo organizacional",
+    "objetivos": [
+      {
+        "codigo": "DIG-15",
+        "nombre": "Fomentar la capacitación y el desarrollo profesional del personal.",
+        "descripcion": "1. Fomentar la capacitación y el desarrollo profesional del personal.",
+        "resultadoEsperado": "Mejora en las competencias y habilidades del equipo de trabajo.",
+        "indicador": "Porcentaje de personal capacitado",
+        "lineaAccion": "Implementar programas de formación continua y planes de carrera para el personal."
+      },
+      {
+        "codigo": "DIG-16",
+        "nombre": "Optimizar la estructura organizativa y los procesos internos.",
+        "descripcion": "2. Optimizar la estructura organizativa y los procesos internos.",
+        "resultadoEsperado": "Mayor eficiencia y agilidad en la gestión de recursos y tareas.",
+        "indicador": "Tiempo promedio de respuesta a solicitudes",
+        "lineaAccion": "Realizar análisis y reestructuraciones organizativas según las necesidades identificadas."
+      },
+      {
+        "codigo": "DIG-17",
+        "nombre": "Promover un ambiente laboral saludable y motivador.",
+        "descripcion": "3. Promover un ambiente laboral saludable y motivador.",
+        "resultadoEsperado": "Reducción en el ausentismo y aumento en el compromiso laboral.",
+        "indicador": "Tasa de ausentismo",
+        "lineaAccion": "Implementar políticas de bienestar y reconocimiento del personal."
+      }
+    ]
+  },
+  {
+    "nombre": "Imagen y posicionamiento",
+    "objetivos": [
+      {
+        "codigo": "DIG-18",
+        "nombre": "Fortalecer la percepción pública de la agencia como líder en regulación sanitaria.",
+        "descripcion": "1. Fortalecer la percepción pública de la agencia como líder en regulación sanitaria.",
+        "resultadoEsperado": "Mayor reconocimiento y prestigio en la opinión pública.",
+        "indicador": "Índice de reconocimiento institucional",
+        "lineaAccion": "Desarrollar campañas de comunicación y sensibilización sobre el papel y la importancia de la agencia en la sociedad."
+      },
+      {
+        "codigo": "DIG-19",
+        "nombre": "Mejorar la comunicación y la divulgación de las actividades y logros de la agencia.",
+        "descripcion": "2. Mejorar la comunicación y la divulgación de las actividades y logros de la agencia.",
+        "resultadoEsperado": "Mayor visibilidad y entendimiento de las acciones realizadas.",
+        "indicador": "Número de menciones en medios de comunicación",
+        "lineaAccion": "Implementar estrategias de comunicación efectiva y relaciones públicas proactivas."
+      },
+      {
+        "codigo": "DIG-20",
+        "nombre": "Posicionar la marca institucional como referente de calidad y confiabilidad.",
+        "descripcion": "3. Posicionar la marca institucional como referente de calidad y confiabilidad.",
+        "resultadoEsperado": "Aumento en la confianza y preferencia por los servicios regulados por la agencia.",
+        "indicador": "Índice de confianza en la marca",
+        "lineaAccion": "Desarrollar una identidad visual sólida y consistente, así como promover la participación en eventos y foros relevantes."
+      }
+    ]
+  },
+  {
+    "nombre": "Gestión de Tecnología, Información y Comunicación",
+    "objetivos": [
+      {
+        "codigo": "DIG-21",
+        "nombre": "Modernizar y optimizar los sistemas de información y gestión.",
+        "descripcion": "1. Modernizar y optimizar los sistemas de información y gestión.",
+        "resultadoEsperado": "Mayor eficiencia y seguridad en la gestión de datos y procesos.",
+        "indicador": "Nivel de satisfacción con los sistemas informáticos",
+        "lineaAccion": "Actualizar y mantener sistemas informáticos y plataformas digitales de manera constante."
+      },
+      {
+        "codigo": "DIG-22",
+        "nombre": "Facilitar el acceso y la disponibilidad de información relevante para los usuarios.",
+        "descripcion": "2. Facilitar el acceso y la disponibilidad de información relevante para los usuarios.",
+        "resultadoEsperado": "Mejora en la accesibilidad y transparencia de la información.",
+        "indicador": "Tiempo promedio de respuesta a consultas",
+        "lineaAccion": "Desarrollar y mantener bases de datos y portales de información actualizados y accesibles."
+      },
+      {
+        "codigo": "DIG-23",
+        "nombre": "Promover el uso de tecnologías innovadoras para mejorar la eficiencia y calidad de los servicios.",
+        "descripcion": "3. Promover el uso de tecnologías innovadoras para mejorar la eficiencia y calidad de los servicios.",
+        "resultadoEsperado": "Mayor agilidad y precisión en la prestación de servicios.",
+        "indicador": "Número de herramientas tecnológicas implementadas",
+        "lineaAccion": "Identificar y adoptar tecnologías emergentes que optimicen la gestión de servicios y procesos."
+      }
+    ]
+  }
+]

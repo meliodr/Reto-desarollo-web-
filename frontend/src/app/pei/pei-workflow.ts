@@ -8,15 +8,21 @@ import { PeiAction, PeiWorkflowApi } from './pei-workflow-api';
 const actionLabels: Record<PeiAction, string> = {
   enviar: 'Enviar a revisión',
   aprobar: 'Aprobar PEI',
-  devolver: 'Devolver a borrador',
+  revisar: 'Completar revisión técnica',
+  validar_comite: 'Validar en comité',
+  corregir: 'Marcar como corregido',
+  devolver: 'Observar PEI',
   publicar: 'Publicar PEI',
 };
 
 const successMessages: Record<PeiAction, string> = {
   enviar: 'PEI enviado a revisión.',
   aprobar: 'PEI aprobado.',
-  devolver: 'PEI devuelto a borrador.',
-  publicar: 'PEI publicado. Sus POA anuales están disponibles.',
+  revisar: 'Revisión técnica registrada.',
+  validar_comite: 'Validación del comité registrada.',
+  corregir: 'Corrección registrada.',
+  devolver: 'PEI observado.',
+  publicar: 'PEI publicado. Puedes vincularle un POA desde Planes operativos.',
 };
 
 @Component({
@@ -50,7 +56,7 @@ export class PeiWorkflow {
     effect((cleanup) => {
       const plan = this.pei();
       this.returnReason.set(null);
-      if (!this.session.canPlan() || plan.estado === 'publicado') {
+      if (!(this.session.canRead() || this.session.canPlan()) || plan.estado === 'publicado') {
         this.actions.set([]);
         this.loading.set(false);
         return;
@@ -86,7 +92,7 @@ export class PeiWorkflow {
   transition(action: PeiAction) {
     const etag = this.etag();
     if (
-      !this.session.canPlan() ||
+      !(this.session.canRead() || this.session.canPlan()) ||
       !etag ||
       this.dirty() ||
       this.pending() ||

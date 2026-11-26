@@ -14,16 +14,9 @@ internal sealed class FlujoPeiRepository(NpgsqlDataSource source, PeiRepository 
         if (snapshot is null)
             return null;
 
-        var actions = snapshot.Pei.Estado switch
-        {
-            "borrador" => new[] { "enviar" },
-            "en_revision" => await IsSubmitterAsync(versionId, actor, connection, null, ct)
-                ? new[] { "devolver" } : new[] { "aprobar", "devolver" },
-            "aprobado" => new[] { "publicar" },
-            _ => Array.Empty<string>()
-        };
+        var actions = await AllowedActionsAsync(snapshot.Pei.Estado, versionId, actor, connection, null, ct);
         string? returnReason = null;
-        if (snapshot.Pei.Estado == "borrador")
+        if (snapshot.Pei.Estado is "observado" or "corregido" or "borrador")
         {
             await using var command = new NpgsqlCommand("""
                 SELECT motivo FROM sisplan.pei_transicion
@@ -50,20 +43,23 @@ internal sealed class FlujoPeiRepository(NpgsqlDataSource source, PeiRepository 
 
         var state = snapshot.Pei.Estado;
         if (action == "publicar" && state == "publicado")
-            return new(FlujoPeiStatus.Saved, snapshot);
+            return actor.Director ? new(FlujoPeiStatus.Saved, snapshot) : new(FlujoPeiStatus.Forbidden);
 
-        var next = (state, action) switch
-        {
-            ("borrador", "enviar") => "en_revision",
-            ("en_revision", "aprobar") => "aprobado",
-            ("en_revision", "devolver") => "borrador",
-            ("aprobado", "publicar") => "publicado",
-            _ => null
-        };
-        if (next is null)
+        if (!IsActionForState(state, action))
             return new(FlujoPeiStatus.Conflict);
-        if (action == "aprobar" && await IsSubmitterAsync(versionId, actor, connection, transaction, ct))
-            return new(FlujoPeiStatus.SelfApproval);
+        var allowed = await AllowedActionsAsync(state, versionId, actor, connection, transaction, ct);
+        if (!allowed.Contains(action))
+            return new(FlujoPeiStatus.Forbidden);
+
+        var next = action switch
+        {
+            "enviar" => "en_revision",
+            "devolver" => "observado",
+            "corregir" => "corregido",
+            "aprobar" => "aprobado",
+            "publicar" => "publicado",
+            _ => state,
+        };
 
         if (action is "aprobar" or "publicar")
         {
@@ -78,7 +74,6 @@ internal sealed class FlujoPeiRepository(NpgsqlDataSource source, PeiRepository 
                 await publishLock.ExecuteNonQueryAsync(ct);
             if (await OverlapsAsync(snapshot.Pei, connection, transaction, ct))
                 return new(FlujoPeiStatus.OverlappingPeriod);
-            await GeneratePoasAsync(snapshot.Pei, connection, transaction, ct);
         }
 
         const string updateSql = """
@@ -109,7 +104,7 @@ internal sealed class FlujoPeiRepository(NpgsqlDataSource source, PeiRepository 
                    e.id, e.cuatrimestre, e.fecha_inicio, e.fecha_fin, e.estado
             FROM sisplan.poa a
             JOIN sisplan.pei_version v ON v.id = a.pei_version_id
-            JOIN sisplan.poa_evaluacion e ON e.poa_id = a.id
+            LEFT JOIN sisplan.poa_evaluacion e ON e.poa_id = a.id
             WHERE a.pei_id = @peiId
             ORDER BY a.anio, e.cuatrimestre
             """;
@@ -127,7 +122,8 @@ internal sealed class FlujoPeiRepository(NpgsqlDataSource source, PeiRepository 
             if (poas.Count == 0 || poas[^1].Id != id)
                 poas.Add(new FlujoPeiPoaDto(id, reader.GetInt32(1), reader.GetString(2),
                     reader.GetFieldValue<DateOnly>(3), reader.GetFieldValue<DateOnly>(4), reader.GetBoolean(5), []));
-            poas[^1].Evaluaciones.Add(new FlujoPeiEvaluacionDto(reader.GetGuid(6), reader.GetInt32(7),
+            if (!reader.IsDBNull(6))
+                poas[^1].Evaluaciones.Add(new FlujoPeiEvaluacionDto(reader.GetGuid(6), reader.GetInt32(7),
                 reader.GetFieldValue<DateOnly>(8), reader.GetFieldValue<DateOnly>(9), reader.GetString(10)));
         }
         return poas;
@@ -168,19 +164,56 @@ internal sealed class FlujoPeiRepository(NpgsqlDataSource source, PeiRepository 
             : null;
     }
 
-    private static async Task<bool> IsSubmitterAsync(Guid versionId, FlujoPeiActor actor, NpgsqlConnection connection,
-        NpgsqlTransaction? transaction, CancellationToken ct)
+    private static bool IsActionForState(string state, string action) => state switch
     {
+        "borrador" or "corregido" => action == "enviar",
+        "observado" => action == "corregir",
+        "en_revision" => action is "revisar" or "validar_comite" or "aprobar" or "devolver",
+        "aprobado" => action == "publicar",
+        _ => false,
+    };
+
+    private static async Task<string[]> AllowedActionsAsync(string state, Guid versionId, FlujoPeiActor actor,
+        NpgsqlConnection connection, NpgsqlTransaction? transaction, CancellationToken ct)
+    {
+        if (state is "borrador" or "corregido")
+            return actor.Analista ? ["enviar"] : [];
+        if (state == "observado")
+            return actor.Analista ? ["corregir"] : [];
+        if (state == "aprobado")
+            return actor.Director ? ["publicar"] : [];
+        if (state != "en_revision")
+            return [];
+
         const string sql = """
-            SELECT emisor = @emisor AND sujeto = @sujeto FROM sisplan.pei_transicion
-            WHERE pei_version_id = @id AND accion = 'enviar' ORDER BY revision DESC LIMIT 1
+            SELECT accion, emisor = @emisor AND sujeto = @sujeto
+            FROM sisplan.pei_transicion
+            WHERE pei_version_id = @id AND accion IN ('enviar', 'revisar', 'validar_comite')
+            ORDER BY revision DESC
             """;
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("id", versionId);
         command.Parameters.AddWithValue("emisor", actor.Emisor);
         command.Parameters.AddWithValue("sujeto", actor.Sujeto);
-        // Una revisión sin un envío registrado tampoco habilita la aprobación.
-        return await command.ExecuteScalarAsync(ct) is not false;
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        string? stage = null;
+        while (await reader.ReadAsync(ct))
+        {
+            var step = reader.GetString(0);
+            stage ??= step;
+            if (reader.GetBoolean(1))
+                return [];
+            if (step == "enviar")
+                break;
+        }
+
+        return stage switch
+        {
+            "enviar" when actor.Director => ["revisar", "devolver"],
+            "revisar" when actor.Comite => ["validar_comite", "devolver"],
+            "validar_comite" when actor.Autoridad => ["aprobar", "devolver"],
+            _ => [],
+        };
     }
 
     private static async Task<bool> HasCompleteStructureAsync(Guid versionId, NpgsqlConnection connection,
@@ -224,41 +257,6 @@ internal sealed class FlujoPeiRepository(NpgsqlDataSource source, PeiRepository 
         command.Parameters.AddWithValue("inicio", NpgsqlDbType.Date, pei.FechaInicio);
         command.Parameters.AddWithValue("fin", NpgsqlDbType.Date, pei.FechaFin);
         return await command.ExecuteScalarAsync(ct) is true;
-    }
-
-    private static async Task GeneratePoasAsync(PeiDto pei, NpgsqlConnection connection,
-        NpgsqlTransaction transaction, CancellationToken ct)
-    {
-        const string sql = """
-            WITH planes AS (
-                INSERT INTO sisplan.poa (id, pei_id, pei_version_id, anio, fecha_inicio, fecha_fin)
-                SELECT gen_random_uuid(), @peiId, @versionId, anio,
-                    GREATEST(@inicio, make_date(anio, 1, 1)),
-                    LEAST(@fin, make_date(anio, 12, 31))
-                FROM generate_series(@anioInicio, @anioFin) anio
-                ON CONFLICT (pei_id, anio) DO NOTHING
-                RETURNING id, anio, fecha_inicio, fecha_fin
-            )
-            INSERT INTO sisplan.poa_evaluacion (id, poa_id, cuatrimestre, fecha_inicio, fecha_fin, estado)
-            SELECT gen_random_uuid(), p.id, c.numero, fechas.inicio, fechas.fin,
-                CASE WHEN fechas.fin < p.fecha_inicio OR fechas.inicio > p.fecha_fin
-                     THEN 'fuera_de_vigencia' ELSE 'generada' END
-            FROM planes p
-            CROSS JOIN (VALUES (1, 1, 4, 30), (2, 5, 8, 31), (3, 9, 12, 31))
-                AS c(numero, mes_inicio, mes_fin, dia_fin)
-            CROSS JOIN LATERAL (
-                SELECT make_date(p.anio, c.mes_inicio, 1) AS inicio,
-                       make_date(p.anio, c.mes_fin, c.dia_fin) AS fin
-            ) fechas
-            """;
-        await using var command = new NpgsqlCommand(sql, connection, transaction);
-        command.Parameters.AddWithValue("peiId", pei.Id);
-        command.Parameters.AddWithValue("versionId", pei.VersionId);
-        command.Parameters.AddWithValue("anioInicio", pei.FechaInicio.Year);
-        command.Parameters.AddWithValue("anioFin", pei.FechaFin.Year);
-        command.Parameters.AddWithValue("inicio", NpgsqlDbType.Date, pei.FechaInicio);
-        command.Parameters.AddWithValue("fin", NpgsqlDbType.Date, pei.FechaFin);
-        await command.ExecuteNonQueryAsync(ct);
     }
 
     private static async Task RecordTransitionAsync(Guid versionId, long revision, string action, string previous,

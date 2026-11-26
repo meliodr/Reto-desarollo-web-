@@ -121,7 +121,7 @@ export class PeiForm implements OnInit {
   isReadOnly() {
     const current = this.current();
     return (
-      (current !== null && current.estado !== 'borrador') ||
+      (current !== null && !['borrador', 'observado'].includes(current.estado)) ||
       (this.session.enabled() && !this.session.canPlan())
     );
   }

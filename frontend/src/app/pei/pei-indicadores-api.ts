@@ -16,7 +16,12 @@ export interface IndicadorWrite {
   frecuencia: string;
 }
 
-export interface Indicador extends IndicadorWrite {
+export interface Indicador extends Pick<IndicadorWrite, 'nombre'> {
+  formula: string | null;
+  unidad: string | null;
+  lineaBase: string | null;
+  meta: string | null;
+  frecuencia: string | null;
   id: string;
 }
 

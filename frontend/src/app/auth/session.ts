@@ -6,6 +6,8 @@ export class Session {
   private client: Keycloak | null = null;
   readonly enabled = signal(false);
   readonly authenticated = signal(false);
+  readonly canRead = signal(false);
+  readonly canFormulatePoa = signal(false);
   readonly canPlan = signal(false);
   readonly name = signal('');
   readonly error = signal('');
@@ -60,7 +62,24 @@ export class Session {
   private refreshState() {
     const active = this.client?.authenticated === true;
     this.authenticated.set(active);
-    this.canPlan.set(active && this.client?.hasResourceRole('Planificador') === true);
+    const has = (role: string) => active && this.client?.hasResourceRole(role) === true;
+    const analyst = has('AnalistaPlanificacion') || has('Planificador');
+    const director = has('DirectorPlanificacion');
+    const responsible = has('ResponsableArea');
+    this.canPlan.set(analyst);
+    this.canFormulatePoa.set(analyst || director || responsible);
+    this.canRead.set(
+      analyst ||
+        director ||
+        responsible ||
+        [
+          'ComiteEstrategico',
+          'MaximaAutoridad',
+          'AdministradorInstitucional',
+          'DirectorArea',
+          'Auditor',
+        ].some(has),
+    );
     const username = this.client?.tokenParsed?.['preferred_username'];
     this.name.set(typeof username === 'string' ? username : '');
   }

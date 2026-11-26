@@ -8,7 +8,7 @@
       <button
         type="button"
         class="button button-primary"
-        [disabled]="loading() || !!loadError() || !!editor() || editLoading()"
+        [disabled]="importing() || loading() || !!loadError() || !!editor() || editLoading()"
         (click)="startCreate()"
       >
         Agregar eje
@@ -107,6 +107,16 @@
       <button type="button" class="button button-secondary" (click)="load()">Reintentar</button>
     } @else if (!ejes().length) {
       <p class="eje-muted">Este PEI todavía no tiene ejes.</p>
+      @if (!readOnly() && !editor()) {
+        <button
+          class="button button-secondary"
+          type="button"
+          [disabled]="importing()"
+          (click)="importDigemaps()"
+        >
+          {{ importing() ? 'Cargando DIGEMAPS…' : 'Cargar estructura DIGEMAPS' }}
+        </button>
+      }
     } @else {
       <ul class="eje-list">
         @for (eje of ejes(); track eje.id) {

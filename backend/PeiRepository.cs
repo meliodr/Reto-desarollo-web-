@@ -73,7 +73,7 @@ internal sealed class PeiRepository(NpgsqlDataSource source)
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await using (var locked = new NpgsqlCommand("""
             SELECT revision FROM sisplan.pei_version
-            WHERE id = @id AND estado = 'borrador' FOR UPDATE
+            WHERE id = @id AND estado IN ('borrador', 'observado') FOR UPDATE
             """, connection, transaction))
         {
             locked.Parameters.AddWithValue("id", versionId);
@@ -105,7 +105,7 @@ internal sealed class PeiRepository(NpgsqlDataSource source)
             SET nombre = @nombre, tipo = @tipo, fecha_inicio = @fechaInicio, fecha_fin = @fechaFin,
                 mision = @mision, vision = @vision, valores = @valores,
                 revision = revision + 1, actualizado_en = clock_timestamp()
-            WHERE id = @id AND revision = @revision AND estado = 'borrador'
+            WHERE id = @id AND revision = @revision AND estado IN ('borrador', 'observado')
             RETURNING {Fields}
             """;
         await using var command = new NpgsqlCommand(sql, connection, transaction);

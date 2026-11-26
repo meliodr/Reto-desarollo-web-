@@ -18,6 +18,13 @@ export interface Eje extends EjeWrite {
 export class PeiEjesApi {
   private readonly http = inject(HttpClient);
 
+  importDigemaps(peiId: string) {
+    return this.http.post<{ ejes: number; objetivos: number; indicadores: number }>(
+      `/api/v1/peis/${encodeURIComponent(peiId)}/catalogo-digemaps`,
+      {},
+    );
+  }
+
   list(peiId: string) {
     return this.http.get<Eje[]>(this.url(peiId));
   }

@@ -65,7 +65,7 @@ internal sealed class EjeRepository(NpgsqlDataSource source, PeiRepository peis)
         var parent = await LockCurrentPeiVersionAsync(peiId, connection, transaction, cancellationToken);
         if (parent is null)
             return new(EjeWriteStatus.NotFound);
-        if (parent.Value.State != "borrador")
+        if (!PeiEstados.Editable(parent.Value.State))
             return new(EjeWriteStatus.Conflict);
 
         var ejeId = Guid.NewGuid();
@@ -94,7 +94,7 @@ internal sealed class EjeRepository(NpgsqlDataSource source, PeiRepository peis)
         var current = await FindCurrentAsync(parent.Value.Id, ejeId, connection, transaction, cancellationToken);
         if (current is null)
             return new(EjeWriteStatus.NotFound);
-        if (parent.Value.State != "borrador")
+        if (!PeiEstados.Editable(parent.Value.State))
             return new(EjeWriteStatus.Conflict);
         if (current.Revision != revision)
             return new(EjeWriteStatus.Stale);

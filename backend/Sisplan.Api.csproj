@@ -9,5 +9,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <EmbeddedResource Include="Migrations/*.sql" />
+    <EmbeddedResource Include="Catalogos/*.json" />
   </ItemGroup>
 </Project>

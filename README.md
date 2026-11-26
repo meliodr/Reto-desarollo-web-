@@ -2,7 +2,7 @@
 
 Proyecto académico de INTEC para un equipo de **cinco integrantes**.
 
-El sistema debe gestionar la planificación estratégica y operativa de una institución y relacionar los objetivos del PEI con los productos, las actividades, los avances y las evidencias del POA. La aplicación se entrega con el nombre **SISPLAN**, que utiliza el SRS. La dirección visual propuesta está en la guía de identidad.
+**SISPLAN** permite trabajar con el PEI y el POA por separado o vincularlos cuando una institución usa ambos módulos. El [SRS v2 y su adaptación](docs/plan-sisplan/10-ADAPTACION-SRS-V2.md) orientan el alcance del reto.
 
 [Portal del proyecto](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/)
 
@@ -10,19 +10,14 @@ El sistema debe gestionar la planificación estratégica y operativa de una inst
 
 La consigna y la **Especificación de Requerimientos de Software SISPLAN** definen el alcance original. Los archivos **Ejes y Objetivos DIGEMAPS (1).xlsx** y **POA TI 2026 V2.xlsx** sirven como referencias para los datos estratégicos y la programación operativa.
 
-El análisis identifica 18 requisitos funcionales, 7 reglas de negocio, 2 requisitos no funcionales y 3 casos de uso oficiales. El portal presenta también 9 casos de uso propuestos, separados de los originales.
+La [matriz anterior](docs/plan-sisplan/05-TRAZABILIDAD.md) documenta los requisitos numerados de la v1.
 
 ## Proceso principal
 
-1. Formular el PEI con sus ejes, objetivos, resultados, indicadores y metas.
-2. Generar un POA por cada año del PEI.
-3. Registrar productos y actividades con responsables, programación y presupuesto.
-4. Registrar avances físicos y financieros y adjuntar evidencias.
-5. Evaluar el cumplimiento en tres cuatrimestres.
-6. Elaborar planes correctivos cuando el cumplimiento sea menor al 70 %.
-7. Consultar resultados y generar reportes con auditoría de los cambios.
-
-Cada producto debe mantener su relación con el eje, el objetivo y el indicador estratégico al que contribuye.
+1. Cargar la estructura estratégica y preparar el PEI.
+2. Enviar a revisión, registrar observaciones y corregir. El director revisa, el comité valida y la máxima autoridad aprueba.
+3. Publicar el PEI y abrir el POA anual como plan independiente o vinculado.
+4. En el módulo operativo, programar productos y actividades, registrar avances y evidencias y evaluar resultados.
 
 ## Ampliación solicitada
 
@@ -34,11 +29,13 @@ El portal de trabajo v2 está publicado. Permite asignar tareas, completar check
 
 En el entorno de desarrollo se aprobaron **21 pruebas del portal**: 17 del servicio del tablero y 4 regresiones de interfaz. La incorporación y los recorridos con las cinco cuentas reales siguen pendientes.
 
-El plan base v1.0 fija el alcance, las reglas operativas, el reparto y las herramientas. El equipo eligió **Angular**. La base técnica usa .NET 10, PostgreSQL 18 y Keycloak con MFA. El recorrido de formulación, publicación del PEI y generación de POA está en [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1), en revisión.
+El [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) incorpora la carga DIGEMAPS, el nuevo flujo de aprobación del PEI y la creación de POA en ambas modalidades. La aplicación usa Angular, .NET, PostgreSQL y Keycloak.
 
 La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 23:59**. El objetivo de trabajo referido a la **semana 6** está pendiente de conciliar con ese plazo; todavía no se le asigna una fecha.
 
 ## Documentación
+
+- [Adaptación y alcance del SRS v2](docs/plan-sisplan/10-ADAPTACION-SRS-V2.md)
 
 - [Arranque local y pruebas de la aplicación](docs/plan-sisplan/06-PRIMER-INCREMENTO.md)
 - [QA del recorrido PEI–POA](docs/plan-sisplan/09-QA-PEI-POA.md)

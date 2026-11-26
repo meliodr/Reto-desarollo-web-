@@ -18,7 +18,11 @@
               <summary>
                 <span class="poa-year">POA {{ poa.anio }}</span>
                 <span class="poa-state">{{
-                  poa.estado === 'formulacion' ? 'En formulación' : poa.estado
+                  poa.estado === 'borrador'
+                    ? 'Borrador'
+                    : poa.estado === 'formulacion'
+                      ? 'En formulación'
+                      : poa.estado
                 }}</span>
                 @if (poa.vigente) {
                   <span class="poa-current">Vigente</span>
@@ -29,19 +33,21 @@
                   Período del POA: {{ poa.fechaInicio | date: 'dd/MM/yyyy' }} –
                   {{ poa.fechaFin | date: 'dd/MM/yyyy' }}
                 </p>
-                <h3>Evaluaciones cuatrimestrales</h3>
-                <ul>
-                  @for (periodo of poa.evaluaciones; track periodo.id) {
-                    <li>
-                      <strong>Cuatrimestre {{ periodo.cuatrimestre }}</strong>
-                      <span
-                        >{{ periodo.fechaInicio | date: 'dd/MM/yyyy' }} –
-                        {{ periodo.fechaFin | date: 'dd/MM/yyyy' }}</span
-                      >
-                      <span>{{ periodLabel(periodo.estado) }}</span>
-                    </li>
-                  }
-                </ul>
+                @if (poa.evaluaciones.length) {
+                  <h3>Evaluaciones del plan anterior</h3>
+                  <ul>
+                    @for (periodo of poa.evaluaciones; track periodo.id) {
+                      <li>
+                        <strong>Cuatrimestre {{ periodo.cuatrimestre }}</strong>
+                        <span
+                          >{{ periodo.fechaInicio | date: 'dd/MM/yyyy' }} –
+                          {{ periodo.fechaFin | date: 'dd/MM/yyyy' }}</span
+                        >
+                        <span>{{ periodLabel(periodo.estado) }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
               </div>
             </details>
           </li>

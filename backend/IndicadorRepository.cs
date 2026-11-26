@@ -38,8 +38,9 @@ internal sealed class IndicadorRepository(NpgsqlDataSource source)
         do
         {
             if (!reader.IsDBNull(0))
-                result.Add(new(reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
-                    reader.GetDecimal(4), reader.GetDecimal(5), reader.GetString(6)));
+                result.Add(new(reader.GetGuid(0), reader.GetString(1), reader.IsDBNull(2) ? null : reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetString(3),
+                    reader.IsDBNull(4) ? null : reader.GetDecimal(4), reader.IsDBNull(5) ? null : reader.GetDecimal(5),
+                    reader.IsDBNull(6) ? null : reader.GetString(6)));
         } while (await reader.ReadAsync(cancellationToken));
         return result;
     }
@@ -89,11 +90,11 @@ internal sealed class IndicadorRepository(NpgsqlDataSource source)
         command.Parameters.AddWithValue("id", data.Id);
         command.Parameters.AddWithValue("objetivoId", objetivoId);
         command.Parameters.AddWithValue("nombre", data.Nombre);
-        command.Parameters.AddWithValue("formula", data.Formula);
-        command.Parameters.AddWithValue("unidad", data.Unidad);
-        command.Parameters.AddWithValue("lineaBase", data.LineaBase);
-        command.Parameters.AddWithValue("meta", data.Meta);
-        command.Parameters.AddWithValue("frecuencia", data.Frecuencia);
+        command.Parameters.AddWithValue("formula", data.Formula!);
+        command.Parameters.AddWithValue("unidad", data.Unidad!);
+        command.Parameters.AddWithValue("lineaBase", data.LineaBase!.Value);
+        command.Parameters.AddWithValue("meta", data.Meta!.Value);
+        command.Parameters.AddWithValue("frecuencia", data.Frecuencia!);
         await command.ExecuteNonQueryAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return IndicadorWriteStatus.Saved;
@@ -166,7 +167,7 @@ internal sealed class IndicadorRepository(NpgsqlDataSource source)
     {
         if (parent is null)
             return IndicadorWriteStatus.NotFound;
-        if (parent.Value.State != "borrador")
+        if (!PeiEstados.Editable(parent.Value.State))
             return IndicadorWriteStatus.ReadOnlyPei;
         return parent.Value.AxisActive ? IndicadorWriteStatus.Saved : IndicadorWriteStatus.InactiveAxis;
     }

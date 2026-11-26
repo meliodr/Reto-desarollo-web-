@@ -103,8 +103,18 @@ app.MapGet("/api/configuracion", () => Results.Ok(new
 }));
 var api = app.MapGroup("/api/v1");
 if (oidc is not null)
-    api.RequireAuthorization("Planificador");
-api.MapEjes();
+    api.RequireAuthorization("LeerPlanes");
+var estrategia = api.MapGroup("");
+if (oidc is not null)
+    ((IEndpointConventionBuilder)estrategia).Add(endpoint =>
+    {
+        var methods = endpoint.Metadata.OfType<IHttpMethodMetadata>().LastOrDefault()?.HttpMethods;
+        if (methods?.Any(method => method is not ("GET" or "HEAD")) == true)
+            endpoint.Metadata.Add(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute("EditarPei"));
+    });
+estrategia.MapEjes();
+estrategia.MapCatalogoPei();
+api.MapPoas(oidc is not null);
 api.MapFlujoPei();
 api.MapGet("/peis", async (PeiRepository repository, CancellationToken cancellationToken) =>
     Results.Ok(await repository.ListAsync(cancellationToken)));
@@ -118,7 +128,7 @@ api.MapGet("/peis/{id:guid}", async (Guid id, HttpResponse response, PeiReposito
     return Results.Ok(snapshot.Pei);
 });
 
-api.MapPost("/peis", async (HttpRequest request, HttpResponse response, PeiRepository repository, CancellationToken cancellationToken) =>
+estrategia.MapPost("/peis", async (HttpRequest request, HttpResponse response, PeiRepository repository, CancellationToken cancellationToken) =>
 {
     var (fields, error) = await ReadFieldsAsync(request, cancellationToken);
     if (error is not null)
@@ -129,7 +139,7 @@ api.MapPost("/peis", async (HttpRequest request, HttpResponse response, PeiRepos
     return Results.Created($"/api/v1/peis/{snapshot.Pei.Id:D}", snapshot.Pei);
 });
 
-api.MapPatch("/pei-versiones/{versionId:guid}", async (Guid versionId, HttpRequest request, HttpResponse response,
+estrategia.MapPatch("/pei-versiones/{versionId:guid}", async (Guid versionId, HttpRequest request, HttpResponse response,
     PeiRepository repository, CancellationToken cancellationToken) =>
 {
     var expected = request.Headers.IfMatch.ToString();
@@ -142,8 +152,8 @@ api.MapPatch("/pei-versiones/{versionId:guid}", async (Guid versionId, HttpReque
     if (!string.Equals(expected, current.ETag, StringComparison.Ordinal))
         return StaleVersion();
 
-    if (current.Pei.Estado != "borrador")
-        return Results.Problem(statusCode: 409, title: "Solo se pueden editar borradores de PEI.");
+    if (!PeiEstados.Editable(current.Pei.Estado))
+        return Results.Problem(statusCode: 409, title: "El PEI no está disponible para edición.");
 
     var (fields, error) = await ReadFieldsAsync(request, cancellationToken);
     if (error is not null)

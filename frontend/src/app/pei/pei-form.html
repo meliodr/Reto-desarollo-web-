@@ -10,7 +10,9 @@
           ? 'Crear borrador de PEI'
           : isReadOnly()
             ? 'Consultar PEI'
-            : 'Editar borrador de PEI'
+            : current()?.estado === 'observado'
+              ? 'Corregir PEI observado'
+              : 'Editar borrador de PEI'
       }}
     </h1>
   </div>
@@ -312,7 +314,7 @@
     </div>
   </form>
   @if (current(); as pei) {
-    @if (session.canPlan()) {
+    @if (session.canRead() || session.canPlan()) {
       <app-pei-workflow
         [pei]="pei"
         [etag]="etag()"

@@ -23,6 +23,11 @@ export const routes: Routes = [
     canDeactivate: [pendingChangesGuard],
   },
   {
+    path: 'poas',
+    title: 'Planes operativos · SISPLAN',
+    loadComponent: () => import('./poa/poa-list').then((m) => m.PoaList),
+  },
+  {
     path: '**',
     title: 'Página no encontrada · SISPLAN',
     loadComponent: () => import('./pei/not-found').then((m) => m.NotFound),

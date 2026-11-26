@@ -3,7 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs';
 import { Pei, VersionedPei } from './pei-api';
 
-export type PeiAction = 'enviar' | 'aprobar' | 'devolver' | 'publicar';
+export type PeiAction =
+  'enviar' | 'revisar' | 'validar_comite' | 'aprobar' | 'devolver' | 'corregir' | 'publicar';
 
 export interface PoaPeriod {
   id: string;

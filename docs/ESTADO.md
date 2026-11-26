@@ -1,10 +1,12 @@
 # Estado del proyecto
 
+La [adaptación al SRS v2](plan-sisplan/10-ADAPTACION-SRS-V2.md) recoge el alcance vigente. La información sobre el portal documenta su publicación anterior.
+
 ## Situación actual
 
 | Componente | Estado | Detalle |
 |---|---|---|
-| Consigna y SRS | Analizados | 11 páginas revisadas; 18 RF, 7 RN, 2 RNF y 3 casos de uso oficiales |
+| Consigna y SRS | Analizados | SRS v2 comparado con el SRS original y las dos hojas de cálculo |
 | Catálogo DIGEMAPS | Analizado | 6 ejes y 20 objetivos con resultados, indicadores y líneas de acción |
 | POA TI 2026 | Analizado | 11 registros de productos con metas mensuales y datos pendientes |
 | Organización del equipo | Cinco plazas configuradas | Incorporación y recorridos con las cinco cuentas reales pendientes |
@@ -13,8 +15,8 @@
 | Nombre de la aplicación | SISPLAN | Nombre de trabajo para la entrega académica |
 | Arquitectura | Definida en la base | Angular 22, .NET 10 LTS, PostgreSQL 18, Npgsql y Keycloak con MFA. Demo local reproducible |
 | Actividades no planificadas | Regla de trabajo definida | [Registro, autorización e incorporación](plan-sisplan/07-REGLAS-OPERATIVAS.md#trabajo-no-planificado-proyectos-riesgos-y-alertas) |
-| Implementación del sistema institucional | Prototipo en PR | [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) cubre formulación y publicación del PEI y generación de POA en desarrollo local |
-| Pruebas del sistema institucional | Verificación parcial del prototipo | 19 pruebas Angular e integración en Chromium con Keycloak, .NET y PostgreSQL. [Verificación de QA](plan-sisplan/09-QA-PEI-POA.md). La aceptación del SRS se mide sobre la entrega integrada |
+| Implementación del sistema institucional | Prototipo en PR | [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) cubre carga DIGEMAPS, revisión y publicación del PEI, y creación de POA independiente o vinculado |
+| Pruebas del sistema institucional | Verificación parcial del prototipo | 20 pruebas Angular y prueba de integración con .NET, Keycloak y PostgreSQL. [Verificación del incremento v2](plan-sisplan/10-ADAPTACION-SRS-V2.md). La aceptación del SRS se mide sobre la entrega integrada |
 | Despliegue del sistema institucional | Pendiente | El portal publicado contiene documentación del proyecto |
 | Cumplimiento global del SRS | Sin calcular | La versión integrada y sus criterios de aceptación siguen pendientes |
 
@@ -75,6 +77,6 @@ El objetivo referido a la **semana 6** está pendiente de conciliar con ese plaz
 ## Trabajo siguiente
 
 1. Registrar en el tablero responsables, revisores y horas disponibles.
-2. Revisar la base v1.0 con el grupo y verificar la rúbrica, el formato de entrega y el plazo en el aula.
+2. Revisar el SRS v2 con el grupo y verificar la rúbrica, el formato de entrega y el plazo en el aula.
 3. Revisar el PR #1 frente a la base, reproducir el entorno y comprobar acceso con MFA.
-4. Ejecutar el primer corte de PEI publicado, POA generado y actividad programada.
+4. Completar la programación de productos y actividades sobre un POA en borrador.

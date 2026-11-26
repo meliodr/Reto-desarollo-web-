@@ -8,25 +8,25 @@ internal static class FlujoPeiEndpoints
     public static void MapFlujoPei(this RouteGroupBuilder api)
     {
         var transitions = api.MapGroup("/pei-versiones/{versionId:guid}/transiciones")
-            .RequireAuthorization("Planificador");
+            .RequireAuthorization("LeerPlanes");
         transitions.MapGet("", OptionsAsync);
         transitions.MapPost("", ApplyAsync);
-        api.MapGet("/peis/{peiId:guid}/poas", ListPoasAsync).RequireAuthorization("Planificador");
+        api.MapGet("/peis/{peiId:guid}/poas", ListPoasAsync).RequireAuthorization("LeerPlanes");
     }
 
-    private static async Task<IResult> OptionsAsync(Guid versionId, ClaimsPrincipal user,
+    private static async Task<IResult> OptionsAsync(Guid versionId, ClaimsPrincipal user, IConfiguration configuration,
         FlujoPeiRepository repository, CancellationToken ct)
     {
-        if (Actor(user) is not { } actor)
+        if (Actor(user, configuration) is not { } actor)
             return Results.Forbid();
         var options = await repository.OptionsAsync(versionId, actor, ct);
         return options is null ? MissingPei() : Results.Ok(options);
     }
 
-    private static async Task<IResult> ApplyAsync(Guid versionId, ClaimsPrincipal user, HttpRequest request,
+    private static async Task<IResult> ApplyAsync(Guid versionId, ClaimsPrincipal user, IConfiguration configuration, HttpRequest request,
         HttpResponse response, FlujoPeiRepository repository, CancellationToken ct)
     {
-        if (Actor(user) is not { } actor)
+        if (Actor(user, configuration) is not { } actor)
             return Results.Forbid();
 
         var expectedTag = request.Headers.IfMatch.ToString();
@@ -48,10 +48,10 @@ internal static class FlujoPeiEndpoints
         var action = input?.Accion?.Trim();
         var reason = input?.Motivo?.Trim();
         var errors = new Dictionary<string, string[]>();
-        if (action is not ("enviar" or "aprobar" or "devolver" or "publicar"))
+        if (action is not ("enviar" or "revisar" or "validar_comite" or "aprobar" or "devolver" or "corregir" or "publicar"))
             errors["accion"] = ["Selecciona una acción de transición válida."];
         if (action == "devolver" && string.IsNullOrEmpty(reason))
-            errors["motivo"] = ["Indica el motivo para devolver el PEI a borrador."];
+            errors["motivo"] = ["Indica el motivo para observar el PEI."];
         else if (reason is { Length: > 4000 } || reason?.Contains('\0') == true)
             errors["motivo"] = ["Usa hasta 4000 caracteres válidos."];
         if (errors.Count > 0)
@@ -70,7 +70,7 @@ internal static class FlujoPeiEndpoints
             FlujoPeiStatus.NotFound => MissingPei(),
             FlujoPeiStatus.Stale => Results.Problem(statusCode: 412, title: "El PEI cambió. Carga su versión actual."),
             FlujoPeiStatus.Conflict => Results.Problem(statusCode: 409, title: "La acción no está disponible en el estado actual del PEI."),
-            FlujoPeiStatus.SelfApproval => Results.Problem(statusCode: 403, title: "La aprobación requiere un planificador distinto de quien envió el PEI."),
+            FlujoPeiStatus.Forbidden => Results.Problem(statusCode: 403, title: "Tu rol o participación en este PEI no autoriza la acción."),
             FlujoPeiStatus.IncompleteStructure => Results.Problem(statusCode: 409, title: "El PEI no tiene su estructura estratégica completa.",
                 detail: "Incluye al menos un eje activo, con objetivos e indicadores para cada objetivo."),
             FlujoPeiStatus.OverlappingPeriod => Results.Problem(statusCode: 409, title: "El período coincide con otro PEI publicado."),
@@ -84,11 +84,16 @@ internal static class FlujoPeiEndpoints
         return poas is null ? MissingPei() : Results.Ok(poas);
     }
 
-    private static FlujoPeiActor? Actor(ClaimsPrincipal user)
+    private static FlujoPeiActor? Actor(ClaimsPrincipal user, IConfiguration configuration)
     {
         var issuer = user.FindFirstValue("iss");
         var subject = user.FindFirstValue("sub");
-        return string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(subject) ? null : new(issuer, subject);
+        if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(subject))
+            return null;
+        var clientId = configuration["Sisplan:Oidc:ClientId"] ?? "sisplan-web";
+        bool Has(string role) => AccesoInstitucional.HasRole(user, clientId, role);
+        return new(issuer, subject, Has("AnalistaPlanificacion") || Has("Planificador"),
+            Has("DirectorPlanificacion"), Has("ComiteEstrategico"), Has("MaximaAutoridad"));
     }
 
     private static IResult MissingPei() => Results.Problem(statusCode: 404, title: "No se encontró el PEI vigente para esta operación.");

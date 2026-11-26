@@ -22,7 +22,7 @@
     } @else if (loading()) {
       <p role="status">Consultando acciones…</p>
     } @else if (pei().estado === 'publicado') {
-      <p>El PEI está publicado. Los POA generados se pueden consultar debajo.</p>
+      <p>El PEI está publicado. Puedes vincularle un POA desde Planes operativos.</p>
     } @else if (!actions().length) {
       <p>En esta sesión no hay acciones disponibles para el estado del PEI.</p>
     } @else if (confirmAction(); as action) {
@@ -40,7 +40,7 @@
           ></textarea>
         </div>
       } @else {
-        <p>Al publicar este PEI se generará un POA para cada año de su período.</p>
+        <p>El PEI quedará disponible para vincularlo desde Planes operativos.</p>
       }
       <div class="workflow-actions">
         <button

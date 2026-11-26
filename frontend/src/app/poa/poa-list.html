@@ -1,0 +1,116 @@
+<div class="page-heading">
+  <div><h1>Planes operativos anuales</h1></div>
+  @if (
+    (!session.enabled() || session.canFormulatePoa()) && !loading() && !loadError() && !showForm()
+  ) {
+    <button
+      class="button button-primary"
+      type="button"
+      (click)="showForm.set(true); notice.set('')"
+    >
+      Crear POA
+    </button>
+  }
+</div>
+@if (notice()) {
+  <p class="notice notice-success" role="status">{{ notice() }}</p>
+}
+@if (showForm()) {
+  <form class="panel form-section-body poa-form" #form="ngForm" (ngSubmit)="save()">
+    <div class="field">
+      <label for="poa-year">Año del POA</label>
+      <input
+        id="poa-year"
+        name="year"
+        type="number"
+        required
+        min="1"
+        max="9999"
+        [ngModel]="year()"
+        [disabled]="saving()"
+        (ngModelChange)="year.set($event); peiId.set('')"
+      />
+    </div>
+    <div class="field">
+      <label for="poa-pei">Plan estratégico</label>
+      <select
+        id="poa-pei"
+        name="peiId"
+        [ngModel]="peiId()"
+        [disabled]="saving()"
+        (ngModelChange)="peiId.set($event)"
+      >
+        <option value="">POA independiente</option>
+        @for (pei of candidates(); track pei.id) {
+          <option [value]="pei.id">{{ pei.nombre }}</option>
+        }
+      </select>
+      @if (peiLoadError()) {
+        <p role="status">
+          No pudimos consultar los PEI para vincular. Puedes crear un POA independiente.
+        </p>
+      }
+    </div>
+    @if (error()) {
+      <p role="alert" class="notice notice-error">{{ error() }}</p>
+    }
+    <button
+      class="button button-secondary"
+      type="button"
+      [disabled]="saving()"
+      (click)="showForm.set(false); error.set('')"
+    >
+      Cancelar
+    </button>
+    <button class="button button-primary" type="submit" [disabled]="saving() || form.invalid">
+      {{ saving() ? 'Guardando…' : 'Guardar POA' }}
+    </button>
+  </form>
+}
+@if (loading()) {
+  <p role="status">Consultando POA…</p>
+} @else if (loadError()) {
+  <p role="alert">No pudimos consultar los planes operativos.</p>
+  <button class="button button-secondary" type="button" (click)="load()">Reintentar</button>
+} @else if (!plans().length) {
+  <p>Aún no hay planes operativos registrados.</p>
+} @else {
+  <div class="panel table-scroll">
+    <table aria-label="Planes operativos registrados">
+      <thead>
+        <tr>
+          <th scope="col">Año</th>
+          <th scope="col">Período</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Plan estratégico</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (poa of plans(); track poa.id) {
+          <tr>
+            <td>{{ poa.anio }}</td>
+            <td>
+              {{ poa.fechaInicio | date: 'dd/MM/yyyy' }} – {{ poa.fechaFin | date: 'dd/MM/yyyy' }}
+            </td>
+            <td>
+              {{
+                poa.estado === 'borrador'
+                  ? 'Borrador'
+                  : poa.estado === 'formulacion'
+                    ? 'En formulación'
+                    : poa.estado
+              }}
+            </td>
+            <td>
+              @if (poa.peiId) {
+                <a [routerLink]="['/peis', poa.peiId]">{{ poa.peiNombre }}</a>
+              } @else {
+                Independiente
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

@@ -20,6 +20,7 @@ export class PeiEjes implements OnInit {
   readonly readOnly = input(false);
   readonly ejes = signal<Eje[]>([]);
   readonly loading = signal(false);
+  readonly importing = signal(false);
   readonly loadError = signal('');
   readonly editLoading = signal(false);
   readonly editor = signal<'create' | 'edit' | null>(null);
@@ -47,6 +48,7 @@ export class PeiEjes implements OnInit {
 
   hasPendingChanges() {
     return (
+      this.importing() ||
       this.saving() ||
       this.editLoading() ||
       this.form.dirty ||
@@ -68,6 +70,31 @@ export class PeiEjes implements OnInit {
         error: () => {
           this.loadError.set('No pudimos consultar los ejes. Vuelve a intentarlo.');
           this.loading.set(false);
+        },
+      });
+  }
+
+  importDigemaps() {
+    if (this.readOnly() || this.importing() || this.ejes().length) return;
+    this.importing.set(true);
+    this.saveError.set('');
+    this.api
+      .importDigemaps(this.peiId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.importing.set(false);
+          this.notice.set(
+            `DIGEMAPS cargado con ${result.ejes} ejes, ${result.objetivos} objetivos y ${result.indicadores} indicadores.`,
+          );
+          this.load();
+        },
+        error: (error: HttpErrorResponse) => {
+          this.importing.set(false);
+          this.saveError.set(
+            error.error?.title ?? 'No pudimos confirmar la carga. Revisa los ejes.',
+          );
+          this.load();
         },
       });
   }

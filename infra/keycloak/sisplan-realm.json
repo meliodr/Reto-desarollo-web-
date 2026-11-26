@@ -34,7 +34,7 @@
   ],
   "roles": {
     "client": {
-      "sisplan-web": [{ "name": "Planificador" }]
+      "sisplan-web": [{ "name": "Planificador" }, { "name": "AnalistaPlanificacion" }, { "name": "DirectorPlanificacion" }, { "name": "ComiteEstrategico" }, { "name": "MaximaAutoridad" }, { "name": "SuperAdministrador" }, { "name": "AdministradorInstitucional" }, { "name": "ResponsableArea" }, { "name": "DirectorArea" }, { "name": "Auditor" }]
     }
   }
 }

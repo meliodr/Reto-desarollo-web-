@@ -13,6 +13,7 @@
             Cerrar sesión
           </button>
         }
+        <a class="institutional-nav-link" routerLink="/poas">Planes operativos</a>
       </nav>
     </div>
   </header>
@@ -34,13 +35,13 @@
       @if (session.error()) {
         <p class="notice notice-error" role="alert">{{ session.error() }}</p>
       }
-      @if (!session.enabled() || session.canPlan()) {
+      @if (!session.enabled() || session.canRead()) {
         <router-outlet />
       } @else if (!session.error()) {
         <section class="panel empty-state" aria-labelledby="session-title">
           <h1 id="session-title">Acceso a SISPLAN</h1>
           @if (session.authenticated()) {
-            <p>La cuenta {{ session.name() }} necesita el permiso Planificador.</p>
+            <p>La cuenta {{ session.name() }} no tiene acceso a los planes institucionales.</p>
           } @else {
             <p>Inicia sesión con tu cuenta institucional para consultar y gestionar planes.</p>
             <button class="button button-primary" type="button" (click)="session.login()">

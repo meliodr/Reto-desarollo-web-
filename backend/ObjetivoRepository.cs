@@ -42,7 +42,7 @@ internal sealed class ObjetivoRepository(NpgsqlDataSource source, EjeRepository 
         var eje = await EjeRepository.FindCurrentAsync(parent.Value.Id, ejeId, connection, transaction, cancellationToken);
         if (eje is null)
             return new(ObjetivoCreateStatus.NotFound);
-        if (parent.Value.State != "borrador")
+        if (!PeiEstados.Editable(parent.Value.State))
             return new(ObjetivoCreateStatus.ReadOnlyPei);
         if (!eje.Activo)
             return new(ObjetivoCreateStatus.InactiveAxis);

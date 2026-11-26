@@ -160,23 +160,23 @@
           <dl class="indicadores-fields">
             <div>
               <dt>Fórmula</dt>
-              <dd>{{ indicador.formula }}</dd>
+              <dd>{{ indicador.formula ?? 'Por definir' }}</dd>
             </div>
             <div>
               <dt>Unidad</dt>
-              <dd>{{ indicador.unidad }}</dd>
+              <dd>{{ indicador.unidad ?? 'Por definir' }}</dd>
             </div>
             <div>
               <dt>Línea base</dt>
-              <dd>{{ indicador.lineaBase.replace('.', ',') }}</dd>
+              <dd>{{ indicador.lineaBase?.replace('.', ',') ?? 'Por definir' }}</dd>
             </div>
             <div>
               <dt>Meta</dt>
-              <dd>{{ indicador.meta.replace('.', ',') }}</dd>
+              <dd>{{ indicador.meta?.replace('.', ',') ?? 'Por definir' }}</dd>
             </div>
             <div>
               <dt>Frecuencia</dt>
-              <dd>{{ indicador.frecuencia }}</dd>
+              <dd>{{ indicador.frecuencia ?? 'Por definir' }}</dd>
             </div>
           </dl>
           @if (selected()?.id === indicador.id) {
@@ -202,7 +202,7 @@
                     <thead>
                       <tr>
                         <th scope="col">Fecha del período</th>
-                        <th scope="col">Valor ({{ indicador.unidad }})</th>
+                        <th scope="col">Valor ({{ indicador.unidad ?? 'Por definir' }})</th>
                       </tr>
                     </thead>
                     <tbody>

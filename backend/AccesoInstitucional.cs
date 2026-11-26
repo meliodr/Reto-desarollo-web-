@@ -57,17 +57,31 @@ internal sealed record AccesoInstitucional(string Url, string Realm, string Clie
                 ValidTypes = ["JWT", "at+jwt"],
             };
         });
-        builder.Services.AddAuthorizationBuilder().AddPolicy("Planificador", policy =>
-        {
-            policy.RequireAuthenticatedUser();
-            policy.RequireClaim("iss");
-            policy.RequireClaim("sub");
-            policy.RequireAssertion(context => oidc is not null && context.User.FindAll("resource_access")
-                .Any(claim => HasClientRole(claim.Value, oidc.ClientId)));
-        });
+        builder.Services.AddAuthorizationBuilder()
+            .AddPolicy("LeerPlanes", policy => SetupPolicy(policy, oidc, PlanningRoles))
+            .AddPolicy("EditarPei", policy => SetupPolicy(policy, oidc, ["AnalistaPlanificacion", "Planificador"]))
+            .AddPolicy("FormularPoa", policy => SetupPolicy(policy, oidc,
+                ["AnalistaPlanificacion", "Planificador", "DirectorPlanificacion", "ResponsableArea"]));
     }
 
-    private static bool HasClientRole(string value, string clientId)
+    private static readonly string[] PlanningRoles =
+        ["AnalistaPlanificacion", "Planificador", "DirectorPlanificacion", "ComiteEstrategico",
+         "MaximaAutoridad", "AdministradorInstitucional", "ResponsableArea", "DirectorArea", "Auditor"];
+
+    private static void SetupPolicy(Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder policy,
+        AccesoInstitucional? oidc, string[] roles)
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim("iss");
+        policy.RequireClaim("sub");
+        policy.RequireAssertion(context => oidc is not null
+            && roles.Any(role => HasRole(context.User, oidc.ClientId, role)));
+    }
+
+    internal static bool HasRole(System.Security.Claims.ClaimsPrincipal user, string clientId, string role) =>
+        user.FindAll("resource_access").Any(claim => HasClientRole(claim.Value, clientId, role));
+
+    private static bool HasClientRole(string value, string clientId, string expectedRole)
     {
         try
         {
@@ -77,7 +91,7 @@ internal sealed record AccesoInstitucional(string Url, string Realm, string Clie
                 && client.ValueKind == JsonValueKind.Object
                 && client.TryGetProperty("roles", out var roles)
                 && roles.ValueKind == JsonValueKind.Array
-                && roles.EnumerateArray().Any(role => role.ValueKind == JsonValueKind.String && role.GetString() == "Planificador");
+                && roles.EnumerateArray().Any(role => role.ValueKind == JsonValueKind.String && role.GetString() == expectedRole);
         }
         catch (JsonException)
         {

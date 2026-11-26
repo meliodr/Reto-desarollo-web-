@@ -1,5 +1,7 @@
 # Primer incremento de SISPLAN
 
+Esta página conserva la evidencia de la v1. Para los flujos y pruebas actuales, consulta la [adaptación al SRS v2](10-ADAPTACION-SRS-V2.md).
+
 El recorrido permite listar, crear, abrir y editar borradores de PEI en Angular. La API guarda los datos en PostgreSQL. La pantalla muestra el período derivado de las fechas y el servidor asigna el estado borrador. Corresponde a la cabecera de RF-001. En un PEI guardado se pueden gestionar ejes y registrar objetivos. Los objetivos admiten indicadores y mediciones. En el entorno con acceso institucional, otro planificador puede aprobar el PEI antes de publicarlo y generar sus POA.
 
 ## Arranque local

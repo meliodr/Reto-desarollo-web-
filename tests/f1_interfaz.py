@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 
 from playwright.sync_api import Error, Page, expect, sync_playwright
 
-from f0_interfaz import A, B, captura, comprobar_rol, entrar_como_multi, sesion
+from f0_interfaz import A, B, cambiar_institucion, captura, entrar_como_multi, etapa_chromium
 
 ORIGINAL = "Plan estratégico 2170-01-01 a 2173-12-31"
 REVISADO = "Plan estratégico revisado de 2170"
@@ -50,57 +50,58 @@ def consultar_pei_oficial(pagina: Page, password: str, semilla: str, carpeta: Pa
             consultas_poa.append(ruta)
 
     pagina.on("request", observar)
-    pagina.get_by_role("link", name="Planes estratégicos", exact=True).click()
-    pagina.get_by_label("Estado del plan").select_option("publicado")
-    buscar = pagina.get_by_label("Buscar planes por nombre o año")
-    buscar.fill("plan sin resultados para F1")
-    expect(pagina.get_by_text("No encontramos planes con esos filtros.")).to_be_visible()
-    buscar.fill(REVISADO)
-    pagina.get_by_role("link", name=REVISADO, exact=True).click()
-    expect(pagina.get_by_role("heading", name=REVISADO, exact=True)).to_be_visible()
-    expect(pagina.get_by_text("Versión oficial", exact=True)).to_be_visible()
-    expect(pagina.get_by_text("Ajustar la visión del plan oficial.")).to_be_visible()
-    pagina.get_by_role("link", name="Ver versión anterior").click()
-    expect(pagina.get_by_role("heading", name=ORIGINAL, exact=True)).to_be_visible()
-    expect(pagina.get_by_text("Publicación histórica", exact=True)).to_be_visible()
-    expect(pagina.get_by_text(MOTIVO)).to_be_visible()
-    pagina.get_by_role("link", name="Ver versión siguiente").click()
-    expect(pagina.get_by_role("heading", name=REVISADO, exact=True)).to_be_visible()
-    expect(pagina.get_by_text(MOTIVO)).to_have_count(0)
-    pagina.get_by_role("link", name="Volver al plan estratégico").click()
-    expect(pagina.get_by_role("heading", name="PEI oficial", exact=True)).to_be_visible()
-    pagina.get_by_role("button", name="Ver versiones e historial", exact=True).click()
-    expect(pagina.get_by_role("link", name="Versión 2 · Publicado", exact=True)).to_be_visible()
-    pagina.get_by_role("link", name="Versión 1 · Publicado", exact=True).click()
-    expect(pagina.get_by_role("heading", name=ORIGINAL, exact=True)).to_be_visible()
-    expect(pagina.get_by_text("Publicación histórica", exact=True)).to_be_visible()
-    expect(pagina.get_by_text(MOTIVO)).to_be_visible()
-    expect(pagina.get_by_text("Publicación oficial", exact=True)).to_be_visible()
-    pagina.get_by_role("button", name="Consultar mapa", exact=True).click()
-    pagina.get_by_label("Buscar en el mapa").fill("F1-SIN-INDICADOR")
-    expect(pagina.get_by_text("Objetivo para validar", exact=True)).to_be_visible()
-    expect(pagina.get_by_text("Objetivo inactivo", exact=True)).to_be_visible()
-
-    for ancho, alto in ((1280, 900), (390, 844)):
-        pagina.set_viewport_size({"width": ancho, "height": alto})
+    with etapa_chromium("filtrar y abrir la versión oficial más reciente"):
+        pagina.get_by_role("link", name="Planes estratégicos", exact=True).click()
+        pagina.get_by_label("Estado del plan").select_option("publicado")
+        buscar = pagina.get_by_label("Buscar planes por nombre o año")
+        buscar.fill("plan sin resultados para F1")
+        expect(pagina.get_by_text("No encontramos planes con esos filtros.")).to_be_visible()
+        buscar.fill(REVISADO)
+        pagina.get_by_role("link", name=REVISADO, exact=True).click()
+        expect(pagina.get_by_role("heading", name=REVISADO, exact=True)).to_be_visible()
+        expect(pagina.get_by_text("Versión oficial", exact=True)).to_be_visible()
+        expect(pagina.get_by_text("Ajustar la visión del plan oficial.")).to_be_visible()
+    with etapa_chromium("navegar entre versiones y consultar el mapa histórico"):
+        pagina.get_by_role("link", name="Ver versión anterior").click()
         expect(pagina.get_by_role("heading", name=ORIGINAL, exact=True)).to_be_visible()
-        assert pagina.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), (
-            f"La vista de versión oficial desborda a {ancho} px."
-        )
-        captura(pagina, carpeta, f"f1-oficial-{ancho}.png")
-    pagina.get_by_role("link", name="Volver al plan estratégico").click()
-    expect(pagina.get_by_role("heading", name="PEI oficial", exact=True)).to_be_visible()
-    with pagina.expect_response(sesion) as cambio:
-        pagina.get_by_role("combobox", name="Institución activa").select_option(B)
-    comprobar_rol(cambio.value, B, "Auditor")
-    expect(pagina.get_by_role("heading", name="Planes estratégicos institucionales")).to_be_visible()
-    expect(pagina.get_by_text(REVISADO, exact=True)).to_have_count(0)
+        expect(pagina.get_by_text("Publicación histórica", exact=True)).to_be_visible()
+        expect(pagina.get_by_text(MOTIVO)).to_be_visible()
+        pagina.get_by_role("link", name="Ver versión siguiente").click()
+        expect(pagina.get_by_role("heading", name=REVISADO, exact=True)).to_be_visible()
+        expect(pagina.get_by_text(MOTIVO)).to_have_count(0)
+        pagina.get_by_role("link", name="Volver al plan estratégico").click()
+        expect(pagina.get_by_role("heading", name="PEI oficial", exact=True)).to_be_visible()
+        pagina.get_by_role("button", name="Ver versiones e historial", exact=True).click()
+        expect(pagina.get_by_role("link", name="Versión 2 · Publicado", exact=True)).to_be_visible()
+        pagina.get_by_role("link", name="Versión 1 · Publicado", exact=True).click()
+        expect(pagina.get_by_role("heading", name=ORIGINAL, exact=True)).to_be_visible()
+        expect(pagina.get_by_text("Publicación histórica", exact=True)).to_be_visible()
+        expect(pagina.get_by_text(MOTIVO)).to_be_visible()
+        expect(pagina.get_by_text("Publicación oficial", exact=True)).to_be_visible()
+        pagina.get_by_role("button", name="Consultar mapa", exact=True).click()
+        pagina.get_by_label("Buscar en el mapa").fill("F1-SIN-INDICADOR")
+        expect(pagina.get_by_text("Objetivo para validar", exact=True)).to_be_visible()
+        expect(pagina.get_by_text("Objetivo inactivo", exact=True)).to_be_visible()
+
+    with etapa_chromium("verificar el diseño adaptable y volver al plan"):
+        for ancho, alto in ((1280, 900), (390, 844)):
+            pagina.set_viewport_size({"width": ancho, "height": alto})
+            expect(pagina.get_by_role("heading", name=ORIGINAL, exact=True)).to_be_visible()
+            assert pagina.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), (
+                f"La vista de versión oficial desborda a {ancho} px."
+            )
+            captura(pagina, carpeta, f"f1-oficial-{ancho}.png")
+        pagina.get_by_role("link", name="Volver al plan estratégico").click()
+        expect(pagina.get_by_role("heading", name="PEI oficial", exact=True)).to_be_visible()
+    cambiar_institucion(pagina, B, "Auditor")
+    with etapa_chromium("verificar que Bahía muestra su propio listado de PEI"):
+        expect(pagina.get_by_role("heading", name="Planes estratégicos institucionales")).to_be_visible()
+        expect(pagina.get_by_text(REVISADO, exact=True)).to_have_count(0)
     assert not consultas_poa, consultas_poa
     print("F1.4: historial y publicación oficial comprobados a 1280 y 390 px, con cambio de versión e institución.")
-    with pagina.expect_response(sesion) as regreso:
-        pagina.get_by_role("combobox", name="Institución activa").select_option(A)
-    comprobar_rol(regreso.value, A, "AnalistaPlanificacion")
-    corregir_objetivo_observado(pagina)
+    cambiar_institucion(pagina, A, "AnalistaPlanificacion")
+    with etapa_chromium("editar y volver a abrir un objetivo observado"):
+        corregir_objetivo_observado(pagina)
     print("F1.2: Chromium corrigió un objetivo tras una devolución y verificó su persistencia.")
 
 

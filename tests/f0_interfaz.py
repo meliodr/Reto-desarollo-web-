@@ -166,19 +166,20 @@ def verificar(page: Page, password: str, semilla: str, directory: Path | None, m
         expect(page.get_by_role("button", name="Crear POA")).to_have_count(0)
         expect(page.get_by_role("cell", name="2230", exact=True)).to_have_count(0)
 
-    with etapa_chromium("verificar la auditoría de la institución"):
+    with etapa_chromium("abrir el historial y comprobar el alcance de su solicitud"):
         with page.expect_response(lambda r: r.url == WEB + "/api/v1/auditoria") as consulta:
             auditoria.click()
         response = consulta.value
         assert response.ok, "El Auditor no pudo consultar su historial."
-        rows = response.json()
         assert response.request.headers.get("x-institucion-id") == B
-        assert all(row["institucionId"] == B for row in rows)
-        expect(page.get_by_role("heading", name="Historial de auditoría")).to_be_visible()
-        if rows:
-            expect(page.locator("tbody tr")).to_have_count(len(rows))
-        else:
-            expect(page.get_by_text("Aún no se han registrado cambios en esta institución.")).to_be_visible()
+
+    with etapa_chromium("verificar la tabla de auditoría de Bahía"):
+        expect(page.get_by_role("heading", name="Historial de auditoría", exact=True)).to_be_visible()
+        tabla = page.get_by_role("region", name="Cambios registrados", exact=True)
+        expect(tabla.locator("tbody tr").first).to_be_visible()
+        # La batería HTTP registra cambios con el analista de Bahía.
+        expect(tabla.get_by_text("30000000-0000-4000-8000-000000000010").first).to_be_visible()
+        expect(tabla.get_by_text("30000000-0000-4000-8000-000000000004")).to_have_count(0)
         captura(page, directory, "02-bahia-auditor.png")
         print("Angular: la misma cuenta en Bahía sólo consulta planes y su auditoría.", flush=True)
 

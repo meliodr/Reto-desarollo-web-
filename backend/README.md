@@ -48,7 +48,7 @@ Cuando Angular te envíe a Keycloak, introduce el usuario y la contraseña. Para
 
 ### Prueba con navegador y Keycloak
 
-Con la API en marcha y las mismas variables, instala Playwright en un entorno virtual de Python. Chromium recorre los formularios reales de contraseña y TOTP de las 15 identidades y verifica su sujeto mediante el flujo de código de autorización con PKCE. El ensayo comprueba el rechazo de un código incorrecto, el cierre de sesión y la emisión de un token que se deja caducar. El archivo de salida contiene credenciales de corta duración.
+Con la API en marcha, inicia Angular en el puerto 4200 como indica la [guía del frontend](../frontend/README.md#ejecución-local). El verificador recibe el retorno OIDC en una página HTML estática del frontend. En otra terminal con las mismas variables locales, instala Playwright en un entorno virtual de Python. Chromium recorre los formularios reales de contraseña y TOTP de las 15 identidades y verifica su sujeto mediante el flujo de código de autorización con PKCE. El ensayo comprueba el rechazo de un código incorrecto, el cierre de sesión y la emisión de un token que se deja caducar. El archivo de salida contiene credenciales de corta duración.
 
 ```sh
 python3 -m venv /tmp/sisplan-f0-python

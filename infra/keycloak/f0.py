@@ -18,7 +18,7 @@ from urllib.request import Request, urlopen
 ORIGEN = "http://127.0.0.1:8080"
 OIDC = ORIGEN + "/realms/sisplan/protocol/openid-connect"
 ADMIN = ORIGEN + "/admin/realms/sisplan"
-RETORNO = "http://127.0.0.1:4200/peis"
+RETORNO = "http://127.0.0.1:4200/f0-retorno.html"
 CLIENTE = "sisplan-web"
 CUENTAS = [
     ("super", "SuperAdministrador"), ("admin", "AdministradorInstitucional"),
@@ -259,7 +259,10 @@ def login(navegador, cliente, nombre, password, semilla, *, probar_salida=False,
                   "code_challenge": b64(hashlib.sha256(verificador.encode()).digest())}
     with navegador.new_context() as contexto:
         pagina = contexto.new_page()
-        pagina.route(RETORNO + "**", lambda ruta: ruta.fulfill(status=200, body="SISPLAN F0"))
+        if probar_salida:
+            with paso_oidc(pagina, nombre, "página estática del recorrido F0", True):
+                pagina.goto(RETORNO)
+                pagina.locator("#retorno-f0").wait_for(timeout=5000)
         with paso_oidc(pagina, nombre, "formulario de contraseña", probar_salida):
             pagina.goto(OIDC + "/auth?" + urlencode(parametros))
             pagina.locator('[name="username"]').fill("f0-" + nombre)
@@ -318,6 +321,7 @@ def emitir_tokens(destino, password, semilla):
     cliente = cliente_web()
     cliente["clientId"] = cliente_corto
     cliente["attributes"]["access.token.lifespan"] = "1"
+    cliente["attributes"]["post.logout.redirect.uris"] = RETORNO
     admin = token_admin()
     web, = consultar(ADMIN + "/clients?" + urlencode({"clientId": CLIENTE}), token=admin)
     configurado = consultar(ADMIN + "/clients/" + web["id"], token=admin)

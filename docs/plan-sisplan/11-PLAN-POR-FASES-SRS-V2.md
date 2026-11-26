@@ -227,14 +227,14 @@ Combinar pruebas unitarias para reglas y cálculos, validación de contrato para
 | Aislamiento | Instituciones A y B con datos y evidencias distintos, y cuentas institucionales independientes | Ninguna cuenta institucional accede a los registros de la otra. Repetir el intento en búsquedas, detalle, auditoría y descarga. |
 | Presupuesto ausente y cero | Dos POA de períodos distintos, uno sin monto y otro con RD$ 0.00 declarado | El listado distingue «Sin registrar» de RD$ 0.00, y ambos pueden completar el flujo. |
 
-## Decisiones que requieren validación
+## Decisiones por fase
 
-| Decisión | Cuándo resolverla | Qué afecta |
+| Decisión | Estado o fase responsable | Qué afecta |
 |---|---|---|
-| Comité, publicación oficial, rúbrica y MFA | En F0.1 durante la semana 4. El flujo de la pág. 7 incluye Comité y la RACI de las págs. 2–3 omite ese rol. Confirmar permisos y qué perfiles requieren MFA. | Alcance de entrega, matriz de permisos y pruebas de sesión, aprobación y publicación. |
+| Comité, publicación oficial y MFA | F0.1 adopta un representante del Comité para validar, aprobación por Máxima Autoridad y publicación por el Director. Las cuentas ficticias usan MFA individual. [Decisiones y fuentes](14-CONTRATO-F0.md#decisiones-operativas-para-el-cierre-de-f0) | Matriz de permisos y pruebas de sesión, aprobación y publicación. |
 | Estados, publicación y modificaciones del POA | En F2, antes de implementar el paso a ejecución. Conciliar la revisión por área de la RACI con el flujo general de la pág. 8. | Contrato de estados, reprogramación, versionado y entrada de F4. |
 | Indicadores, períodos y reportes | En F3 y F4, antes de fijar resultados de referencia. Resolver cálculo con meta cero o ausente, unidades, redondeo, cortes y reglas de consolidación. | Exactitud de tableros, informes y retroalimentación de F5. |
-| Tratamiento de riesgos y actividades no planificadas | En F0, al delimitar qué datos del PEI se cargan y si alguna ampliación entra en la rúbrica. | Alcance, trazabilidad y orden del trabajo. |
+| Tratamiento de riesgos y actividades no planificadas | El alcance de F0 cubre identidad, organización, contratos y auditoría. F1.2 incorpora los riesgos asociados al objetivo. El flujo de actividades no planificadas se conserva como [ampliación solicitada](05-TRAZABILIDAD.md#ampliación-solicitada-de-actividades-no-planificadas). | Alcance, trazabilidad y orden del trabajo. |
 | Rúbrica y formato de entrega | En F0, con el equipo y el aula. Verificar fecha y plataforma de entrega. | Criterios finales, paquete documental y ensayo de F6. |
 
-El PR actual aporta evidencia parcial para F0 (identidad), F1 (carga y aprobación), F2 (apertura y presupuesto) y F5 (vínculo anual). El cierre de cada fase requiere toda su evidencia. Los acuerdos mínimos de F0 y los casos de aceptación de F1 y F2 se preparan en paralelo. Los cinco frentes pueden repartirse entre plataforma y seguridad, PEI, POA, UX y reportes, y QA y documentación. Las asignaciones se confirman con el equipo.
+El [PR #2](https://github.com/meliodr/Reto-desarollo-web-/pull/2) reúne la implementación y las pruebas de F0. El primer incremento también aporta evidencia parcial para F1 (carga y aprobación), F2 (apertura y presupuesto) y F5 (vínculo anual). Los casos de aceptación de F1 y F2 se pueden preparar en paralelo. Los cinco frentes pueden repartirse entre plataforma y seguridad, PEI, POA, UX y reportes, y QA y documentación. Las asignaciones se confirman con el equipo.

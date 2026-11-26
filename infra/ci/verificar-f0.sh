@@ -71,7 +71,8 @@ anterior.CUENTAS = anterior.CUENTAS[:8]
 anterior.alta_usuarios(os.environ["SISPLAN_F0_PASSWORD"], os.environ["SISPLAN_F0_TOTP_AUTORIDAD_ANTERIOR"])
 IDENTIDADES
 python3 infra/keycloak/f0.py usuarios
-python3 infra/keycloak/f0.py usuarios
+# La reprovisión de cuentas existentes debe conservar su contraseña original.
+SISPLAN_F0_PASSWORD="$(openssl rand -hex 20)" python3 infra/keycloak/f0.py usuarios
 dotnet "$api_dll" >"$temporal/api.log" 2>&1 &
 api_pid=$!
 if ! curl -fsS --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:5080/api/configuracion -o /dev/null; then

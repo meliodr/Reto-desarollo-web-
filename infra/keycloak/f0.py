@@ -9,6 +9,7 @@ import secrets
 import struct
 import sys
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlencode, urlsplit
@@ -199,17 +200,51 @@ def totp(semilla, instante=None):
     return f"{valor % 1000000:06d}"
 
 
+def enviar_formulario(pagina, selector):
+    # También navega cuando Keycloak vuelve a representar el mismo formulario.
+    with pagina.expect_navigation(wait_until="domcontentloaded"):
+        pagina.locator(selector).click()
+
+
 def completar_otp(pagina, semilla):
     campo = pagina.locator('[name="otp"]')
     campo.fill(totp(semilla))
-    pagina.locator('#kc-otp-login-form [type="submit"]').click()
-    # Keycloak puede prohibir reutilizar el código del mismo paso entre logins.
+    enviar_formulario(pagina, '#kc-otp-login-form [type="submit"]')
+    # Esperar al nuevo documento evita confundir el formulario anterior con un rechazo.
     if campo.is_visible():
         time.sleep(31 - time.time() % 30)
         campo.fill(totp(semilla))
-        pagina.locator('#kc-otp-login-form [type="submit"]').click()
+        enviar_formulario(pagina, '#kc-otp-login-form [type="submit"]')
         if campo.is_visible():
             raise SystemExit("Keycloak rechazó el TOTP. Revisa la semilla original del volumen de F0.")
+
+
+@contextmanager
+def paso_oidc(pagina, nombre, etapa, publicar):
+    from playwright.sync_api import Error
+
+    if publicar:
+        print(f"f0-{nombre} · {etapa}", flush=True)
+    try:
+        yield
+    except Error as error:
+        # Sólo identificar controles públicos conocidos. Omitir URL, textos y valores.
+        controles = {"usuario": '[name="username"]', "contraseña": '[name="password"]',
+                     "TOTP": '[name="otp"]', "registro TOTP": '#kc-totp-settings-form',
+                     "perfil": '#kc-update-profile-form', "confirmar salida": '#kc-logout-confirm',
+                     "error de formulario": '[aria-invalid="true"], [role="alert"]',
+                     "error de Keycloak": '#kc-error-message'}
+        visibles = []
+        try:
+            for etiqueta, selector in controles.items():
+                if pagina.locator(selector).first.is_visible():
+                    visibles.append(etiqueta)
+            ubicacion = {urlsplit(ORIGEN).netloc: "Keycloak", urlsplit(RETORNO).netloc: "retorno"}.get(
+                urlsplit(pagina.url).netloc, "otra página")
+        except Error:
+            ubicacion = "página no disponible"
+        estado = ", ".join(visibles) or "sin controles reconocidos"
+        raise SystemExit(f"f0-{nombre} · {etapa} · {type(error).__name__} · {ubicacion} · {estado}") from None
 
 
 def login(navegador, cliente, nombre, password, semilla, *, probar_salida=False, probar_rechazo=False):
@@ -221,21 +256,25 @@ def login(navegador, cliente, nombre, password, semilla, *, probar_salida=False,
     with navegador.new_context() as contexto:
         pagina = contexto.new_page()
         pagina.route(RETORNO + "**", lambda ruta: ruta.fulfill(status=200, body="SISPLAN F0"))
-        pagina.goto(OIDC + "/auth?" + urlencode(parametros))
-        pagina.locator('[name="username"]').fill("f0-" + nombre)
-        pagina.locator('[name="password"]').fill(password)
-        pagina.locator('#kc-form-login [type="submit"]').click()
+        with paso_oidc(pagina, nombre, "formulario de contraseña", probar_salida):
+            pagina.goto(OIDC + "/auth?" + urlencode(parametros))
+            pagina.locator('[name="username"]').fill("f0-" + nombre)
+            pagina.locator('[name="password"]').fill(password)
+            enviar_formulario(pagina, '#kc-form-login [type="submit"]')
         if probar_rechazo:
-            # Tiene seis dígitos y difiere de los códigos válidos en la ventana.
-            prohibidos = {totp(semilla, time.time() + d * 30) for d in range(-2, 3)}
-            incorrecto = next(f"{n:06d}" for n in range(6) if f"{n:06d}" not in prohibidos)
-            pagina.locator('[name="otp"]').fill(incorrecto)
-            pagina.locator('#kc-otp-login-form [type="submit"]').click()
-            pagina.locator('[name="otp"]').wait_for(state="visible")
-            if urlsplit(pagina.url).netloc != urlsplit(ORIGEN).netloc:
-                raise SystemExit("Keycloak aceptó el código incorrecto.")
-        completar_otp(pagina, semilla)
-        pagina.wait_for_url(RETORNO + "?**")
+            with paso_oidc(pagina, nombre, "rechazo de código incorrecto", True):
+                # Tiene seis dígitos y difiere de los códigos válidos en la ventana.
+                prohibidos = {totp(semilla, time.time() + d * 30) for d in range(-2, 3)}
+                incorrecto = next(f"{n:06d}" for n in range(6) if f"{n:06d}" not in prohibidos)
+                pagina.locator('[name="otp"]').fill(incorrecto)
+                enviar_formulario(pagina, '#kc-otp-login-form [type="submit"]')
+                pagina.locator('[name="otp"]').wait_for(state="visible")
+                if urlsplit(pagina.url).netloc != urlsplit(ORIGEN).netloc:
+                    raise SystemExit("Keycloak aceptó el código incorrecto.")
+        with paso_oidc(pagina, nombre, "formulario TOTP", probar_salida):
+            completar_otp(pagina, semilla)
+        with paso_oidc(pagina, nombre, "retorno del código de autorización", probar_salida):
+            pagina.wait_for_url(RETORNO + "?**")
         callback = parse_qs(urlsplit(pagina.url).query)
         if callback.get("state") != [estado] or "code" not in callback:
             raise SystemExit("El retorno OIDC no coincide con el inicio de sesión.")
@@ -243,11 +282,13 @@ def login(navegador, cliente, nombre, password, semilla, *, probar_salida=False,
             "grant_type": "authorization_code", "code": callback["code"][0],
             "code_verifier": verificador, "redirect_uri": RETORNO, "client_id": cliente})
         if probar_salida:
-            pagina.goto(OIDC + "/logout?" + urlencode({"id_token_hint": tokens["id_token"],
-                                                        "post_logout_redirect_uri": RETORNO}))
-            pagina.wait_for_url(RETORNO)
-            pagina.goto(OIDC + "/auth?" + urlencode({**parametros, "prompt": "none"}))
-            pagina.wait_for_url(RETORNO + "?**")
+            with paso_oidc(pagina, nombre, "cierre de sesión", True):
+                pagina.goto(OIDC + "/logout?" + urlencode({"id_token_hint": tokens["id_token"],
+                                                            "post_logout_redirect_uri": RETORNO}))
+                pagina.wait_for_url(RETORNO)
+            with paso_oidc(pagina, nombre, "verificación de salida sin interacción", True):
+                pagina.goto(OIDC + "/auth?" + urlencode({**parametros, "prompt": "none"}))
+                pagina.wait_for_url(RETORNO + "?**")
             if parse_qs(urlsplit(pagina.url).query).get("error") != ["login_required"]:
                 raise SystemExit("La sesión del navegador continuó activa después de salir.")
         return tokens["access_token"]
@@ -287,6 +328,7 @@ def emitir_tokens(destino, password, semilla):
                                   semillas[nombre], probar_rechazo=(nombre == "autoridad"))
                     if declaraciones(token)["sub"] != sub(numero):
                         raise SystemExit("Identidad OIDC inesperada para f0-" + nombre)
+                    print(f"f0-{nombre} · contraseña, TOTP y sujeto verificados", flush=True)
                     clave = "sinMembresia" if nombre == "sin-membresia" else f"{numero:02d}"
                     tokens[clave] = token
     except Error as error:

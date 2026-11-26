@@ -1,5 +1,7 @@
 # QA del recorrido PEI–POA
 
+> Esta página conserva el QA de la v1. Ejecuta las [pruebas del flujo vigente](10-ADAPTACION-SRS-V2.md#verificación-del-incremento) para revisar el PR actual.
+
 Revisión del 13 de noviembre de 2026 sobre el [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1). La línea de partida fue el commit `a25a828`.
 
 | Caso | Resultado de la revisión |
@@ -11,7 +13,7 @@ Revisión del 13 de noviembre de 2026 sobre el [PR #1](https://github.com/meliod
 | Accesibilidad | En Chromium, el filtro de tipo conserva su nombre accesible a 1280, 1200 y 390 px. Axe no reportó infracciones en el recorrido móvil de formulario de indicador que se evaluó. |
 | Contrato | El documento pasó la validación estructural de OpenAPI 3.1. La seguridad se declara de forma global para el entorno institucional y se describe la excepción local de borradores. |
 
-## Pruebas que debe repetir el revisor
+## Pruebas históricas de la v1
 
 1. Ejecutar los [pasos de arranque y pruebas](06-PRIMER-INCREMENTO.md) con datos de prueba. Confirmar que un borrador anterior sobrevive al aplicar y volver a aplicar las migraciones.
 2. Usar dos planificadores y una cuenta sin el rol. Enviar, devolver con un motivo, revisar el motivo con el autor, reenviar, aprobar con la otra cuenta y publicar.

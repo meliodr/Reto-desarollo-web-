@@ -1,5 +1,7 @@
 # Plan base de SISPLAN
 
+> Este plan conserva las decisiones de la v1. Consulta el [alcance vigente del SRS v2](10-ADAPTACION-SRS-V2.md) para los flujos y criterios actuales.
+
 **Versión 1.0 · 12 de noviembre de 2026 · Equipo de cinco**
 
 La aplicación usará el nombre **SISPLAN** para la entrega. SISPLAN gestiona el ciclo institucional completo desde el PEI hasta la evaluación del POA. El primer recorrido integrado debe publicar un PEI, generar los POA, vincular una actividad con su objetivo, registrar un avance con evidencia y publicar una evaluación. Ese recorrido fija el contrato que comparten los cinco frentes.

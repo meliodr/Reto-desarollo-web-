@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: SISPLAN — Planificación estratégica y POA anuales
-  version: 0.5.0
+  version: 0.5.1
   description: Contrato institucional. En loopback sin OIDC se permite formular borradores sin token. Publicación y consulta de POA requieren sesión incluso en local. El período se deriva de las fechas y el servidor asigna el estado borrador. Cada eje pertenece a la versión actual del PEI, con revisiones consultables. Los objetivos se registran bajo ejes activos y conservan el vínculo a su revisión de origen.
 servers:
   - url: http://127.0.0.1:5080/api/v1
@@ -308,6 +308,10 @@ paths:
               properties:
                 anio: { type: integer, minimum: 1, maximum: 9999 }
                 peiId: { type: [string, 'null'], format: uuid }
+                presupuestoReferencia:
+                  type: [string, 'null']
+                  pattern: '^[0-9]{1,12}(\.[0-9]{1,2})?$'
+                  description: Importe estimado opcional en DOP. Usa punto decimal y omite los separadores de miles.
       responses:
         '201':
           description: POA en borrador
@@ -422,7 +426,7 @@ components:
       enum: [enviar, revisar, validar_comite, devolver, corregir, aprobar, publicar]
     PoaV2:
       type: object
-      required: [id, anio, estado, fechaInicio, fechaFin, peiId, peiNombre]
+      required: [id, anio, estado, fechaInicio, fechaFin, peiId, peiNombre, presupuestoReferencia]
       properties:
         id: { type: string, format: uuid }
         anio: { type: integer, minimum: 1, maximum: 9999 }
@@ -431,6 +435,10 @@ components:
         fechaFin: { type: string, format: date }
         peiId: { type: [string, 'null'], format: uuid }
         peiNombre: { type: [string, 'null'] }
+        presupuestoReferencia:
+          type: [string, 'null']
+          pattern: '^[0-9]{1,12}\.[0-9]{2}$'
+          description: Importe estimado en DOP o null si queda sin registrar.
     Poa:
       type: object
       required: [id, anio, estado, fechaInicio, fechaFin, vigente, evaluaciones]

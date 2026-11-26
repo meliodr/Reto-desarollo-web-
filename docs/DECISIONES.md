@@ -46,7 +46,7 @@ La consigna disponible establece cierre el **2 de diciembre de 2026 a las 23:59*
 
 **Estado:** criterio de seguimiento.
 
-El portal de trabajo está publicado y cuenta con una revisión funcional y visual registrada. El prototipo institucional de borradores PEI está en [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1). La cobertura se mide sobre la entrega integrada.
+El portal de trabajo está publicado y cuenta con una revisión funcional y visual registrada. El prototipo institucional del PEI y la apertura del POA está en [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1). La cobertura se mide sobre la entrega integrada.
 
 **Motivo:** comunicar el estado real del proyecto. La documentación, el simulador del portal y las pruebas históricas de FuelTrack no representan funcionalidades construidas de este sistema.
 
@@ -57,6 +57,10 @@ El equipo confirmó Angular el 12 de noviembre de 2026. La base v1.0 fija Angula
 ## D-08. Adoptar la base de trabajo v1.0
 
 El plan del 12 de noviembre fija el orden de implementación, las reglas operativas y las herramientas. El PR de borradores queda disponible para revisión. Las decisiones que cambien por indicación del maestro se actualizan junto con el contrato y el caso de prueba. [Plan base](plan-sisplan/01-PLAN-DE-CONSTRUCCION.md)
+
+## D-09. Adoptar el SRS v2 y el presupuesto opcional
+
+La aclaración del maestro del 26 de noviembre de 2026 permite dejar vacío el presupuesto o consignar un valor de referencia. El incremento lo captura en RD$ a nivel del POA anual, tanto independiente como vinculado. El tratamiento por producto o actividad podrá precisarse al implementar la programación. [Alcance y pruebas vigentes](plan-sisplan/10-ADAPTACION-SRS-V2.md)
 
 ## Actualizaciones
 

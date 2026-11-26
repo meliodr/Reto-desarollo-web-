@@ -15,8 +15,8 @@ La [adaptación al SRS v2](plan-sisplan/10-ADAPTACION-SRS-V2.md) recoge el alcan
 | Nombre de la aplicación | SISPLAN | Nombre de trabajo para la entrega académica |
 | Arquitectura | Definida en la base | Angular 22, .NET 10 LTS, PostgreSQL 18, Npgsql y Keycloak con MFA. Demo local reproducible |
 | Actividades no planificadas | Regla de trabajo definida | [Registro, autorización e incorporación](plan-sisplan/07-REGLAS-OPERATIVAS.md#trabajo-no-planificado-proyectos-riesgos-y-alertas) |
-| Implementación del sistema institucional | Prototipo en PR | [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) cubre carga DIGEMAPS, revisión y publicación del PEI, y creación de POA independiente o vinculado |
-| Pruebas del sistema institucional | Verificación parcial del prototipo | 20 pruebas Angular y prueba de integración con .NET, Keycloak y PostgreSQL. [Verificación del incremento v2](plan-sisplan/10-ADAPTACION-SRS-V2.md). La aceptación del SRS se mide sobre la entrega integrada |
+| Implementación del sistema institucional | Prototipo en PR | [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) cubre carga DIGEMAPS, revisión y publicación del PEI, y creación de POA independiente o vinculado con presupuesto de referencia opcional |
+| Pruebas del sistema institucional | Verificación parcial del prototipo | 21 pruebas Angular y prueba de integración con .NET, Keycloak y PostgreSQL. [Verificación del incremento v2](plan-sisplan/10-ADAPTACION-SRS-V2.md). La aceptación del SRS se mide sobre la entrega integrada |
 | Despliegue del sistema institucional | Pendiente | El portal publicado contiene documentación del proyecto |
 | Cumplimiento global del SRS | Sin calcular | La versión integrada y sus criterios de aceptación siguen pendientes |
 
@@ -57,8 +57,8 @@ El portal reúne los requisitos del SRS y presenta **9 casos de uso propuestos**
 
 - El catálogo tiene seis ejes. Los cinco nombres enumerados en el SRS son ejemplos.
 - Los productos del POA no identifican su objetivo e indicador estratégico.
-- La plantilla agrupa los meses en cuatro trimestres, mientras que el SRS exige tres evaluaciones cuatrimestrales.
-- Los presupuestos de los once productos están vacíos.
+- La plantilla agrupa los meses en cuatro trimestres. Para el seguimiento se aplica la periodicidad del SRS v2 conforme se implemente.
+- Los presupuestos de los once productos están vacíos. Según la aclaración del maestro, se permite registrar un valor de referencia o dejar el campo vacío.
 - Solo dos productos tienen actividades detalladas en la columna correspondiente.
 - Dos registros llevan el rótulo «Producto 8».
 - La columna de verificación describe las evidencias esperadas, sin acreditar ejecución.
@@ -66,7 +66,7 @@ El portal reúne los requisitos del SRS y presenta **9 casos de uso propuestos**
 
 ## Reglas de trabajo
 
-Vigencia, permisos, evaluación, presupuesto, alertas y trabajo adicional se implementan según las [reglas operativas de la base v1.0](plan-sisplan/07-REGLAS-OPERATIVAS.md). Cualquier aclaración del maestro se registra con el requisito y el caso de prueba afectado.
+El flujo actual y el presupuesto opcional se rigen por la [adaptación al SRS v2](plan-sisplan/10-ADAPTACION-SRS-V2.md). Las [reglas de la base v1.0](plan-sisplan/07-REGLAS-OPERATIVAS.md) sirven de antecedente.
 
 ## Calendario de referencia
 
@@ -78,5 +78,5 @@ El objetivo referido a la **semana 6** está pendiente de conciliar con ese plaz
 
 1. Registrar en el tablero responsables, revisores y horas disponibles.
 2. Revisar el SRS v2 con el grupo y verificar la rúbrica, el formato de entrega y el plazo en el aula.
-3. Revisar el PR #1 frente a la base, reproducir el entorno y comprobar acceso con MFA.
+3. Revisar el PR #1 frente al SRS v2, reproducir el entorno y comprobar acceso con MFA.
 4. Completar la programación de productos y actividades sobre un POA en borrador.

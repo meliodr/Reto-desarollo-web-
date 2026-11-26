@@ -8,7 +8,7 @@ Proyecto académico de INTEC para un equipo de **cinco integrantes**.
 
 ## Requisitos y fuentes
 
-La consigna y la **Especificación de Requerimientos de Software SISPLAN** definen el alcance original. Los archivos **Ejes y Objetivos DIGEMAPS (1).xlsx** y **POA TI 2026 V2.xlsx** sirven como referencias para los datos estratégicos y la programación operativa.
+La consigna y el **SRS v2 del Reto PEI y POA (noviembre–enero 2027)** definen el alcance vigente. Los archivos **Ejes y Objetivos DIGEMAPS (1).xlsx** y **POA TI 2026 V2.xlsx** sirven como referencias para los datos estratégicos y la programación operativa.
 
 La [matriz anterior](docs/plan-sisplan/05-TRAZABILIDAD.md) documenta los requisitos numerados de la v1.
 
@@ -16,7 +16,7 @@ La [matriz anterior](docs/plan-sisplan/05-TRAZABILIDAD.md) documenta los requisi
 
 1. Cargar la estructura estratégica y preparar el PEI.
 2. Enviar a revisión, registrar observaciones y corregir. El director revisa, el comité valida y la máxima autoridad aprueba.
-3. Publicar el PEI y abrir el POA anual como plan independiente o vinculado.
+3. Formular un POA anual independiente o vincularlo con un PEI publicado. Se puede dejar vacío el presupuesto o indicar un monto de referencia en RD$.
 4. En el módulo operativo, programar productos y actividades, registrar avances y evidencias y evaluar resultados.
 
 ## Ampliación solicitada
@@ -29,7 +29,7 @@ El portal de trabajo v2 está publicado. Permite asignar tareas, completar check
 
 En el entorno de desarrollo se aprobaron **21 pruebas del portal**: 17 del servicio del tablero y 4 regresiones de interfaz. La incorporación y los recorridos con las cinco cuentas reales siguen pendientes.
 
-El [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) incorpora la carga DIGEMAPS, el nuevo flujo de aprobación del PEI y la creación de POA en ambas modalidades. La aplicación usa Angular, .NET, PostgreSQL y Keycloak.
+El [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) incorpora la carga DIGEMAPS, el nuevo flujo de aprobación del PEI y la creación de POA en ambas modalidades con presupuesto de referencia opcional. La aplicación usa Angular, .NET, PostgreSQL y Keycloak.
 
 La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 23:59**. El objetivo de trabajo referido a la **semana 6** está pendiente de conciliar con ese plazo; todavía no se le asigna una fecha.
 
@@ -38,10 +38,10 @@ La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 2
 - [Adaptación y alcance del SRS v2](docs/plan-sisplan/10-ADAPTACION-SRS-V2.md)
 
 - [Arranque local y pruebas de la aplicación](docs/plan-sisplan/06-PRIMER-INCREMENTO.md)
-- [QA del recorrido PEI–POA](docs/plan-sisplan/09-QA-PEI-POA.md)
+- [QA histórico del recorrido PEI–POA v1](docs/plan-sisplan/09-QA-PEI-POA.md)
 
 - [Plan base v1.0 con reglas, herramientas, responsables y entregables](docs/plan-sisplan/01-PLAN-DE-CONSTRUCCION.md)
-- [Verificación del SRS, los Excel y la consigna](docs/plan-sisplan/05-TRAZABILIDAD.md#verificación-del-srs-y-los-excel)
+- [Verificación histórica del SRS v1, los Excel y la consigna](docs/plan-sisplan/05-TRAZABILIDAD.md#verificación-del-srs-y-los-excel)
 - [Estado del proyecto](docs/ESTADO.md)
 - [Método de trabajo](docs/METODO-DE-TRABAJO.md)
 - [Decisiones y asuntos pendientes](docs/DECISIONES.md)

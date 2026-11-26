@@ -16,6 +16,7 @@ interface Poa {
   fechaFin: string;
   peiId: string | null;
   peiNombre: string | null;
+  presupuestoReferencia: string | null;
 }
 
 @Component({
@@ -40,6 +41,7 @@ export class PoaList {
   readonly showForm = signal(false);
   readonly year = signal<number | null>(new Date().getFullYear());
   readonly peiId = signal('');
+  readonly budget = signal('');
   readonly candidates = computed(() => {
     const year = this.year();
     return this.strategic().filter(
@@ -82,11 +84,20 @@ export class PoaList {
     const anio = this.year();
     if (this.saving() || anio === null || !Number.isInteger(anio) || anio < 1 || anio > 9999)
       return;
-    this.saving.set(true);
     this.error.set('');
     this.notice.set('');
+    const budget = this.budget().trim().replace(',', '.');
+    if (budget && !/^[0-9]{1,12}(\.[0-9]{1,2})?$/.test(budget)) {
+      this.error.set('Indica un presupuesto con hasta 12 dígitos enteros y 2 decimales.');
+      return;
+    }
+    this.saving.set(true);
     this.http
-      .post<Poa>('/api/v1/poas', { anio, peiId: this.peiId() || null })
+      .post<Poa>('/api/v1/poas', {
+        anio,
+        peiId: this.peiId() || null,
+        presupuestoReferencia: budget || null,
+      })
       .pipe(
         takeUntilDestroyed(this.destroy),
         finalize(() => this.saving.set(false)),
@@ -95,10 +106,15 @@ export class PoaList {
         next: (poa) => {
           this.plans.update((plans) => [...plans, poa].sort((a, b) => b.anio - a.anio));
           this.notice.set(`POA ${poa.anio} creado.`);
+          this.budget.set('');
           this.showForm.set(false);
         },
         error: (error: HttpErrorResponse) =>
-          this.error.set(error.error?.title ?? 'No pudimos guardar el POA.'),
+          this.error.set(
+            error.error?.errors?.presupuestoReferencia?.[0] ??
+              error.error?.title ??
+              'No pudimos guardar el POA.',
+          ),
       });
   }
 }

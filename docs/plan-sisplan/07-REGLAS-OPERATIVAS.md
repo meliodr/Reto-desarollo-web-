@@ -1,5 +1,7 @@
 # Reglas operativas de SISPLAN
 
+> Estas reglas documentan el diseño de la v1. Consulta el [alcance vigente del SRS v2](10-ADAPTACION-SRS-V2.md) para el flujo PEI–POA, el seguimiento y el presupuesto opcional.
+
 **Base de trabajo v1.0 · 12 de noviembre de 2026.** Los requisitos y los identificadores se conservan en la [matriz de trazabilidad](05-TRAZABILIDAD.md). Este documento fija las decisiones del diseño del equipo donde el SRS deja alternativas o vacíos. Si el maestro da una aclaración distinta, actualizar la regla, el contrato y su prueba en el mismo cambio.
 
 ## Institución, alcance y permisos

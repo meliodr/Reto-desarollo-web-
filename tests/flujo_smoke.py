@@ -48,10 +48,24 @@ def main():
     call(base, "/poas", 403, "POST", {"anio": year}, auditor)
     poa, _ = call(base, "/poas", 201, "POST", {"anio": year}, analyst)
     assert poa["peiId"] is None and poa["fechaInicio"] == f"{year}-01-01" and poa["estado"] == "borrador"
+    assert poa["presupuestoReferencia"] is None
     call(base, "/poas", 409, "POST", {"anio": year}, analyst)
     call(base, "/poas", 422, "POST", {"anio": 0}, analyst)
+    for invalid in ("-1", "5.001", "1000000000000", "5,50", ""):
+        errors, _ = call(base, "/poas", 422, "POST",
+                         {"anio": year + 1, "presupuestoReferencia": invalid}, analyst)
+        assert "presupuestoReferencia" in errors["errors"]
+    zero, _ = call(base, "/poas", 201, "POST",
+                   {"anio": year + 1, "presupuestoReferencia": "0"}, analyst)
+    assert zero["presupuestoReferencia"] == "0.00"
+    omitted, _ = call(base, "/poas", 201, "POST",
+                      {"anio": year + 2, "presupuestoReferencia": None}, analyst)
+    assert omitted["presupuestoReferencia"] is None
     listed, _ = call(base, "/poas", 200, token=auditor)
-    assert any(row["id"] == poa["id"] for row in listed)
+    budgets = {row["id"]: row["presupuestoReferencia"] for row in listed}
+    assert budgets[poa["id"]] is None
+    assert budgets[zero["id"]] == "0.00"
+    assert budgets[omitted["id"]] is None
 
     data = {
         "nombre": f"PEI de prueba v2 {uuid4().hex[:7]}",
@@ -112,12 +126,17 @@ def main():
     linked_path = f"/peis/{pei_id}/poas"
     assert call(base, linked_path, 200, token=analyst)[0] == []
     call(base, "/poas", 409, "POST", {"anio": year - 1, "peiId": pei_id}, analyst)
-    linked, _ = call(base, "/poas", 201, "POST", {"anio": year, "peiId": pei_id}, analyst)
+    reference = "999999999999.03"
+    linked, _ = call(base, "/poas", 201, "POST",
+                     {"anio": year, "peiId": pei_id, "presupuestoReferencia": reference}, analyst)
     assert linked["peiId"] == pei_id and linked["fechaInicio"] == f"{year}-03-01"
+    assert linked["presupuestoReferencia"] == reference
+    listed, _ = call(base, "/poas", 200, token=auditor)
+    assert next(row for row in listed if row["id"] == linked["id"])["presupuestoReferencia"] == reference
     call(base, "/poas", 409, "POST", {"anio": year, "peiId": pei_id}, analyst)
     related, _ = call(base, linked_path, 200, token=analyst)
     assert len(related) == 1 and related[0]["id"] == linked["id"] and related[0]["evaluaciones"] == []
-    print("SRS v2: roles, observaciones, corrección, carga DIGEMAPS y POA independiente/vinculado comprobados.")
+    print("SRS v2: roles, corrección, carga DIGEMAPS y POA en ambas modalidades con presupuesto opcional comprobados.")
 
 
 if __name__ == "__main__":

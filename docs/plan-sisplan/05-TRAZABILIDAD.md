@@ -1,5 +1,7 @@
 # Matriz de trazabilidad de SISPLAN
 
+> Esta matriz corresponde al SRS v1. Los cambios y la cobertura del nuevo reto se documentan en la [adaptación al SRS v2](10-ADAPTACION-SRS-V2.md).
+
 La [base v1.0](01-PLAN-DE-CONSTRUCCION.md) y sus [reglas operativas](07-REGLAS-OPERATIVAS.md) fijan los resultados que esta matriz debe verificar.
 
 Base funcional: SRS SISPLAN v1.0, 11 páginas, y consigna del Reto Web PEI-POA. Los nombres de pantalla, la asignación a tareas y los criterios de aceptación concretan el desarrollo propuesto. Cada criterio requiere evidencia del producto institucional al ejecutarse. El estado del producto y del prototipo se consulta en el registro vigente. [Estado vigente del proyecto](../ESTADO.md)

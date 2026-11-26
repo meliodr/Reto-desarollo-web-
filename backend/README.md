@@ -1,6 +1,6 @@
 # API de planificación estratégica
 
-La API .NET 10 usa PostgreSQL para borradores, ejes, objetivos, indicadores, publicación y generación de POA. [Configurar Keycloak para aprobar y publicar](../docs/plan-sisplan/06-PRIMER-INCREMENTO.md#habilitar-el-acceso-institucional-local).
+La API .NET 10 usa PostgreSQL para formular, revisar y publicar PEI y para crear o consultar POA independientes o vinculados. [Configurar Keycloak para el flujo del SRS v2](../docs/plan-sisplan/10-ADAPTACION-SRS-V2.md#verificación-del-incremento).
 
 ## Arranque
 
@@ -25,9 +25,13 @@ Cada migración aplicada se registra con su huella. Repetir `--migrate` conserva
 | `GET /api/v1/peis/{id}` | PEI con `ETag` |
 | `POST /api/v1/peis` | Borrador creado, `201`, `Location` y `ETag` |
 | `PATCH /api/v1/pei-versiones/{versionId}` | Borrador actualizado y nuevo `ETag` |
+| `GET /api/v1/poas` | POA registrados y su presupuesto de referencia, si existe |
+| `POST /api/v1/poas` | POA en borrador, `201` |
 
-`POST` y `PATCH` reciben `nombre`, `tipo`, `fechaInicio`, `fechaFin`, `mision`, `vision` y `valores`. El nombre admite de 3 a 200 caracteres y cada texto de 1 a 4000. Las fechas usan `AAAA-MM-DD`. La fecha de fin debe ser igual o posterior a la inicial. Para este incremento se acordaron cuatro años calendario inclusivos en el PEI ordinario y cinco en el extraordinario.
+Las escrituras del PEI reciben `nombre`, `tipo`, `fechaInicio`, `fechaFin`, `mision`, `vision` y `valores`. El nombre admite de 3 a 200 caracteres y cada texto de 1 a 4000. Las fechas usan `AAAA-MM-DD`. La fecha de fin debe ser igual o posterior a la inicial. Para este incremento se acordaron cuatro años calendario inclusivos en el PEI ordinario y cinco en el extraordinario.
 
-`PATCH` envía el `If-Match` exacto obtenido en la consulta. Si falta devuelve `428`. Si otra edición actualizó el borrador devuelve `412`. Los campos inválidos devuelven `422` con un objeto `errors` indexado por campo. El estado del PEI puede ser `borrador`, `en_revision`, `aprobado` o `publicado`.
+`PATCH` envía el `If-Match` exacto obtenido en la consulta. Si falta devuelve `428`. Si otra edición actualizó el borrador devuelve `412`. Los campos inválidos devuelven `422` con un objeto `errors` indexado por campo. El estado del PEI puede ser `borrador`, `en_revision`, `observado`, `corregido`, `aprobado` o `publicado`.
+
+`POST /api/v1/poas` requiere `anio`. El vínculo `peiId` y el monto `presupuestoReferencia` son opcionales. El monto se envía como texto decimal en DOP, por ejemplo `"1500.25"`, y se devuelve con dos decimales o como `null` si se dejó vacío.
 
 Se usa Npgsql con SQL parametrizado. [Npgsql 10.0.3](https://www.nuget.org/packages/Npgsql/10.0.3).

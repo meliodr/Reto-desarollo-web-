@@ -51,6 +51,22 @@
         </p>
       }
     </div>
+    <div class="field">
+      <label for="poa-budget">Presupuesto de referencia (RD$, opcional)</label>
+      <input
+        id="poa-budget"
+        name="budget"
+        type="text"
+        inputmode="decimal"
+        aria-describedby="poa-budget-help"
+        [ngModel]="budget()"
+        [disabled]="saving()"
+        (ngModelChange)="budget.set($event)"
+      />
+      <p id="poa-budget-help">
+        Puedes dejarlo vacío o indicar un estimado con hasta dos decimales.
+      </p>
+    </div>
     @if (error()) {
       <p role="alert" class="notice notice-error">{{ error() }}</p>
     }
@@ -58,7 +74,7 @@
       class="button button-secondary"
       type="button"
       [disabled]="saving()"
-      (click)="showForm.set(false); error.set('')"
+      (click)="showForm.set(false); error.set(''); budget.set('')"
     >
       Cancelar
     </button>
@@ -83,6 +99,7 @@
           <th scope="col">Período</th>
           <th scope="col">Estado</th>
           <th scope="col">Plan estratégico</th>
+          <th scope="col">Presupuesto de referencia</th>
         </tr>
       </thead>
       <tbody>
@@ -106,6 +123,13 @@
                 <a [routerLink]="['/peis', poa.peiId]">{{ poa.peiNombre }}</a>
               } @else {
                 Independiente
+              }
+            </td>
+            <td>
+              @if (poa.presupuestoReferencia; as budget) {
+                RD$ {{ budget }}
+              } @else {
+                Sin registrar
               }
             </td>
           </tr>

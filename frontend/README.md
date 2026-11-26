@@ -1,6 +1,6 @@
 # SISPLAN · Frontend del primer incremento
 
-Aplicación Angular 22 para formular y publicar el PEI, registrar ejes, objetivos e indicadores y consultar los POA generados. El flujo de revisión requiere acceso institucional local. [Guía del incremento](../docs/plan-sisplan/06-PRIMER-INCREMENTO.md).
+Aplicación Angular 22 para formular y publicar el PEI, registrar ejes, objetivos e indicadores y crear y consultar los POA independientes o vinculados con presupuesto de referencia opcional. El flujo de revisión requiere acceso institucional local. [Alcance vigente](../docs/plan-sisplan/10-ADAPTACION-SRS-V2.md).
 
 ## Ejecución local
 
@@ -13,7 +13,7 @@ npm start
 
 Abrir `http://127.0.0.1:4200/peis`. La API debe escuchar en `http://127.0.0.1:5080`. El proxy de desarrollo reenvía `/api/**`; no es una configuración de publicación.
 
-Rutas: `/peis`, `/peis/nuevo` y `/peis/:id`.
+Rutas principales: `/peis`, `/peis/nuevo`, `/peis/:id` y `/poas`.
 
 ## Verificación
 
@@ -28,11 +28,12 @@ Las pruebas Vitest verifican el contrato HTTP, la preservación de ETag/If-Match
 ## Contrato y decisiones
 
 - `GET/POST /api/v1/peis`, `GET /api/v1/peis/{id}` y `PATCH /api/v1/pei-versiones/{versionId}`.
-- Las escrituras envían exclusivamente nombre, tipo, fechas, misión, visión y valores. Los identificadores y el estado vienen del servidor.
+- Las escrituras de cabecera del PEI envían exclusivamente nombre, tipo, fechas, misión, visión y valores. Los identificadores y el estado vienen del servidor.
 - El PATCH conserva el ETag exacto recibido y lo envía en `If-Match`. Un 412 mantiene los cambios locales; la comparación consulta el servidor sin reemplazarlos. Cargar su versión requiere confirmación explícita.
 - Un resultado incierto de red bloquea el reenvío inmediato y pide comprobar el registro para evitar duplicados.
 - Regla provisional alineada con la API: ordinario de 4 años calendario inclusivos, extraordinario de 5. Nombre de 3–200 caracteres; misión, visión y valores requeridos, hasta 4.000 caracteres cada uno.
 - Formularios con labels, errores enlazados, foco en el resumen, avisos de cambios sin guardar y layout responsivo. Es una base accesible, no una certificación WCAG.
+- En `/poas` se puede dejar vacío el presupuesto o indicar un estimado en RD$ con coma o punto decimal. El listado muestra «Sin registrar» si no se indicó un valor.
 - Tipografías locales de Fontsource, con licencia OFL en sus paquetes; no se requieren Google Fonts ni otros servicios externos en ejecución.
 
 Los archivos de `src/app/pei/` concentran este dominio. `pei-api.ts` contiene los DTO y cliente HTTP; `pei-validation.ts` las validaciones locales; `pei-list` y `pei-form` las pantallas. Los estilos institucionales son compartidos en `src/styles.css`.

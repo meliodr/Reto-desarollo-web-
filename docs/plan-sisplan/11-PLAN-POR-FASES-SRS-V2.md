@@ -40,6 +40,8 @@ F1 y F2 pueden empezar con un contrato de institución, identidad y catálogos a
 
 ### Subfases de F0
 
+La [preparación de F0](13-ARRANQUE-F0.md) recoge la línea base verificada, la secuencia inicial, los casos de QA y las decisiones pendientes.
+
 | Subfase | Entrada para cerrar | Trabajo | Evidencia de cierre |
 |---|---|---|---|
 | **F0.1 · Alcance y contratos comunes** | SRS v2, archivos fuente y PR actual. | Confirmar rúbrica, rol del Comité, publicación y política de MFA. Acordar contratos de institución, sesión, catálogos, auditoría y [evidencias](12-ENTREGA-SEMANA-7.md#contrato-común-de-evidencias). Preparar datos de prueba para Angular y API. | Decisiones registradas con su fuente, contratos validados, casos obligatorios identificados y datos de prueba disponibles para F1 y F2. Resolver o escalar lo que afecte el plazo de entrega al cerrar la semana 4. |

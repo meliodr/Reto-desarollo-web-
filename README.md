@@ -35,6 +35,7 @@ Estamos en la **semana 4**. El primer recorrido de punta a punta se ensaya en la
 
 ## Documentación
 
+- [Preparación de F0 y casos iniciales de QA](docs/plan-sisplan/13-ARRANQUE-F0.md)
 - [Plan vigente · fases, subfases, dependencias y pruebas](docs/plan-sisplan/11-PLAN-POR-FASES-SRS-V2.md)
 - [Adaptación y alcance del SRS v2](docs/plan-sisplan/10-ADAPTACION-SRS-V2.md)
 

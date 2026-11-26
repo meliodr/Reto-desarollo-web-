@@ -15,27 +15,37 @@ MOTIVO = "El objetivo de prueba todavía no tiene un indicador."
 
 
 def corregir_objetivo_observado(pagina: Page):
-    pagina.get_by_label("Estado del plan").select_option("observado")
-    pagina.get_by_role("link", name="PEI de mapa y riesgos", exact=True).click()
-    expect(pagina.get_by_role("heading", name="Corregir PEI observado")).to_be_visible()
-    expect(pagina.get_by_text("Precisar el resultado esperado.")).to_be_visible()
-    pagina.get_by_role("button", name="Ver objetivos de Canales de atención").click()
-    objetivo = pagina.get_by_role("listitem").filter(
+    with etapa_chromium("abrir el PEI observado y leer la devolución"):
+        pagina.get_by_role("combobox", name="Estado del plan", exact=True).select_option("observado")
+        pagina.get_by_role("link", name="PEI de mapa y riesgos", exact=True).click()
+        expect(pagina.get_by_role("heading", name="Corregir PEI observado", exact=True)).to_be_visible()
+        revision = pagina.get_by_role("region", name="Revisión y publicación", exact=True)
+        expect(revision.get_by_text("Precisar el resultado esperado.")).to_be_visible()
+
+    panel = pagina.get_by_role("region", name="Objetivos de Canales de atención", exact=True)
+    corregido = "Trámites en línea disponibles con confirmación."
+    with etapa_chromium("abrir el formulario del objetivo devuelto"):
+        pagina.get_by_role("button", name="Ver objetivos de Canales de atención", exact=True).click()
+        panel.get_by_role("button", name="Editar objetivo Dar acceso", exact=True).click()
+        editor = panel.get_by_role("group", name="Editar objetivo", exact=True)
+        campo = editor.get_by_role("textbox", name="Resultado esperado", exact=True)
+        expect(campo).to_have_value("Trámites en línea disponibles.")
+        campo.fill(corregido)
+
+    objetivo = panel.get_by_role("listitem").filter(
         has=pagina.get_by_role("heading", name="OE-01 · Dar acceso", exact=True)
     )
-    objetivo.get_by_role("button", name="Editar objetivo Dar acceso").click()
-    campo = pagina.get_by_role("textbox", name="Resultado esperado", exact=True)
-    expect(campo).to_have_value("Trámites en línea disponibles.")
-    corregido = "Trámites en línea disponibles con confirmación."
-    campo.fill(corregido)
-    with pagina.expect_response(lambda r: "/objetivos/" in r.url and r.request.method == "PUT") as escritura:
-        pagina.get_by_role("button", name="Guardar objetivo", exact=True).click()
-    assert escritura.value.ok
-    assert escritura.value.request.headers.get("if-match")
-    expect(objetivo.get_by_text(corregido, exact=True)).to_be_visible()
-    pagina.reload()
-    pagina.get_by_role("button", name="Ver objetivos de Canales de atención").click()
-    expect(objetivo.get_by_text(corregido, exact=True)).to_be_visible()
+    with etapa_chromium("guardar la corrección del objetivo con el ETag vigente"):
+        with pagina.expect_response(lambda r: "/objetivos/" in r.url and r.request.method == "PUT") as escritura:
+            panel.get_by_role("button", name="Guardar objetivo", exact=True).click()
+        assert escritura.value.ok
+        assert escritura.value.request.headers.get("if-match")
+        expect(objetivo.get_by_text(corregido, exact=True)).to_be_visible()
+
+    with etapa_chromium("recargar y comprobar que la corrección persiste"):
+        pagina.reload()
+        pagina.get_by_role("button", name="Ver objetivos de Canales de atención", exact=True).click()
+        expect(objetivo.get_by_text(corregido, exact=True)).to_be_visible()
 
 
 def consultar_pei_oficial(pagina: Page, password: str, semilla: str, carpeta: Path | None):

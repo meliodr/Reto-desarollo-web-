@@ -122,12 +122,12 @@ sql sisplan < tests/f1_indicador_legacy.sql
 python3 tests/f1_publicacion.py --tokens "$tokens"
 sql sisplan -c 'DROP TRIGGER f1_indicador_legacy_ci ON sisplan.indicador'
 sql sisplan -c 'DROP FUNCTION sisplan.f1_indicador_legacy_ci()'
-python3 tests/f1_interfaz.py --capturas "$capturas"
 if [[ "$(sql sisplan -Atc 'SELECT count(*) FROM sisplan.poa')" != "$poas_antes" ]]; then
   echo 'La publicación autónoma del PEI cambió el conjunto de POA.' >&2
   exit 1
 fi
 echo 'F1.4: las publicaciones no generaron POA en PostgreSQL.'
+python3 tests/f1_interfaz.py --capturas "$capturas"
 sql sisplan -c "UPDATE sisplan.institucion SET pei_habilitado=false, poa_habilitado=true WHERE id='00000000-0000-4000-8000-000000000001'"
 python3 tests/f0_smoke.py --tokens "$tokens" --modo solo-poa
 python3 tests/f0_interfaz.py --modo solo-poa --capturas "$capturas"

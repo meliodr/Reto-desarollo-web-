@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Text.Json;
 
 namespace Sisplan.Api;
@@ -10,24 +9,22 @@ internal static class FlujoPeiEndpoints
         var transitions = api.MapGroup("/pei-versiones/{versionId:guid}/transiciones")
             .RequireAuthorization("LeerPlanes");
         transitions.MapGet("", OptionsAsync);
-        transitions.MapPost("", ApplyAsync);
-        api.MapGet("/peis/{peiId:guid}/poas", ListPoasAsync).RequireAuthorization("LeerPlanes");
+        transitions.MapPost("", ApplyAsync).RequireAuthorization("TransitarPei");
+        api.MapGet("/peis/{peiId:guid}/poas", ListPoasAsync).WithMetadata(new RequiereModulo(Pei: true, Poa: true));
     }
 
-    private static async Task<IResult> OptionsAsync(Guid versionId, ClaimsPrincipal user, IConfiguration configuration,
+    private static async Task<IResult> OptionsAsync(Guid versionId, SesionInstitucional sesion,
         FlujoPeiRepository repository, CancellationToken ct)
     {
-        if (Actor(user, configuration) is not { } actor)
-            return Results.Forbid();
+        var actor = Actor(sesion);
         var options = await repository.OptionsAsync(versionId, actor, ct);
         return options is null ? MissingPei() : Results.Ok(options);
     }
 
-    private static async Task<IResult> ApplyAsync(Guid versionId, ClaimsPrincipal user, IConfiguration configuration, HttpRequest request,
+    private static async Task<IResult> ApplyAsync(Guid versionId, SesionInstitucional sesion, HttpRequest request,
         HttpResponse response, FlujoPeiRepository repository, CancellationToken ct)
     {
-        if (Actor(user, configuration) is not { } actor)
-            return Results.Forbid();
+        var actor = Actor(sesion);
 
         var expectedTag = request.Headers.IfMatch.ToString();
         if (string.IsNullOrWhiteSpace(expectedTag))
@@ -84,16 +81,11 @@ internal static class FlujoPeiEndpoints
         return poas is null ? MissingPei() : Results.Ok(poas);
     }
 
-    private static FlujoPeiActor? Actor(ClaimsPrincipal user, IConfiguration configuration)
+    private static FlujoPeiActor Actor(SesionInstitucional sesion)
     {
-        var issuer = user.FindFirstValue("iss");
-        var subject = user.FindFirstValue("sub");
-        if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(subject))
-            return null;
-        var clientId = configuration["Sisplan:Oidc:ClientId"] ?? "sisplan-web";
-        bool Has(string role) => AccesoInstitucional.HasRole(user, clientId, role);
-        return new(issuer, subject, Has("AnalistaPlanificacion") || Has("Planificador"),
-            Has("DirectorPlanificacion"), Has("ComiteEstrategico"), Has("MaximaAutoridad"));
+        var rol = sesion.Activa!.Rol;
+        return new(sesion.Emisor, sesion.Sujeto, rol is "AnalistaPlanificacion" or "Planificador",
+            rol == "DirectorPlanificacion", rol == "ComiteEstrategico", rol == "MaximaAutoridad");
     }
 
     private static IResult MissingPei() => Results.Problem(statusCode: 404, title: "No se encontró el PEI vigente para esta operación.");

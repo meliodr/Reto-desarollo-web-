@@ -1,0 +1,96 @@
+{
+  "sesion": {
+    "actor": {
+      "emisor": "http://127.0.0.1:8080/realms/sisplan",
+      "sujeto": "30000000-0000-4000-8000-000000000014"
+    },
+    "instituciones": [
+      {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "nombre": "Instituto Horizonte",
+        "rol": "AnalistaPlanificacion",
+        "dependenciaId": null,
+        "modulos": {"pei": true, "poa": true}
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "nombre": "Instituto Bahía",
+        "rol": "Auditor",
+        "dependenciaId": null,
+        "modulos": {"pei": true, "poa": true}
+      }
+    ],
+    "institucionActivaId": "00000000-0000-4000-8000-000000000001"
+  },
+  "organizacion": {
+    "dependencias": [
+      {"id": "00000000-0000-4000-8000-000000000101", "nombre": "Planificación", "activa": true},
+      {"id": "00000000-0000-4000-8000-000000000102", "nombre": "Tecnología", "activa": true},
+      {"id": "00000000-0000-4000-8000-000000000103", "nombre": "Archivo anterior", "activa": false}
+    ],
+    "periodos": [
+      {"id": "00000000-0000-4000-8000-000000001001", "nombre": "PEI 2026–2029", "fechaInicio": "2026-01-01", "fechaFin": "2029-12-31"},
+      {"id": "00000000-0000-4000-8000-000000001002", "nombre": "POA 2026", "fechaInicio": "2026-01-01", "fechaFin": "2026-12-31"}
+    ],
+    "unidadesMedida": [{"codigo": "porcentaje", "nombre": "Porcentaje"}, {"codigo": "unidad", "nombre": "Unidad"}]
+  },
+  "crearPei": {
+    "nombre": "PEI institucional de prueba",
+    "tipo": "ordinario",
+    "fechaInicio": "2026-01-01",
+    "fechaFin": "2029-12-31",
+    "mision": "Coordinar las actividades de planificación.",
+    "vision": "Medir los resultados del plan institucional.",
+    "valores": "Responsabilidad y transparencia."
+  },
+  "crearPoaAutonomo": {"anio": 2026, "peiId": null, "presupuestoReferencia": null},
+  "poaAutonomo": {
+    "id": "40000000-0000-4000-8000-000000000002",
+    "anio": 2026,
+    "estado": "borrador",
+    "fechaInicio": "2026-01-01",
+    "fechaFin": "2026-12-31",
+    "peiId": null,
+    "peiNombre": null,
+    "presupuestoReferencia": null,
+    "dependenciaId": "00000000-0000-4000-8000-000000000101"
+  },
+  "auditoria": [
+    {
+      "id": 1,
+      "institucionId": "00000000-0000-4000-8000-000000000001",
+      "emisor": "http://127.0.0.1:8080/realms/sisplan",
+      "sujeto": "30000000-0000-4000-8000-000000000005",
+      "accion": "INSERT",
+      "entidad": "poa",
+      "referencia": "40000000-0000-4000-8000-000000000002",
+      "fecha": "2026-11-26T14:00:00Z"
+    }
+  ],
+  "evidencia": {
+    "id": "40000000-0000-4000-8000-000000000003",
+    "institucionId": "00000000-0000-4000-8000-000000000001",
+    "vinculo": {"modulo": "poa", "entidad": "avance", "entidadId": "40000000-0000-4000-8000-000000000004"},
+    "periodoId": "00000000-0000-4000-8000-000000001002",
+    "versiones": [
+      {
+        "numero": 1,
+        "descripcion": "Acta de la jornada de capacitación, pendiente de firma.",
+        "categoria": "acta",
+        "estado": "observada",
+        "fecha": "2026-11-25T14:00:00Z",
+        "autor": {"emisor": "http://127.0.0.1:8080/realms/sisplan", "sujeto": "30000000-0000-4000-8000-000000000005"},
+        "fuente": {"tipo": "url", "url": "https://example.org/actas/jornada"}
+      },
+      {
+        "numero": 2,
+        "descripcion": "Acta firmada de la misma jornada.",
+        "categoria": "acta",
+        "estado": "pendiente",
+        "fecha": "2026-11-26T14:05:00Z",
+        "autor": {"emisor": "http://127.0.0.1:8080/realms/sisplan", "sujeto": "30000000-0000-4000-8000-000000000005"},
+        "fuente": {"tipo": "archivo", "archivoId": "40000000-0000-4000-8000-000000000005", "nombre": "acta-firmada.pdf", "mime": "application/pdf", "bytes": 12502}
+      }
+    ]
+  }
+}

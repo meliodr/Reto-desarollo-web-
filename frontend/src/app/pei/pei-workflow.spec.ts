@@ -1,8 +1,8 @@
+import { activateAnalyst } from '../../testing/membresia';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { Session } from '../auth/session';
 import { Pei } from './pei-api';
 import { PeiForm } from './pei-form';
 
@@ -38,9 +38,7 @@ describe('Flujo del PEI en Angular', () => {
         },
       ],
     });
-    const session = TestBed.inject(Session);
-    session.enabled.set(true);
-    session.canPlan.set(true);
+    activateAnalyst();
     fixture = TestBed.createComponent(PeiForm);
     http = TestBed.inject(HttpTestingController);
     view = fixture.nativeElement;

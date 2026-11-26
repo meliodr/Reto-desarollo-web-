@@ -70,6 +70,7 @@ export class PoaList {
         error: () => this.loadError.set(true),
       });
 
+    if (!this.session.pei()) return;
     this.peiLoadError.set(false);
     this.http
       .get<Pei[]>('/api/v1/peis')
@@ -80,9 +81,21 @@ export class PoaList {
       });
   }
 
+  canLeave() {
+    if (this.saving()) return false;
+    return !this.showForm() || window.confirm('¿Salir y descartar el formulario del POA?');
+  }
+
   save() {
     const anio = this.year();
-    if (this.saving() || anio === null || !Number.isInteger(anio) || anio < 1 || anio > 9999)
+    if (
+      !this.session.canFormulatePoa() ||
+      this.saving() ||
+      anio === null ||
+      !Number.isInteger(anio) ||
+      anio < 1 ||
+      anio > 9999
+    )
       return;
     this.error.set('');
     this.notice.set('');
@@ -95,7 +108,7 @@ export class PoaList {
     this.http
       .post<Poa>('/api/v1/poas', {
         anio,
-        peiId: this.peiId() || null,
+        peiId: (this.session.pei() && this.peiId()) || null,
         presupuestoReferencia: budget || null,
       })
       .pipe(

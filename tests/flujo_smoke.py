@@ -8,10 +8,12 @@ from urllib.request import Request, urlopen
 from uuid import uuid4
 
 
-def call(base, path, expected, method="GET", body=None, token=None, etag=None):
+def call(base, path, expected, method="GET", body=None, token=None, etag=None, institution=None):
     headers = {"Accept": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    if institution:
+        headers["X-Institucion-Id"] = institution
     if etag:
         headers["If-Match"] = etag
     if body is not None:

@@ -1,6 +1,6 @@
 # SISPLAN · Frontend del primer incremento
 
-Aplicación Angular 22 para formular y publicar el PEI, registrar ejes, objetivos e indicadores y crear y consultar los POA independientes o vinculados con presupuesto de referencia opcional. El flujo de revisión requiere acceso institucional local. [Alcance vigente](../docs/plan-sisplan/10-ADAPTACION-SRS-V2.md).
+Aplicación Angular 22 para formular y publicar el PEI, registrar ejes, objetivos e indicadores y crear y consultar los POA independientes o vinculados con presupuesto de referencia opcional. El acceso a PEI, POA y auditoría requiere una sesión institucional de Keycloak y una membresía activa. [Alcance vigente](../docs/plan-sisplan/10-ADAPTACION-SRS-V2.md).
 
 ## Ejecución local
 
@@ -13,7 +13,9 @@ npm start
 
 Abrir `http://127.0.0.1:4200/peis`. La API debe escuchar en `http://127.0.0.1:5080`. El proxy de desarrollo reenvía `/api/**`; no es una configuración de publicación.
 
-Rutas principales: `/peis`, `/peis/nuevo`, `/peis/:id` y `/poas`.
+Con la sesión iniciada, la cabecera muestra los módulos habilitados. Si la cuenta pertenece a varias instituciones, el selector permite cambiar de ámbito. El cambio cierra la vista anterior y vuelve al listado de la institución elegida. La selección se recuerda en esta pestaña para la misma cuenta.
+
+Rutas principales: `/peis`, `/peis/nuevo`, `/peis/:id`, `/poas` y `/auditoria`. El Auditor y el Administrador Institucional pueden consultar el historial de la institución activa.
 
 ## Verificación
 

@@ -1,17 +1,76 @@
 openapi: 3.1.0
 info:
   title: SISPLAN — Planificación estratégica y POA anuales
-  version: 0.5.1
-  description: Contrato institucional. En loopback sin OIDC se permite formular borradores sin token. Publicación y consulta de POA requieren sesión incluso en local. El período se deriva de las fechas y el servidor asigna el estado borrador. Cada eje pertenece a la versión actual del PEI, con revisiones consultables. Los objetivos se registran bajo ejes activos y conservan el vínculo a su revisión de origen.
+  version: 0.6.0
+  description: |
+    Todas las operaciones de este contrato requieren un token Bearer válido y una membresía institucional.
+    El servidor obtiene el emisor y el sujeto del token. X-Institucion-Id selecciona una membresía verificada.
+    Si se omite, se elige la primera institución disponible por ID. Los permisos se calculan en cada solicitud.
+    Los listados reflejan el ámbito de lectura. Los recursos fuera de ese ámbito se tratan como inexistentes.
 servers:
   - url: http://127.0.0.1:5080/api/v1
 security:
   - AccesoInstitucional: []
 paths:
+  /sesion:
+    parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
+    get:
+      summary: Consultar la identidad verificada y las instituciones disponibles
+      responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '200':
+          description: Membresías propias e identificador de la institución seleccionada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sesion' }
+  /organizacion:
+    parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
+    get:
+      summary: Consultar dependencias, períodos y unidades de medida de la institución
+      responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '200':
+          description: Organización y catálogos en el ámbito del actor
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Organizacion' }
+  /auditoria:
+    parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
+    get:
+      summary: Consultar escrituras registradas en la institución activa
+      description: Consulta disponible para Auditor y AdministradorInstitucional. Hasta 100 eventos por página, ordenados por id descendente.
+      parameters:
+        - name: antesDe
+          in: query
+          description: Solicita los eventos anteriores a este id (exclusivo).
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '200':
+          description: Eventos de escritura de la institución
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/EventoAuditoria' }
   /peis:
+    parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
     get:
       summary: Consultar borradores de PEI
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200':
           description: Borradores registrados
           content:
@@ -23,12 +82,15 @@ paths:
       summary: Crear el primer borrador de un PEI
       requestBody: { $ref: '#/components/requestBodies/Pei' }
       responses:
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '201': { $ref: '#/components/responses/PeiCreado' }
-        '400': { description: JSON inválido }
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '415': { description: Se requiere application/json }
         '422': { $ref: '#/components/responses/Validacion' }
   /peis/{id}:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - name: id
         in: path
         required: true
@@ -36,10 +98,14 @@ paths:
     get:
       summary: Abrir un PEI y obtener la etiqueta de su versión
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200': { $ref: '#/components/responses/Pei' }
         '404': { description: PEI no encontrado }
   /pei-versiones/{versionId}:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - name: versionId
         in: path
         required: true
@@ -54,20 +120,26 @@ paths:
           schema: { type: string }
       requestBody: { $ref: '#/components/requestBodies/Pei' }
       responses:
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200': { $ref: '#/components/responses/Pei' }
         '404': { description: Versión no encontrada }
         '409': { description: El PEI no está en borrador }
         '412': { description: Otro guardado modificó el borrador. Volver a consultar antes de reintentar. }
-        '400': { description: JSON inválido }
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '415': { description: Se requiere application/json }
         '422': { $ref: '#/components/responses/Validacion' }
         '428': { description: Falta If-Match }
   /peis/{peiId}/ejes:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - $ref: '#/components/parameters/PeiId'
     get:
       summary: Consultar los ejes activos e inactivos de la versión actual del PEI
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200': { $ref: '#/components/responses/Ejes' }
         '404': { description: PEI no encontrado }
     post:
@@ -78,19 +150,25 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/DatosEje' }
       responses:
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '201': { $ref: '#/components/responses/EjeCreado' }
-        '400': { description: JSON inválido }
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '404': { description: PEI no encontrado }
         '409': { description: El PEI no está en borrador }
         '415': { description: Se requiere application/json }
         '422': { $ref: '#/components/responses/Validacion' }
   /peis/{peiId}/ejes/{ejeId}:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - $ref: '#/components/parameters/PeiId'
       - $ref: '#/components/parameters/EjeId'
     get:
       summary: Consultar la revisión actual del eje y su ETag
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200': { $ref: '#/components/responses/Eje' }
         '404': { description: Eje no encontrado en la versión actual del PEI }
     put:
@@ -108,8 +186,10 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/ActualizarEje' }
       responses:
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200': { $ref: '#/components/responses/Eje' }
-        '400': { description: JSON inválido }
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '404': { description: Eje no encontrado en la versión actual del PEI }
         '409': { description: El PEI no está en borrador }
         '412': { description: La revisión no corresponde al ETag o el eje cambió desde la consulta }
@@ -118,20 +198,28 @@ paths:
         '428': { description: Falta If-Match }
   /peis/{peiId}/ejes/{ejeId}/versiones:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - $ref: '#/components/parameters/PeiId'
       - $ref: '#/components/parameters/EjeId'
     get:
       summary: Consultar las revisiones del eje, de la más reciente a la primera
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200': { $ref: '#/components/responses/Ejes' }
         '404': { description: Eje no encontrado en la versión actual del PEI }
   /peis/{peiId}/ejes/{ejeId}/objetivos:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - $ref: '#/components/parameters/PeiId'
       - $ref: '#/components/parameters/EjeId'
     get:
       summary: Consultar los objetivos de un eje activo o inactivo
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200':
           description: Objetivos registrados en el eje
           content:
@@ -148,6 +236,8 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/DatosObjetivo' }
       responses:
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '201':
           description: Objetivo registrado
           headers:
@@ -156,13 +246,14 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Objetivo' }
-        '400': { description: JSON inválido }
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '404': { description: Eje no encontrado en la versión actual del PEI }
         '409': { description: 'Código ya registrado en el eje, eje inactivo o PEI fuera de borrador' }
         '415': { description: Se requiere application/json }
         '422': { $ref: '#/components/responses/Validacion' }
   /peis/{peiId}/ejes/{ejeId}/objetivos/{objetivoId}:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - $ref: '#/components/parameters/PeiId'
       - $ref: '#/components/parameters/EjeId'
       - name: objetivoId
@@ -172,6 +263,9 @@ paths:
     get:
       summary: Consultar un objetivo del eje
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200':
           description: Objetivo registrado
           content:
@@ -180,12 +274,16 @@ paths:
         '404': { description: Objetivo no encontrado en el eje de este PEI }
   /peis/{peiId}/ejes/{ejeId}/objetivos/{objetivoId}/indicadores:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - $ref: '#/components/parameters/PeiId'
       - $ref: '#/components/parameters/EjeId'
       - $ref: '#/components/parameters/ObjetivoId'
     get:
       summary: Consultar indicadores del objetivo
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200':
           description: Indicadores registrados
           content:
@@ -200,7 +298,9 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/DatosIndicador' }
       responses:
-        '400': { description: JSON inválido }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '415': { description: Se requiere application/json }
         '201':
           description: Indicador registrado
@@ -212,6 +312,7 @@ paths:
         '422': { $ref: '#/components/responses/Validacion' }
   /peis/{peiId}/ejes/{ejeId}/objetivos/{objetivoId}/indicadores/{indicadorId}/mediciones:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - $ref: '#/components/parameters/PeiId'
       - $ref: '#/components/parameters/EjeId'
       - $ref: '#/components/parameters/ObjetivoId'
@@ -219,6 +320,9 @@ paths:
     get:
       summary: Consultar mediciones del indicador
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200':
           description: Mediciones ordenadas por fecha descendente
           content:
@@ -233,7 +337,9 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/DatosMedicion' }
       responses:
-        '400': { description: JSON inválido }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '415': { description: Se requiere application/json }
         '201':
           description: Medición registrada
@@ -245,10 +351,12 @@ paths:
         '422': { $ref: '#/components/responses/Validacion' }
   /pei-versiones/{versionId}/transiciones:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - { name: versionId, in: path, required: true, schema: { type: string, format: uuid } }
     get:
       summary: Consultar acciones habilitadas para el planificador autenticado
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '200':
           description: Acciones disponibles según el estado y el actor
           content:
@@ -260,7 +368,7 @@ paths:
                   acciones: { type: array, items: { $ref: '#/components/schemas/AccionPei' } }
                   motivoDevolucion: { type: [string, 'null'] }
         '401': { description: Sesión requerida }
-        '403': { description: Rol de lectura requerido }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '404': { description: Versión no encontrada }
     post:
       summary: Enviar, devolver, aprobar o publicar la versión del PEI
@@ -280,7 +388,7 @@ paths:
         '200': { $ref: '#/components/responses/Pei' }
         '401': { description: Sesión requerida }
         '403': { description: El rol o la participación previa no autoriza la acción }
-        '400': { description: JSON inválido }
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '415': { description: Se requiere application/json }
         '404': { description: Versión no encontrada }
         '409': { description: 'Estado incompatible, estructura incompleta o vigencia solapada' }
@@ -288,9 +396,15 @@ paths:
         '422': { $ref: '#/components/responses/Validacion' }
         '428': { description: Falta If-Match }
   /poas:
+    parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
     get:
       summary: Listar POA independientes y vinculados
+      description: Las cuentas de área ven su dependencia. Si PEI está deshabilitado, peiId y peiNombre se devuelven nulos.
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '200':
           description: Planes operativos registrados
           content:
@@ -307,25 +421,33 @@ paths:
               required: [anio]
               properties:
                 anio: { type: integer, minimum: 1, maximum: 9999 }
+                dependenciaId: { type: [string, 'null'], format: uuid, description: Dependencia activa dentro del ámbito del actor. }
                 peiId: { type: [string, 'null'], format: uuid }
                 presupuestoReferencia:
                   type: [string, 'null']
                   pattern: '^[0-9]{1,12}(\.[0-9]{1,2})?$'
                   description: Importe estimado opcional en DOP. Usa punto decimal y omite los separadores de miles.
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '201':
           description: POA en borrador
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PoaV2' }
-        '409': { description: 'POA duplicado o PEI publicado fuera del período' }
+        '409': { description: 'POA duplicado o PEI vinculado indisponible o fuera del período' }
         '422': { $ref: '#/components/responses/Validacion' }
   /peis/{peiId}/catalogo-digemaps:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - $ref: '#/components/parameters/PeiId'
     post:
       summary: Cargar los registros DIGEMAPS en un PEI editable y sin ejes
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '201':
           description: Catálogo cargado
           content:
@@ -341,17 +463,20 @@ paths:
         '409': { description: 'PEI no editable o con ejes existentes' }
   /peis/{peiId}/poas:
     parameters:
+      - $ref: '#/components/parameters/InstitucionActiva'
       - $ref: '#/components/parameters/PeiId'
     get:
       summary: Consultar POA vinculados al PEI y evaluaciones históricas
+      description: Requiere PEI y POA habilitados en la institución activa.
       responses:
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '200':
           description: POA ordenados por año
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/Poa' } }
         '401': { description: Sesión requerida }
-        '403': { description: Rol de lectura requerido }
+        '403': { $ref: '#/components/responses/SinPermiso' }
         '404': { description: PEI no encontrado }
 components:
   securitySchemes:
@@ -359,8 +484,14 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Token de acceso OIDC con audiencia sisplan-api y rol del flujo correspondiente. Si OIDC está configurado, se exige también en las demás rutas de la API.
+      description: Token de acceso OIDC con audiencia sisplan-api. El servidor resuelve rol y dependencia desde la membresía de la institución activa.
   parameters:
+    InstitucionActiva:
+      name: X-Institucion-Id
+      in: header
+      required: false
+      description: UUID de una institución disponible para el sujeto autenticado.
+      schema: { type: string, format: uuid }
     ObjetivoId:
       name: objetivoId
       in: path
@@ -377,6 +508,82 @@ components:
       required: true
       schema: { type: string, format: uuid }
   schemas:
+    Identidad:
+      type: object
+      required: [emisor, sujeto]
+      properties:
+        emisor: { type: string, format: uri }
+        sujeto: { type: string, minLength: 1 }
+    Membresia:
+      type: object
+      required: [id, nombre, rol, dependenciaId, modulos]
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        rol:
+          type: string
+          enum: [SuperAdministrador, AdministradorInstitucional, DirectorPlanificacion, AnalistaPlanificacion, ResponsableArea, DirectorArea, Auditor, MaximaAutoridad, ComiteEstrategico, Planificador]
+          description: Planificador es el alias histórico de AnalistaPlanificacion.
+        dependenciaId: { type: [string, 'null'], format: uuid }
+        modulos:
+          type: object
+          required: [pei, poa]
+          properties:
+            pei: { type: boolean }
+            poa: { type: boolean }
+    Sesion:
+      type: object
+      required: [actor, instituciones, institucionActivaId]
+      properties:
+        actor: { $ref: '#/components/schemas/Identidad' }
+        instituciones:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/Membresia' }
+        institucionActivaId: { type: string, format: uuid }
+    Organizacion:
+      type: object
+      required: [dependencias, periodos, unidadesMedida]
+      properties:
+        dependencias:
+          type: array
+          items:
+            type: object
+            required: [id, nombre, activa]
+            properties:
+              id: { type: string, format: uuid }
+              nombre: { type: string }
+              activa: { type: boolean }
+        periodos:
+          type: array
+          items:
+            type: object
+            required: [id, nombre, fechaInicio, fechaFin]
+            properties:
+              id: { type: string, format: uuid }
+              nombre: { type: string }
+              fechaInicio: { type: string, format: date }
+              fechaFin: { type: string, format: date }
+        unidadesMedida:
+          type: array
+          items:
+            type: object
+            required: [codigo, nombre]
+            properties:
+              codigo: { type: string }
+              nombre: { type: string }
+    EventoAuditoria:
+      type: object
+      required: [id, institucionId, emisor, sujeto, accion, entidad, referencia, fecha]
+      properties:
+        id: { type: integer, format: int64 }
+        institucionId: { type: string, format: uuid }
+        emisor: { type: string }
+        sujeto: { type: string }
+        accion: { type: string, enum: [INSERT, UPDATE, DELETE] }
+        entidad: { type: string }
+        referencia: { type: string }
+        fecha: { type: string, format: date-time }
     DecimalIndicador:
       type: string
       pattern: '^-?[0-9]{1,12}(\.[0-9]{1,4})?$'
@@ -424,16 +631,20 @@ components:
     AccionPei:
       type: string
       enum: [enviar, revisar, validar_comite, devolver, corregir, aprobar, publicar]
+    EstadoPoa:
+      type: string
+      enum: [borrador, formulacion, en_revision, observado, aprobado, rechazado, en_ejecucion, cerrado]
     PoaV2:
       type: object
-      required: [id, anio, estado, fechaInicio, fechaFin, peiId, peiNombre, presupuestoReferencia]
+      required: [id, anio, estado, fechaInicio, fechaFin, peiId, peiNombre, presupuestoReferencia, dependenciaId]
       properties:
         id: { type: string, format: uuid }
         anio: { type: integer, minimum: 1, maximum: 9999 }
-        estado: { type: string }
+        estado: { $ref: '#/components/schemas/EstadoPoa' }
         fechaInicio: { type: string, format: date }
         fechaFin: { type: string, format: date }
         peiId: { type: [string, 'null'], format: uuid }
+        dependenciaId: { type: [string, 'null'], format: uuid }
         peiNombre: { type: [string, 'null'] }
         presupuestoReferencia:
           type: [string, 'null']
@@ -445,7 +656,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         anio: { type: integer, minimum: 1, maximum: 9999 }
-        estado: { type: string, enum: [borrador, formulacion, en_revision, observado, aprobado, rechazado, en_ejecucion, cerrado] }
+        estado: { $ref: '#/components/schemas/EstadoPoa' }
         fechaInicio: { type: string, format: date }
         fechaFin: { type: string, format: date }
         vigente: { type: boolean }
@@ -544,6 +755,12 @@ components:
             vision: Dar seguimiento verificable a los resultados.
             valores: Transparencia y responsabilidad.
   responses:
+    SolicitudInvalida:
+      description: Formato inválido del encabezado institucional, los parámetros de consulta o el cuerpo de la solicitud.
+    SinSesion:
+      description: Falta un token válido o ha expirado.
+    SinPermiso:
+      description: La membresía, la dependencia, el rol o los módulos habilitados impiden la operación.
     Ejes:
       description: Lista de ejes o de revisiones
       content:

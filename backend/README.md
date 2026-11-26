@@ -2,20 +2,59 @@
 
 La API .NET 10 usa PostgreSQL para formular, revisar y publicar PEI y para crear o consultar POA independientes o vinculados. [Configurar Keycloak para el flujo del SRS v2](../docs/plan-sisplan/10-ADAPTACION-SRS-V2.md#verificación-del-incremento).
 
-## Arranque
+## Arranque local de F0
 
-Configura estas variables en la sesión local. Sustituye los datos de conexión con los de tu base.
+Desde la raíz del repositorio, prepara cuatro claves locales distintas. Las siguientes variables duran la sesión de shell. Para reutilizar los volúmenes en otra sesión, conserva sus valores fuera del repositorio.
+
+```sh
+export SISPLAN_DB_PASSWORD="$(openssl rand -hex 24)"
+export SISPLAN_APP_DB_PASSWORD="$(openssl rand -hex 24)"
+export SISPLAN_KEYCLOAK_PASSWORD="$(openssl rand -hex 24)"
+export SISPLAN_F0_PASSWORD="$(openssl rand -hex 24)"
+docker compose --profile institucional up -d
+docker compose up -d --wait postgres
+```
+
+En la primera inicialización, PostgreSQL crea `sisplan_app` como login de aplicación. Para un volumen PostgreSQL anterior, ejecuta `docker compose exec -T postgres sh /docker-entrypoint-initdb.d/20-sisplan-app.sh` después de incorporar las variables a Compose. Si el login existe, el script verifica sus privilegios y conserva su contraseña.
 
 ```sh
 export ASPNETCORE_ENVIRONMENT=Development
-export ConnectionStrings__Sisplan='Host=127.0.0.1;Port=5432;Database=sisplan;Username=USUARIO;Password=CONTRASEÑA'
+export Sisplan__Oidc__Url=http://127.0.0.1:8080
+export ConnectionStrings__SisplanMigraciones="Host=127.0.0.1;Port=55432;Database=sisplan;Username=sisplan;Password=${SISPLAN_DB_PASSWORD}"
+export ConnectionStrings__Sisplan="Host=127.0.0.1;Port=55432;Database=sisplan;Username=sisplan_app;Password=${SISPLAN_APP_DB_PASSWORD}"
 dotnet run --project backend/Sisplan.Api.csproj --no-launch-profile -- --migrate
+```
+
+La cuenta de migración posee el esquema. El login de la API queda sujeto a las políticas por fila. La migración registra una huella por versión. Puedes ejecutar `--migrate` otra vez para verificarla. **Para actualizar una base con planes previos**, ejecuta primero [la preparación de correspondencias](../infra/postgres/preparar-historicos.sql), registra la institución destinataria de cada PEI y cada POA independiente y luego aplica la migración. Los POA vinculados heredan la institución del PEI.
+
+### Identidades y datos de demostración
+
+La carga de pruebas se ejecuta en una base local desechable. Espera a que la URL de descubrimiento devuelva HTTP 200. Para ensayar MFA con Máxima Autoridad, define `SISPLAN_F0_TOTP_SEED` con `openssl rand -hex 32` antes de la **primera** alta de sus credenciales. Conserva esa semilla para los recorridos en ese entorno. Repetir el alta conserva las credenciales y el segundo factor existentes.
+
+```sh
+curl --fail --silent --output /dev/null --retry 40 --retry-all-errors --retry-delay 2 \
+  http://127.0.0.1:8080/realms/sisplan/.well-known/openid-configuration
+docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U sisplan -d sisplan < infra/postgres/fixtures-f0.sql
+python3 infra/keycloak/f0.py usuarios
 dotnet run --project backend/Sisplan.Api.csproj --no-launch-profile
 ```
 
-La API escucha en `http://127.0.0.1:5080`. Para cambiar el puerto usa `Sisplan__Puerto`. Angular debe dirigir `/api/v1` a esa dirección mediante su proxy local. La API requiere `Development` y conexiones por loopback. Conserva la cadena de conexión fuera del repositorio.
+La API escucha en `http://127.0.0.1:5080` y Angular en `http://127.0.0.1:4200`. Entra con `f0-analista` para Instituto Horizonte, `f0-analista-b` para Instituto Bahía o `f0-multi` para cambiar de institución. La contraseña inicial es el valor de `SISPLAN_F0_PASSWORD`. La API resuelve por emisor y sujeto verificados las membresías cargadas en PostgreSQL.
 
-Cada migración aplicada se registra con su huella. Repetir `--migrate` conserva los datos y reconoce las versiones aplicadas. Ejecuta la migración antes de iniciar la API.
+### Prueba con navegador y Keycloak
+
+Con la API en marcha y las mismas variables, instala Playwright en un entorno virtual de Python. El comando realiza accesos en Chromium mediante código de autorización y PKCE, verifica el cierre de sesión y prepara un token con vigencia vencida. Si se configuró la semilla, completa el reto TOTP interactivo de Máxima Autoridad. El archivo de salida contiene credenciales de corta duración.
+
+```sh
+python3 -m venv /tmp/sisplan-f0-python
+/tmp/sisplan-f0-python/bin/pip install playwright
+/tmp/sisplan-f0-python/bin/python -m playwright install --with-deps chromium
+f0_temp="$(mktemp -d)"
+/tmp/sisplan-f0-python/bin/python infra/keycloak/f0.py tokens --salida "$f0_temp/tokens.json"
+python3 tests/f0_smoke.py --tokens "$f0_temp/tokens.json"
+rm "$f0_temp/tokens.json"
+rmdir "$f0_temp"
+```
 
 ## Rutas
 

@@ -4,7 +4,7 @@
     <h1>Planes estratégicos institucionales</h1>
     <p>Consulta los planes y su estado de publicación.</p>
   </div>
-  @if (!session.enabled() || session.canPlan()) {
+  @if (session.canPlan()) {
     <a class="button button-primary" routerLink="/peis/nuevo">
       <span class="button-plus" aria-hidden="true">+</span> Crear nuevo PEI
     </a>
@@ -69,7 +69,7 @@
           Aún no hay planes estratégicos registrados.<br />Comienza con un nombre, un período y un
           propósito.
         </p>
-        @if (!session.enabled() || session.canPlan()) {
+        @if (session.canPlan()) {
           <a class="button button-primary" routerLink="/peis/nuevo">
             Crear el primer PEI <span aria-hidden="true">→</span>
           </a>
@@ -109,9 +109,8 @@
                   <div class="plan-name">
                     <span class="plan-icon" aria-hidden="true">PEI</span>
                     <div>
-                      <a [routerLink]="['/peis', pei.id]">{{ pei.nombre }}</a><small
-                        >Plan Estratégico Institucional</small
-                      >
+                      <a [routerLink]="['/peis', pei.id]">{{ pei.nombre }}</a
+                      ><small>Plan Estratégico Institucional</small>
                     </div>
                   </div>
                 </td>

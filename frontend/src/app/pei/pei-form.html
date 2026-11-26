@@ -323,7 +323,7 @@
         (pendingChange)="setWorkflowPending($event)"
         (refresh)="refreshWorkflow()"
       />
-      @if (pei.estado === 'publicado') {
+      @if (pei.estado === 'publicado' && session.poa()) {
         <app-pei-poas [peiId]="pei.id" />
       }
     }

@@ -1,3 +1,4 @@
+import { activateAnalyst } from '../../testing/membresia';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -9,6 +10,7 @@ it('creates an independent POA and shows a linked plan only for a covered year',
     imports: [PoaList],
     providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
   });
+  activateAnalyst();
   const fixture = TestBed.createComponent(PoaList);
   const http = TestBed.inject(HttpTestingController);
   const component = fixture.componentInstance;
@@ -64,6 +66,7 @@ it('validates the optional budget and saves cents exactly with a decimal comma',
     imports: [PoaList],
     providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
   });
+  activateAnalyst();
   const fixture = TestBed.createComponent(PoaList);
   const http = TestBed.inject(HttpTestingController);
   http.expectOne('/api/v1/poas').flush([]);
@@ -100,5 +103,22 @@ it('validates the optional budget and saves cents exactly with a decimal comma',
   });
   fixture.detectChanges();
   expect(fixture.nativeElement.querySelector('tbody').textContent).toContain('RD$ 999999999999.03');
+  http.verify();
+});
+
+it('abre un POA autónomo sin consultar ni ofrecer el módulo PEI deshabilitado', () => {
+  TestBed.configureTestingModule({
+    imports: [PoaList],
+    providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+  });
+  activateAnalyst(false, true);
+  const fixture = TestBed.createComponent(PoaList);
+  const http = TestBed.inject(HttpTestingController);
+  http.expectOne('/api/v1/poas').flush([]);
+  http.expectNone('/api/v1/peis');
+  fixture.componentInstance.showForm.set(true);
+  fixture.detectChanges();
+  expect(fixture.nativeElement.querySelector('#poa-pei')).toBeNull();
+  expect(fixture.nativeElement.querySelector('#poa-year')).not.toBeNull();
   http.verify();
 });

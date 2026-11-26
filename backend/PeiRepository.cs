@@ -3,7 +3,7 @@ using NpgsqlTypes;
 
 namespace Sisplan.Api;
 
-internal sealed class PeiRepository(NpgsqlDataSource source)
+internal sealed class PeiRepository(SesionInstitucional source)
 {
     private const string Fields = "pei_id, id, nombre, tipo, fecha_inicio, fecha_fin, mision, vision, valores, estado, revision";
     private const string SelectCurrent = """
@@ -43,7 +43,7 @@ internal sealed class PeiRepository(NpgsqlDataSource source)
     {
         var id = Guid.NewGuid();
         var versionId = Guid.NewGuid();
-        await using var connection = await source.OpenConnectionAsync(cancellationToken);
+        var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         await using (var parent = new NpgsqlCommand("INSERT INTO sisplan.pei (id) VALUES (@id)", connection, transaction))
@@ -69,7 +69,7 @@ internal sealed class PeiRepository(NpgsqlDataSource source)
 
     public async Task<PeiSnapshot?> UpdateAsync(Guid versionId, long expectedRevision, PeiFields fields, CancellationToken cancellationToken)
     {
-        await using var connection = await source.OpenConnectionAsync(cancellationToken);
+        var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await using (var locked = new NpgsqlCommand("""
             SELECT revision FROM sisplan.pei_version

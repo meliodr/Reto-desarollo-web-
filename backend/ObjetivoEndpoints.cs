@@ -8,7 +8,7 @@ internal static class ObjetivoEndpoints
     {
         var objetivos = ejes.MapGroup("/{ejeId:guid}/objetivos");
         objetivos.MapGet("", ListAsync);
-        objetivos.MapPost("", CreateAsync);
+        objetivos.MapPost("", CreateAsync).RequireAuthorization("EditarPei");
         objetivos.MapGet("/{objetivoId:guid}", FindAsync);
         objetivos.MapIndicadores();
     }

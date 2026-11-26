@@ -11,12 +11,12 @@ internal static class CatalogoPeiEndpoints
 
     public static void MapCatalogoPei(this RouteGroupBuilder api)
     {
-        api.MapPost("/peis/{peiId:guid}/catalogo-digemaps", ImportAsync);
+        api.MapPost("/peis/{peiId:guid}/catalogo-digemaps", ImportAsync).RequireAuthorization("EditarPei");
     }
 
-    private static async Task<IResult> ImportAsync(Guid peiId, NpgsqlDataSource source, CancellationToken ct)
+    private static async Task<IResult> ImportAsync(Guid peiId, SesionInstitucional source, CancellationToken ct)
     {
-        await using var connection = await source.OpenConnectionAsync(ct);
+        var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(ct);
         var parent = await EjeRepository.LockCurrentPeiVersionAsync(peiId, connection, transaction, ct);
         if (parent is null)

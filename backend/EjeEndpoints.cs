@@ -8,9 +8,9 @@ internal static class EjeEndpoints
     {
         var ejes = api.MapGroup("/peis/{peiId:guid}/ejes");
         ejes.MapGet("", ListAsync);
-        ejes.MapPost("", CreateAsync);
+        ejes.MapPost("", CreateAsync).RequireAuthorization("EditarPei");
         ejes.MapGet("/{ejeId:guid}", FindAsync);
-        ejes.MapPut("/{ejeId:guid}", UpdateAsync);
+        ejes.MapPut("/{ejeId:guid}", UpdateAsync).RequireAuthorization("EditarPei");
         ejes.MapGet("/{ejeId:guid}/versiones", HistoryAsync);
         ejes.MapObjetivos();
     }

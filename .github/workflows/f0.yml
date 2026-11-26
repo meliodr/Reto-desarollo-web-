@@ -28,10 +28,20 @@ jobs:
       - run: npm run build
   api:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - run: dotnet build backend/Sisplan.Api.csproj -c Release
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preparar Chromium para el recorrido OIDC
+        run: |
+          python -m pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Probar migraciones, autorización y módulos con PostgreSQL y Keycloak
+        run: bash infra/ci/verificar-f0.sh

@@ -3,6 +3,10 @@
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": false,
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
   "clients": [
     {
       "clientId": "sisplan-web",

@@ -3,7 +3,7 @@ using NpgsqlTypes;
 
 namespace Sisplan.Api;
 
-internal sealed class IndicadorRepository(NpgsqlDataSource source)
+internal sealed class IndicadorRepository(SesionInstitucional source)
 {
     private const string CurrentObjective = """
         WITH objetivo_actual AS (
@@ -75,7 +75,7 @@ internal sealed class IndicadorRepository(NpgsqlDataSource source)
     public async Task<IndicadorWriteStatus> CreateAsync(Guid peiId, Guid ejeId, Guid objetivoId, IndicadorDto data,
         CancellationToken cancellationToken)
     {
-        await using var connection = await source.OpenConnectionAsync(cancellationToken);
+        var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var parent = await LockObjectiveAsync(peiId, ejeId, objetivoId, connection, transaction, cancellationToken);
         var status = CheckState(parent);
@@ -103,7 +103,7 @@ internal sealed class IndicadorRepository(NpgsqlDataSource source)
     public async Task<IndicadorWriteStatus> CreateMeasurementAsync(Guid peiId, Guid ejeId, Guid objetivoId,
         Guid indicadorId, IndicadorMedicionDto data, CancellationToken cancellationToken)
     {
-        await using var connection = await source.OpenConnectionAsync(cancellationToken);
+        var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var parent = await LockObjectiveAsync(peiId, ejeId, objetivoId, connection, transaction, cancellationToken);
         if (parent is null)

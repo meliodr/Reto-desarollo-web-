@@ -3,13 +3,13 @@ using NpgsqlTypes;
 
 namespace Sisplan.Api;
 
-internal sealed class FlujoPeiRepository(NpgsqlDataSource source, PeiRepository peis)
+internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiRepository peis)
 {
     private const string Fields = "pei_id, id, nombre, tipo, fecha_inicio, fecha_fin, mision, vision, valores, estado, revision";
 
     public async Task<FlujoPeiOpciones?> OptionsAsync(Guid versionId, FlujoPeiActor actor, CancellationToken ct)
     {
-        await using var connection = await source.OpenConnectionAsync(ct);
+        var connection = source.Conexion;
         var snapshot = await FindCurrentAsync(versionId, connection, null, ct);
         if (snapshot is null)
             return null;
@@ -32,7 +32,7 @@ internal sealed class FlujoPeiRepository(NpgsqlDataSource source, PeiRepository 
     public async Task<FlujoPeiResult> ApplyAsync(Guid versionId, string expectedTag, string action, string? reason,
         FlujoPeiActor actor, CancellationToken ct)
     {
-        await using var connection = await source.OpenConnectionAsync(ct);
+        var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(ct);
 
         var snapshot = await FindCurrentAsync(versionId, connection, transaction, ct);

@@ -2,7 +2,7 @@ using Npgsql;
 
 namespace Sisplan.Api;
 
-internal sealed class ObjetivoRepository(NpgsqlDataSource source, EjeRepository ejes)
+internal sealed class ObjetivoRepository(SesionInstitucional source, EjeRepository ejes)
 {
     private const string Fields = "id, codigo, nombre, descripcion, resultado_esperado, linea_accion";
 
@@ -33,7 +33,7 @@ internal sealed class ObjetivoRepository(NpgsqlDataSource source, EjeRepository 
 
     public async Task<ObjetivoCreateResult> CreateAsync(Guid peiId, Guid ejeId, ObjetivoDto fields, CancellationToken cancellationToken)
     {
-        await using var connection = await source.OpenConnectionAsync(cancellationToken);
+        var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var parent = await EjeRepository.LockCurrentPeiVersionAsync(peiId, connection, transaction, cancellationToken);
         if (parent is null)

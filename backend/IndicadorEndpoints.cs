@@ -8,9 +8,9 @@ internal static class IndicadorEndpoints
     {
         var indicadores = objetivos.MapGroup("/{objetivoId:guid}/indicadores");
         indicadores.MapGet("", ListAsync);
-        indicadores.MapPost("", CreateAsync);
+        indicadores.MapPost("", CreateAsync).RequireAuthorization("EditarPei");
         indicadores.MapGet("/{indicadorId:guid}/mediciones", ListMeasurementsAsync);
-        indicadores.MapPost("/{indicadorId:guid}/mediciones", CreateMeasurementAsync);
+        indicadores.MapPost("/{indicadorId:guid}/mediciones", CreateMeasurementAsync).RequireAuthorization("EditarPei");
     }
 
     private static async Task<IResult> ListAsync(Guid peiId, Guid ejeId, Guid objetivoId, IndicadorRepository repository,

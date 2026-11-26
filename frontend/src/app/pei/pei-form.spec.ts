@@ -1,3 +1,4 @@
+import { activateAnalyst } from '../../testing/membresia';
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -36,6 +37,7 @@ describe('PeiForm save failure recovery', () => {
         },
       ],
     });
+    activateAnalyst();
     component = TestBed.createComponent(PeiForm).componentInstance;
     component.ngOnInit();
   });

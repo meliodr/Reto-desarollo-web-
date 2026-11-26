@@ -122,7 +122,7 @@ export class PeiForm implements OnInit {
     const current = this.current();
     return (
       (current !== null && !['borrador', 'observado'].includes(current.estado)) ||
-      (this.session.enabled() && !this.session.canPlan())
+      !this.session.canPlan()
     );
   }
   workflowBlocked() {

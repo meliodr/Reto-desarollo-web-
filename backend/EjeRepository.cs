@@ -3,7 +3,7 @@ using NpgsqlTypes;
 
 namespace Sisplan.Api;
 
-internal sealed class EjeRepository(NpgsqlDataSource source, PeiRepository peis)
+internal sealed class EjeRepository(SesionInstitucional source, PeiRepository peis)
 {
     private const string LatestEjes = """
         SELECT e.id, v.nombre, v.descripcion, v.activo, v.revision, v.actualizado_en
@@ -60,7 +60,7 @@ internal sealed class EjeRepository(NpgsqlDataSource source, PeiRepository peis)
 
     public async Task<EjeWriteResult> CreateAsync(Guid peiId, EjeFields fields, CancellationToken cancellationToken)
     {
-        await using var connection = await source.OpenConnectionAsync(cancellationToken);
+        var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var parent = await LockCurrentPeiVersionAsync(peiId, connection, transaction, cancellationToken);
         if (parent is null)
@@ -85,7 +85,7 @@ internal sealed class EjeRepository(NpgsqlDataSource source, PeiRepository peis)
     public async Task<EjeWriteResult> UpdateAsync(Guid peiId, Guid ejeId, long revision, EjeFields fields,
         bool active, CancellationToken cancellationToken)
     {
-        await using var connection = await source.OpenConnectionAsync(cancellationToken);
+        var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var parent = await LockCurrentPeiVersionAsync(peiId, connection, transaction, cancellationToken);
         if (parent is null)

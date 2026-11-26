@@ -143,18 +143,17 @@ describe('Flujo del PEI en Angular', () => {
 
   it('consulta la versión oficial y el motivo de devolución en modo solo PEI', () => {
     activateAnalyst(true, false);
-    http.expectOne('/api/v1/peis/pei-1').flush(
-      { ...pei, estado: 'publicado' },
-      { headers: { ETag: '"rev-9"' } },
-    );
+    http
+      .expectOne('/api/v1/peis/pei-1')
+      .flush({ ...pei, estado: 'publicado' }, { headers: { ETag: '"rev-9"' } });
     fixture.detectChanges();
     http.expectOne('/api/v1/peis/pei-1/ejes').flush([]);
     http.expectNone('/api/v1/peis/pei-1/poas');
     expect(view.querySelector('h1')?.textContent).toContain('PEI oficial');
     click('Ver versiones e historial');
-    http.expectOne('/api/v1/peis/pei-1/versiones').flush([
-      { versionId: 'version-1', numero: 1, revision: 9, estado: 'publicado' },
-    ]);
+    http
+      .expectOne('/api/v1/peis/pei-1/versiones')
+      .flush([{ versionId: 'version-1', numero: 1, revision: 9, estado: 'publicado' }]);
     http.expectOne('/api/v1/pei-versiones/version-1/historial').flush([
       {
         revision: 3,
@@ -177,10 +176,9 @@ describe('Flujo del PEI en Angular', () => {
 
   it('abre una revisión de la versión oficial con motivo y protege su vigencia', () => {
     activateAnalyst(true, false);
-    http.expectOne('/api/v1/peis/pei-1').flush(
-      { ...pei, estado: 'publicado' },
-      { headers: { ETag: '"rev-9"' } },
-    );
+    http
+      .expectOne('/api/v1/peis/pei-1')
+      .flush({ ...pei, estado: 'publicado' }, { headers: { ETag: '"rev-9"' } });
     fixture.detectChanges();
     http.expectOne('/api/v1/peis/pei-1/ejes').flush([]);
     click('Ver versiones e historial');

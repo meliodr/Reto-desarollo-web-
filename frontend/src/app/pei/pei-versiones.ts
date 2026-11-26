@@ -178,13 +178,24 @@ export class PeiVersiones {
   }
 
   createRevision() {
-    const etag = this.refreshKey(), reason = this.reason().trim();
-    if (!this.session.canPlan() || this.pei().estado !== 'publicado' || !etag || !reason ||
-        reason.length > 4000 || this.saving() || this.reloadRequired()) return;
+    const etag = this.refreshKey(),
+      reason = this.reason().trim();
+    if (
+      !this.session.canPlan() ||
+      this.pei().estado !== 'publicado' ||
+      !etag ||
+      !reason ||
+      reason.length > 4000 ||
+      this.saving() ||
+      this.reloadRequired()
+    )
+      return;
     this.saving.set(true);
     this.creating.emit(true);
     this.revisionError.set('');
-    this.api.createRevision(this.pei().id, reason, etag).pipe(takeUntilDestroyed(this.destroy))
+    this.api
+      .createRevision(this.pei().id, reason, etag)
+      .pipe(takeUntilDestroyed(this.destroy))
       .subscribe({
         next: () => {
           this.editRevision.set(false);
@@ -198,9 +209,9 @@ export class PeiVersiones {
           this.reloadRequired.set([0, 409, 412, 428].includes(error.status) || error.status >= 500);
           this.revisionError.set(
             error.error?.detail ??
-            (this.reloadRequired()
-              ? 'Actualiza el PEI para consultar la revisión que está disponible.'
-              : 'No pudimos crear la revisión. Revisa el motivo e inténtalo de nuevo.'),
+              (this.reloadRequired()
+                ? 'Actualiza el PEI para consultar la revisión que está disponible.'
+                : 'No pudimos crear la revisión. Revisa el motivo e inténtalo de nuevo.'),
           );
         },
       });

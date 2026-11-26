@@ -72,6 +72,22 @@ def run(base, tokens):
         "nombre": inactive["nombre"], "activo": False, "revision": inactive["revision"],
     }, axis_headers["ETag"])
     goals = f"{axes}/{axis['id']}/objetivos"
+    seeded_goal = api("04", goals, 200)[0][0]
+    indicators = f"{goals}/{seeded_goal['id']}/indicadores"
+    imported, = api("04", indicators, 200)[0]
+    detail = f"{indicators}/{imported['id']}"
+    _, indicator_headers = api("04", detail, 200)
+    ready, _ = api("04", detail, 200, "PUT", {
+        "nombre": imported["nombre"], "formula": "Conteo mensual de expedientes",
+        "unidad": "expedientes", "frecuencia": "Mensual", "sentido": "ascendente",
+        "meta": "12.5", "metodoCalculo": "valor_directo",
+    }, indicator_headers["ETag"])
+    assert ready["listoParaMedir"] and ready["lineaBase"] is None
+    api("04", f"{detail}/mediciones", 201, "POST", {"periodo": "2170-02-01", "valor": "7.5"})
+    risk, _ = api("04", f"{goals}/{seeded_goal['id']}/riesgos", 201, "POST", {
+        "nombre": "Riesgo de continuidad", "descripcion": "Demora en la atención.",
+        "probabilidad": 2, "impacto": 3,
+    })
     empty_goal, goal_headers = api("04", goals, 201, "POST", {
         "codigo": "F1-SIN-INDICADOR", "nombre": "Objetivo para validar",
         "descripcion": "Validar la estructura obligatoria.", "resultadoEsperado": "Estructura comprobada.",
@@ -120,6 +136,64 @@ def run(base, tokens):
     assert history[-1]["revision"] == first["revision"] and history[-1]["sujeto"].endswith("000000000003")
     assert all(event["emisor"] and datetime.fromisoformat(event["registradaEn"]).tzinfo for event in history)
 
+    map_path = f"/peis/{plan['id']}/mapa"
+    original_query = map_path + f"?versionId={plan['versionId']}"
+    original_map = api("07", original_query, 200)[0]
+    original_ids = {axis["id"] for axis in original_map["ejes"]}
+    original_indicators = [i for axis in original_map["ejes"] for goal in axis["objetivos"] for i in goal["indicadores"]]
+    assert len(original_indicators) == 20
+    assert [i["id"] for i in original_indicators if i["listoParaMedir"]] == [ready["id"]]
+    revision_data = {"motivo": "Ajustar la visión del plan oficial."}
+    api("07", versions, 403, "POST", revision_data, published_tag)
+    api("04", versions, 428, "POST", revision_data)
+    api("04", versions, 422, "POST", {"motivo": " "}, published_tag)
+    api("04", versions, 412, "POST", revision_data, approved)
+    successor, head = api("04", versions, 201, "POST", revision_data, published_tag)
+    revised_tag = head["ETag"]
+    api("04", versions, 409, "POST", revision_data, published_tag)
+    assert successor["estado"] == "borrador" and successor["versionOrigenId"] == plan["versionId"]
+    assert successor["fechaInicio"] == official["fechaInicio"] and successor["fechaFin"] == official["fechaFin"]
+    assert api("07", f"/peis/{plan['id']}", 200)[0] == successor
+    assert official in api("07", "/peis?oficiales=true", 200)[0]
+    assert successor not in api("07", "/peis?oficiales=true", 200)[0]
+    assert api("07", version, 200)[0] == official
+    assert api("07", original_query, 200)[0] == original_map
+    assert api("07", versions + "?fecha=2171-01-01", 200)[0] == [first]
+    second = api("07", versions, 200)[0][0]
+    assert second["numero"] == 2 and second["publicadoEn"] is None
+    assert second["versionOrigenId"] == first["versionId"] and second["motivoRevision"] == revision_data["motivo"]
+    assert second["creadaPorSujeto"].endswith("000000000004") and second["creadaPorEmisor"] == history[0]["emisor"]
+
+    copied_map = api("07", map_path, 200)[0]
+    assert copied_map["versionId"] == successor["versionId"]
+    assert len(copied_map["ejes"]) == len(original_ids) and original_ids.isdisjoint(e["id"] for e in copied_map["ejes"])
+    copied_goals = [goal for axis in copied_map["ejes"] for goal in axis["objetivos"]]
+    copied_risk, = [r for goal in copied_goals for r in goal["riesgos"]]
+    assert copied_risk["nombre"] == risk["nombre"] and copied_risk["id"] != risk["id"]
+    copied_indicators = [i for goal in copied_goals for i in goal["indicadores"]]
+    assert len(copied_indicators) == 20
+    copied_axis, copied_goal, copied_ready = next(
+        (axis, goal, i) for axis in copied_map["ejes"] for goal in axis["objetivos"]
+        for i in goal["indicadores"] if i["listoParaMedir"])
+    assert sum(i["listoParaMedir"] for i in copied_indicators) == 1 and copied_ready["id"] != ready["id"]
+    fields = ("nombre", "formula", "unidad", "frecuencia", "sentido", "meta", "metodoCalculo")
+    assert all(copied_ready[key] == ready[key] for key in fields)
+    assert api("07", f"{axes}/{copied_axis['id']}/objetivos/{copied_goal['id']}/indicadores/{copied_ready['id']}/mediciones",
+               200)[0] == []
+
+    revised_path = f"/pei-versiones/{successor['versionId']}"
+    api("04", revised_path, 422, "PATCH", dict(successor, fechaInicio="2170-02-01"), revised_tag)
+    # El PEI editado tendrá una descripción reconocible mientras que el original permanece visible por su ID.
+    revised, head = api("04", revised_path, 200, "PATCH", dict(successor,
+                       nombre="Plan estratégico revisado de 2170", vision="Atender con calidad sostenible."), revised_tag)
+    revised_path, revised_approved = approve(revised, head["ETag"])
+    transition(revised_path, "publicar", "03", revised_approved)
+    assert api("07", revised_path, 200)[0] in api("07", "/peis?oficiales=true", 200)[0]
+    assert official not in api("07", "/peis?oficiales=true", 200)[0]
+    assert api("07", version + "/historial", 200)[0] == history
+    dated, _ = api("07", versions + "?fecha=2171-01-01", 200)
+    assert [candidate["numero"] for candidate in dated] == [2, 1]
+
     coincident, tag = create("2173-12-31", "2177-11-30", "extraordinario")
     load(coincident)
     path, tag = approve(coincident, tag)
@@ -136,7 +210,7 @@ def run(base, tokens):
         statuses = sorted(attempt.result()[0] for attempt in attempts)
     assert statuses == [200, 409], statuses
     api("04", "/poas", 403)
-    print("F1.3/F1.4: estructura, historial, observaciones, revisión concurrente, vigencia y publicación autónoma verificados.")
+    print("F1.3/F1.4: estructura, observaciones, sucesora, historial, concurrencia, vigencia y publicación autónoma verificados.")
 
 
 def main():

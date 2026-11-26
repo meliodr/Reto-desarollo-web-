@@ -7,7 +7,9 @@
   <div class="panel empty-state">
     <h1>Versión del PEI</h1>
     <p role="alert">{{ error() }}</p>
-    <button type="button" class="button button-secondary" (click)="load()">Volver a consultar</button>
+    <button type="button" class="button button-secondary" (click)="load()">
+      Volver a consultar
+    </button>
   </div>
 } @else if (plan(); as pei) {
   <section class="page-heading">
@@ -26,9 +28,12 @@
     <div class="form-section-body">
       <p>PEI {{ pei.tipo }} · {{ pei.tipo === 'ordinario' ? 4 : 5 }} años calendario</p>
       <dl class="narrative">
-        <dt><strong>Misión</strong></dt><dd>{{ pei.mision }}</dd>
-        <dt><strong>Visión</strong></dt><dd>{{ pei.vision }}</dd>
-        <dt><strong>Valores</strong></dt><dd>{{ pei.valores }}</dd>
+        <dt><strong>Misión</strong></dt>
+        <dd>{{ pei.mision }}</dd>
+        <dt><strong>Visión</strong></dt>
+        <dd>{{ pei.vision }}</dd>
+        <dt><strong>Valores</strong></dt>
+        <dd>{{ pei.valores }}</dd>
       </dl>
     </div>
   </section>

@@ -89,10 +89,14 @@ export class PeiWorkflowApi {
 
   createRevision(peiId: string, motivo: string, etag: string) {
     return this.http
-      .post<Pei>(this.versionsUrl(peiId), { motivo }, {
-        headers: { 'If-Match': etag },
-        observe: 'response',
-      })
+      .post<Pei>(
+        this.versionsUrl(peiId),
+        { motivo },
+        {
+          headers: { 'If-Match': etag },
+          observe: 'response',
+        },
+      )
       .pipe(
         map((response): VersionedPei => ({
           data: response.body!,
@@ -106,14 +110,12 @@ export class PeiWorkflowApi {
   }
 
   version(versionId: string) {
-    return this.http
-      .get<Pei>(this.versionUrl(versionId), { observe: 'response' })
-      .pipe(
-        map((response): VersionedPei => ({
-          data: response.body!,
-          etag: response.headers.get('ETag'),
-        })),
-      );
+    return this.http.get<Pei>(this.versionUrl(versionId), { observe: 'response' }).pipe(
+      map((response): VersionedPei => ({
+        data: response.body!,
+        etag: response.headers.get('ETag'),
+      })),
+    );
   }
 
   history(versionId: string) {

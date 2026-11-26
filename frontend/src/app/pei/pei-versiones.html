@@ -17,7 +17,9 @@
         <p role="status">Consultando versiones…</p>
       } @else if (error()) {
         <p class="notice notice-error" role="alert">No pudimos consultar las versiones del PEI.</p>
-        <button type="button" class="button button-secondary" (click)="reload()">Reintentar versiones</button>
+        <button type="button" class="button button-secondary" (click)="reload()">
+          Reintentar versiones
+        </button>
       } @else if (versions().length) {
         <ul>
           @for (version of versions(); track version.versionId) {

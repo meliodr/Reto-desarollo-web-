@@ -26,7 +26,7 @@ def corregir_objetivo_observado(pagina: Page):
     corregido = "Trámites en línea disponibles con confirmación."
     with etapa_chromium("abrir el formulario del objetivo devuelto"):
         pagina.get_by_role("button", name="Ver objetivos de Canales de atención", exact=True).click()
-        panel.get_by_role("button", name="Editar objetivo Dar acceso", exact=True).click()
+        panel.get_by_role("button", name="Editar objetivo OE-01 · Dar acceso", exact=True).click()
         editor = panel.get_by_role("group", name="Editar objetivo", exact=True)
         campo = editor.get_by_role("textbox", name="Resultado esperado", exact=True)
         expect(campo).to_have_value("Trámites en línea disponibles.")

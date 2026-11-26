@@ -15,6 +15,11 @@ export Sisplan__Oidc__Url=http://127.0.0.1:8080
 api_pid=
 web_pid=
 limpiar() {
+  if [[ $? -ne 0 ]]; then
+    # Mostrar sólo la clase de error de Keycloak, sin datos del navegador ni credenciales.
+    docker compose --profile institucional logs --no-color keycloak 2>/dev/null \
+      | sed -nE 's/.*type="([A-Z_]+)".*error="([a-z_]+)".*/Keycloak: \1 (\2)/p' | tail -12 || true
+  fi
   if [[ -n "$web_pid" ]]; then kill "$web_pid" 2>/dev/null || true; fi
   if [[ -n "$api_pid" ]]; then kill "$api_pid" 2>/dev/null || true; fi
   docker compose --profile institucional down --volumes >/dev/null

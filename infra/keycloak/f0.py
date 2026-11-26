@@ -247,11 +247,15 @@ def paso_oidc(pagina, nombre, etapa, publicar):
         raise SystemExit(f"f0-{nombre} · {etapa} · {type(error).__name__} · {ubicacion} · {estado}") from None
 
 
+class RetornoInvalido(SystemExit):
+    pass
+
+
 def login(navegador, cliente, nombre, password, semilla, *, probar_salida=False, probar_rechazo=False):
     verificador = secrets.token_urlsafe(48)
     estado = secrets.token_urlsafe(24)
     parametros = {"client_id": cliente, "redirect_uri": RETORNO, "response_type": "code",
-                  "scope": "openid", "state": estado, "code_challenge_method": "S256",
+                  "scope": "openid", "response_mode": "query", "state": estado, "code_challenge_method": "S256",
                   "code_challenge": b64(hashlib.sha256(verificador.encode()).digest())}
     with navegador.new_context() as contexto:
         pagina = contexto.new_page()
@@ -277,7 +281,15 @@ def login(navegador, cliente, nombre, password, semilla, *, probar_salida=False,
             pagina.wait_for_url(RETORNO + "?**")
         callback = parse_qs(urlsplit(pagina.url).query)
         if callback.get("state") != [estado] or "code" not in callback:
-            raise SystemExit("El retorno OIDC no coincide con el inicio de sesión.")
+            errores = {"invalid_request", "unauthorized_client", "access_denied", "unsupported_response_type",
+                       "invalid_scope", "server_error", "temporarily_unavailable", "interaction_required",
+                       "login_required", "account_selection_required", "consent_required"}
+            motivo = callback.get("error", ["ausente"])[0]
+            clase = motivo if motivo in errores or motivo == "ausente" else "otro"
+            coincide = callback.get("state") == [estado]
+            tipo_cliente = "normal" if cliente == CLIENTE else "de caducidad"
+            raise RetornoInvalido(f"f0-{nombre} · cliente {tipo_cliente} · retorno OIDC inválido · "
+                                  f"state coincide={coincide} · hay código={'code' in callback} · error={clase}")
         tokens = consultar(OIDC + "/token", formulario=True, datos={
             "grant_type": "authorization_code", "code": callback["code"][0],
             "code_verifier": verificador, "redirect_uri": RETORNO, "client_id": cliente})
@@ -323,14 +335,22 @@ def emitir_tokens(destino, password, semilla):
                 if not 1 <= claims["exp"] - claims["iat"] <= 2:
                     raise SystemExit("El cliente de prueba no emitió un token de un segundo.")
                 tokens = {"expirado": expirado}
+                rechazos = []
                 for numero, (nombre, _) in enumerate(CUENTAS, 1):
-                    token = login(navegador, CLIENTE, nombre, password,
-                                  semillas[nombre], probar_rechazo=(nombre == "autoridad"))
+                    try:
+                        token = login(navegador, CLIENTE, nombre, password,
+                                      semillas[nombre], probar_rechazo=(nombre == "autoridad"))
+                    except RetornoInvalido as rechazo:
+                        print(rechazo, flush=True)
+                        rechazos.append(nombre)
+                        continue
                     if declaraciones(token)["sub"] != sub(numero):
                         raise SystemExit("Identidad OIDC inesperada para f0-" + nombre)
                     print(f"f0-{nombre} · contraseña, TOTP y sujeto verificados", flush=True)
                     clave = "sinMembresia" if nombre == "sin-membresia" else f"{numero:02d}"
                     tokens[clave] = token
+                if rechazos:
+                    raise SystemExit("Keycloak rechazó el retorno de las cuentas: " + ", ".join(rechazos))
     except Error as error:
         # Playwright puede incluir una URL con un código de un solo uso en su traza.
         raise SystemExit(f"Falló el recorrido del navegador para f0-{nombre} ({type(error).__name__}).") from None

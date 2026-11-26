@@ -35,6 +35,7 @@ La fecha de cierre visible en la consigna es el **2 de diciembre de 2026 a las 2
 
 ## Documentación
 
+- [Plan vigente por fases, dependencias y pruebas de aceptación](docs/plan-sisplan/11-PLAN-POR-FASES-SRS-V2.md)
 - [Adaptación y alcance del SRS v2](docs/plan-sisplan/10-ADAPTACION-SRS-V2.md)
 
 - [Arranque local y pruebas de la aplicación](docs/plan-sisplan/06-PRIMER-INCREMENTO.md)

@@ -11,6 +11,8 @@ El SRS v2 permite operar PEI y POA por separado o vinculados (págs. 4 y 9). La 
 | Múltiples instituciones (págs. 4 y 10) | Se prepararon los roles de acceso del flujo PEI. | Gestión de instituciones, asignaciones por dependencia, aislamiento de datos por institución y configuración de módulos. |
 | Seguimiento mensual, trimestral, semestral y anual (págs. 7 y 8) | Se conservan las evaluaciones históricas existentes. | Programación y seguimiento con las frecuencias de la v2, evidencias y evaluación. |
 
+Consulta el [plan vigente por fases](11-PLAN-POR-FASES-SRS-V2.md) para las dependencias, las métricas y el catálogo de pruebas de la entrega.
+
 ## Presupuesto de referencia
 
 El valor se captura a nivel del POA anual en este incremento. Es un estimado informativo. Los productos de `Matriz POA!U12:U22` del archivo POA TI 2026 V2 tienen el presupuesto vacío. La aplicación conserva esa ausencia en los POA existentes al aplicar la migración `0007`. Los ejemplos que se usen en la demostración se identifican como valores de referencia.

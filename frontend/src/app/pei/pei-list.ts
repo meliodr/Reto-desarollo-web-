@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Pei, PeiApi, PeiState, peiStateLabels } from './pei-api';
 import { Session } from '../auth/session';
 @Component({ imports: [RouterLink], templateUrl: './pei-list.html' })
@@ -27,6 +27,9 @@ export class PeiList {
     );
   });
   constructor() {
+    const route = inject(ActivatedRoute);
+    const requested = route.snapshot.queryParamMap.get('estado');
+    if (requested && this.states.includes(requested as PeiState)) this.state.set(requested as PeiState);
     effect((cleanup) => {
       const officialOnly = this.officialOnly();
       this.retry();

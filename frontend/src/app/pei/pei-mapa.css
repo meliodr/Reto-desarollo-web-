@@ -61,7 +61,7 @@
   cursor: pointer;
   padding: 13px 14px;
   color: var(--accent);
-  background: #f0f4ff;
+  background: var(--tint);
   border-radius: inherit;
 }
 
@@ -70,7 +70,7 @@
 }
 
 .mapa-eje-titulo {
-  color: #213963;
+  color: var(--ink);
   font-weight: 650;
   margin-inline-end: 12px;
 }
@@ -144,7 +144,7 @@
 
 .mapa-relaciones > div {
   border-radius: 7px;
-  background: #f4f6fb;
+  background: var(--soft);
   padding: 8px 10px;
 }
 
@@ -171,8 +171,8 @@
   display: inline-block;
   border-radius: 999px;
   padding: 3px 8px;
-  color: #34435a;
-  background: #edf1f6;
+  color: var(--ink);
+  background: var(--soft);
   font-size: 0.76rem;
   font-weight: 600;
 }
@@ -196,7 +196,7 @@
 .mapa-formulario {
   padding: 14px;
   border-radius: 9px;
-  background: #f0f4ff;
+  background: var(--tint);
   margin-top: 10px;
 }
 

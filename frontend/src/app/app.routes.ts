@@ -1,26 +1,10 @@
-import { Component, inject } from '@angular/core';
-import { CanActivateFn, CanDeactivateFn, Router, RouterLink, Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, CanDeactivateFn, Router, Routes } from '@angular/router';
 import { Session } from './auth/session';
+import { InstitutionHome } from './institution-home';
 
 export interface PendingChanges {
   canLeave(): boolean;
-}
-
-@Component({
-  imports: [RouterLink],
-  template: `
-    <section class="panel empty-state">
-      <h1>{{ session.active()?.nombre }}</h1>
-      @if (session.pei() || session.poa()) {
-        <a class="button button-primary" [routerLink]="session.home()">Ver planes</a>
-      } @else {
-        <p>Esta institución tiene los módulos de planificación deshabilitados.</p>
-      }
-    </section>
-  `,
-})
-class InstitutionHome {
-  readonly session = inject(Session);
 }
 
 const pendingChangesGuard: CanDeactivateFn<PendingChanges> = (component) =>

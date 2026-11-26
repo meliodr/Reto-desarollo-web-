@@ -31,10 +31,11 @@ En el entorno de desarrollo se aprobaron **21 pruebas del portal**: 17 del servi
 
 El [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1) incorpora la carga DIGEMAPS, el nuevo flujo de aprobación del PEI y la creación de POA en ambas modalidades con presupuesto de referencia opcional. La aplicación usa Angular, .NET, PostgreSQL y Keycloak.
 
-Estamos en la **semana 4**. El primer recorrido de punta a punta se ensaya en la semana 5 y el candidato debe quedar validado al terminar la semana 6, listo para la semana 7. El plazo oficial del aula sigue por verificar. [Calendario, capacidad y criterios de entrega](docs/plan-sisplan/12-ENTREGA-SEMANA-7.md)
+Estamos en la **semana 4**. El primer recorrido de punta a punta se ensaya en la semana 5 y el candidato debe quedar validado al terminar la semana 6, listo para la semana 7. El [Campus Virtual](https://campusvirtual.intec.edu.do/mod/assign/view.php?id=1260918) muestra como cierre el **2 de diciembre de 2026 a las 23:59**. Este plazo precede al hito interno de semana 7. [Calendario, capacidad y criterios de entrega](docs/plan-sisplan/12-ENTREGA-SEMANA-7.md)
 
 ## Documentación
 
+- [Base institucional de F0 · permisos, contratos y cuentas de prueba](docs/plan-sisplan/14-CONTRATO-F0.md) · [Ejecutar la aplicación](backend/README.md#arranque-local-de-f0) · [Verificación del PR](https://github.com/meliodr/Reto-desarollo-web-/pull/2/checks)
 - [Preparación de F0 y casos iniciales de QA](docs/plan-sisplan/13-ARRANQUE-F0.md)
 - [Plan vigente · fases, subfases, dependencias y pruebas](docs/plan-sisplan/11-PLAN-POR-FASES-SRS-V2.md)
 - [Adaptación y alcance del SRS v2](docs/plan-sisplan/10-ADAPTACION-SRS-V2.md)

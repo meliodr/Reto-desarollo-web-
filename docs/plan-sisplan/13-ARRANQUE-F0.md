@@ -2,6 +2,8 @@
 
 **Semana 4 · Base revisada en PR #1, commit `904e1fa`**
 
+La [implementación F0](14-CONTRATO-F0.md) y el [arranque vigente](../../backend/README.md#arranque-local-de-f0) actualizan los pasos y las decisiones. La línea base de este documento corresponde al incremento anterior.
+
 El primer objetivo de F0 es que PEI y POA puedan trabajar con un contrato común y datos aislados. El recorrido de semana 5 necesita dos instituciones, permisos efectivos y trazabilidad de las escrituras que se van a demostrar. El [plan completo](11-PLAN-POR-FASES-SRS-V2.md#subfases-de-f0) mantiene los criterios de cierre de F0 y el [calendario](12-ENTREGA-SEMANA-7.md) sitúa el candidato al final de la semana 6.
 
 ## Punto de partida comprobado

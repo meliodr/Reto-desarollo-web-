@@ -71,6 +71,13 @@ describe('Contexto institucional', () => {
     next.flush([]);
   });
 
+  it('conserva los permisos de la membresía histórica Planificador', () => {
+    session.active.set({ ...a, rol: 'Planificador' });
+    expect(session.canPlan()).toBe(true);
+    expect(session.canFormulatePoa()).toBe(true);
+    expect(session.canAudit()).toBe(false);
+  });
+
   it('borra el contexto anterior cuando la API deniega la pertenencia', async () => {
     session.active.set(a);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 403 })));

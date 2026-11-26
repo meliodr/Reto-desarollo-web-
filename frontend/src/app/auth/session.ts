@@ -34,13 +34,17 @@ export class Session {
     const role = this.active()?.rol;
     return role === 'Auditor' || role === 'AdministradorInstitucional';
   });
-  readonly canPlan = computed(() => this.pei() && this.active()?.rol === 'AnalistaPlanificacion');
+  private readonly isAnalyst = computed(() => {
+    const role = this.active()?.rol;
+    return role === 'AnalistaPlanificacion' || role === 'Planificador';
+  });
+  readonly canPlan = computed(() => this.pei() && this.isAnalyst());
   readonly canFormulatePoa = computed(
     () =>
       this.poa() &&
-      ['AnalistaPlanificacion', 'DirectorPlanificacion', 'ResponsableArea'].includes(
-        this.active()!.rol,
-      ),
+      (this.isAnalyst() ||
+        this.active()?.rol === 'DirectorPlanificacion' ||
+        this.active()?.rol === 'ResponsableArea'),
   );
   readonly home = computed(() => (this.pei() ? '/peis' : this.poa() ? '/poas' : '/institucion'));
 
@@ -93,6 +97,7 @@ export class Session {
       }
       if (response.status === 403) {
         this.institutions.set([]);
+        if (id) this.error.set('Esta cuenta ya no tiene acceso a la institución seleccionada.');
         return;
       }
       if (!response.ok) throw new Error();

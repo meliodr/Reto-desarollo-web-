@@ -58,6 +58,26 @@ def token_admin():
                      datos=datos, formulario=True)["access_token"]
 
 
+def cliente_web():
+    realm = json.loads(Path(__file__).with_name("sisplan-realm.json").read_text())
+    return next(c for c in realm["clients"] if c["clientId"] == CLIENTE)
+
+
+def preparar_retorno_local(admin):
+    # Keycloak conserva los realms existentes al arrancar con --import-realm.
+    ficha, = consultar(ADMIN + "/clients?" + urlencode({"clientId": CLIENTE}), token=admin)
+    ruta = ADMIN + "/clients/" + ficha["id"]
+    cliente = consultar(ruta, token=admin)
+    atributo = "post.logout.redirect.uris"
+    atributos = cliente.setdefault("attributes", {})
+    anteriores = atributos.get(atributo, "").split("##")
+    requeridas = cliente_web()["attributes"][atributo].split("##")
+    faltantes = [uri for uri in requeridas if uri not in anteriores]
+    if faltantes:
+        atributos[atributo] = "##".join([uri for uri in anteriores if uri] + faltantes)
+        consultar(ruta, metodo="PUT", datos=cliente, token=admin)
+
+
 def alta_usuarios(password, semilla):
     usuarios = []
     for numero, (nombre, rol) in enumerate(CUENTAS, 1):
@@ -74,6 +94,7 @@ def alta_usuarios(password, semilla):
                          "firstName": "Prueba", "lastName": nombre, "credentials": credenciales,
                          "clientRoles": {CLIENTE: [rol]}})
     admin = token_admin()
+    preparar_retorno_local(admin)
     resultado = consultar(ADMIN + "/partialImport", token=admin,
                           datos={"ifResourceExists": "SKIP", "users": usuarios})
     existentes = consultar(ADMIN + "/users?search=f0-&max=200", token=admin)
@@ -139,8 +160,7 @@ def emitir_tokens(destino, password, semilla):
     from playwright.sync_api import Error, sync_playwright
 
     cliente_corto = "sisplan-f0-caducidad-" + secrets.token_hex(8)
-    realm = json.loads(Path(__file__).with_name("sisplan-realm.json").read_text())
-    cliente = next(c for c in realm["clients"] if c["clientId"] == CLIENTE)
+    cliente = cliente_web()
     cliente["clientId"] = cliente_corto
     cliente["attributes"]["access.token.lifespan"] = "1"
     admin = token_admin()
@@ -150,12 +170,14 @@ def emitir_tokens(destino, password, semilla):
     try:
         with sync_playwright() as playwright:
             with playwright.chromium.launch() as navegador:
-                expirado = login(navegador, cliente_corto, "analista", password, None)
+                expirado = login(navegador, cliente_corto, "analista", password, None, probar_salida=True)
+                claims = declaraciones(expirado)
+                if not 1 <= claims["exp"] - claims["iat"] <= 2:
+                    raise SystemExit("El cliente de prueba no emitió un token de un segundo.")
                 tokens = {"expirado": expirado}
                 for numero, (nombre, _) in enumerate(CUENTAS, 1):
                     token = login(navegador, CLIENTE, nombre, password,
-                                  semilla if nombre == "autoridad" else None,
-                                  probar_salida=(nombre == "sin-membresia"))
+                                  semilla if nombre == "autoridad" else None)
                     if declaraciones(token)["sub"] != sub(numero):
                         raise SystemExit("Identidad OIDC inesperada para f0-" + nombre)
                     clave = "sinMembresia" if nombre == "sin-membresia" else f"{numero:02d}"

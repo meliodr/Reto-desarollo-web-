@@ -11,6 +11,7 @@ La [adaptación al SRS v2](plan-sisplan/10-ADAPTACION-SRS-V2.md) recoge el alcan
 | POA TI 2026 | Analizado | 11 registros de productos con metas mensuales y datos pendientes |
 | Organización del equipo | Cinco plazas configuradas | Incorporación y recorridos con las cinco cuentas reales pendientes |
 | Portal de trabajo v2 | Publicado y revisado | [Portal público](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/) con tareas compartidas, checklist, notas, encuestas y revisión cruzada |
+| Base institucional F0 | Implementada en el [PR #2](https://github.com/meliodr/Reto-desarollo-web-/pull/2) | Sesión por institución, roles y dependencias, módulos autónomos, RLS, datos históricos y auditoría. [Matriz, contratos y decisiones](plan-sisplan/14-CONTRATO-F0.md). |
 | Repositorio | Plan vigente para el SRS v2 | [Fases, subfases y criterios de aceptación](plan-sisplan/11-PLAN-POR-FASES-SRS-V2.md) |
 | Nombre de la aplicación | SISPLAN | Nombre de trabajo para la entrega académica |
 | Arquitectura | Definida en la base | Angular 22, .NET 10 LTS, PostgreSQL 18, Npgsql y Keycloak con MFA. Demo local reproducible |
@@ -70,11 +71,11 @@ El flujo actual y el presupuesto opcional se rigen por la [adaptación al SRS v2
 
 ## Calendario de referencia
 
-Estamos en la semana 4. El objetivo es entregar en la semana 7 con el candidato validado al cierre de la semana 6. La consigna anterior mostraba un cierre el 2 de diciembre de 2026 a las 23:59. La vigencia de esa fecha se verifica en el aula en semana 4. [Calendario de trabajo y capacidad del equipo](plan-sisplan/12-ENTREGA-SEMANA-7.md)
+Estamos en la semana 4. El objetivo es entregar en la semana 7 con el candidato validado al cierre de la semana 6. La [actividad vigente](https://campusvirtual.intec.edu.do/mod/assign/view.php?id=1260918), consultada el 26 de noviembre, cierra el 2 de diciembre de 2026 a las 23:59. El equipo debe ajustar el corte de envío a ese plazo. [Calendario de trabajo y capacidad del equipo](plan-sisplan/12-ENTREGA-SEMANA-7.md)
 
 ## Trabajo siguiente
 
 1. Confirmar responsables, revisores y horas del equipo al cerrar la semana 4.
-2. Verificar la rúbrica y el plazo del aula y cerrar las decisiones de publicación, Comité y MFA.
-3. Preparar las cuentas y los datos aislados para el primer ensayo.
+2. Confirmar la composición del Comité y la política académica de MFA.
+3. Usar las cuentas ficticias de F0 para el primer ensayo de PEI y POA.
 4. Construir y probar el POA mínimo de la semana 5 con un producto, una actividad, una meta y un responsable.

@@ -23,7 +23,8 @@ class InstitutionHome {
   readonly session = inject(Session);
 }
 
-const pendingChangesGuard: CanDeactivateFn<PendingChanges> = (component) => component.canLeave();
+const pendingChangesGuard: CanDeactivateFn<PendingChanges> = (component) =>
+  component?.canLeave() ?? true;
 const allow =
   (check: (session: Session) => boolean): CanActivateFn =>
   () => {

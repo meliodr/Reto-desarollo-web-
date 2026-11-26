@@ -79,14 +79,15 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
         const string updateSql = """
             UPDATE sisplan.pei_version
             SET estado = @estado, revision = revision + 1, actualizado_en = clock_timestamp()
-            WHERE id = @id
+            WHERE id = @id AND (SELECT sisplan.rol_modulo('pei')) = @rol
             RETURNING revision
             """;
         await using var update = new NpgsqlCommand(updateSql, connection, transaction);
         update.Parameters.AddWithValue("estado", next);
         update.Parameters.AddWithValue("id", versionId);
-        var revision = (long)(await update.ExecuteScalarAsync(ct)
-            ?? throw new InvalidOperationException("No se actualizó el estado del PEI."));
+        update.Parameters.AddWithValue("rol", source.Activa!.Rol);
+        if (await update.ExecuteScalarAsync(ct) is not long revision)
+            return new(FlujoPeiStatus.Forbidden);
 
         await RecordTransitionAsync(versionId, revision, action, state, next, actor, reason, connection, transaction, ct);
         await transaction.CommitAsync(ct);

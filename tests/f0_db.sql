@@ -65,4 +65,58 @@ BEGIN
     IF NOT EXISTS (SELECT FROM sisplan.pei_version WHERE id = '50000000-0000-4000-8000-000000000002' AND mision = 'Atender')
     THEN RAISE EXCEPTION 'F0-04: la versión original fue alterada.'; END IF;
 END $$;
+-- Un único backend físico alterna las identidades sin cerrar la conexión.
+DO $$
+DECLARE
+    cuenta integer;
+BEGIN
+    FOR cuenta IN 1..9 LOOP
+        PERFORM set_config('sisplan.sujeto','30000000-0000-4000-8000-' || lpad(cuenta::text,12,'0'),true);
+        IF NOT EXISTS (SELECT FROM sisplan.pei WHERE id='50000000-0000-4000-8000-000000000001') THEN
+            RAISE EXCEPTION 'F0-02: el perfil % perdió su lectura del PEI.', cuenta;
+        END IF;
+        IF EXISTS (SELECT FROM sisplan.auditoria WHERE referencia='50000000-0000-4000-8000-000000000003')
+           IS DISTINCT FROM (cuenta IN (2,7)) THEN
+            RAISE EXCEPTION 'F0-02: el perfil % obtuvo un alcance de auditoría incorrecto.', cuenta;
+        END IF;
+    END LOOP;
+    PERFORM set_config('sisplan.sujeto','30000000-0000-4000-8000-000000000005',true);
+    INSERT INTO sisplan.poa(id,anio,fecha_inicio,fecha_fin)
+    VALUES ('50000000-0000-4000-8000-000000000008',2041,'2041-01-01','2041-12-31');
+    BEGIN
+        INSERT INTO sisplan.poa(id,anio,fecha_inicio,fecha_fin,dependencia_id)
+        VALUES ('50000000-0000-4000-8000-000000000009',2042,'2042-01-01','2042-12-31',
+                '00000000-0000-4000-8000-000000000102');
+        RAISE EXCEPTION 'F0-02: se escribió desde otra dependencia.';
+    EXCEPTION WHEN insufficient_privilege THEN NULL;
+    END;
+    PERFORM set_config('sisplan.sujeto','30000000-0000-4000-8000-000000000012',true);
+    IF EXISTS (SELECT FROM sisplan.poa WHERE id='50000000-0000-4000-8000-000000000008') THEN
+        RAISE EXCEPTION 'F0-02: el área de Tecnología puede leer el POA de Planificación.';
+    END IF;
+    PERFORM set_config('sisplan.sujeto','30000000-0000-4000-8000-000000000013',true);
+    IF EXISTS (SELECT FROM sisplan.pei) OR EXISTS (SELECT FROM sisplan.poa) THEN
+        RAISE EXCEPTION 'F0-02: el área inactiva obtuvo datos.';
+    END IF;
+END $$;
+RESET ROLE;
+UPDATE sisplan.institucion SET pei_habilitado=false WHERE id='00000000-0000-4000-8000-000000000001';
+SET LOCAL ROLE sisplan_app;
+SELECT set_config('sisplan.sujeto','30000000-0000-4000-8000-000000000004',true);
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM sisplan.pei) OR NOT EXISTS (SELECT FROM sisplan.poa WHERE id='50000000-0000-4000-8000-000000000003') THEN
+        RAISE EXCEPTION 'F0-07: el modo solo POA no aisló los módulos.';
+    END IF;
+END $$;
+RESET ROLE;
+UPDATE sisplan.institucion SET pei_habilitado=true,poa_habilitado=false
+WHERE id='00000000-0000-4000-8000-000000000001';
+SET LOCAL ROLE sisplan_app;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM sisplan.poa) OR NOT EXISTS (SELECT FROM sisplan.pei WHERE id='50000000-0000-4000-8000-000000000001') THEN
+        RAISE EXCEPTION 'F0-07: el modo solo PEI no aisló los módulos.';
+    END IF;
+END $$;
 ROLLBACK;

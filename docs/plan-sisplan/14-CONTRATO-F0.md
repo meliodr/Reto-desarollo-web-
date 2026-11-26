@@ -6,7 +6,7 @@
 
 | Fuente | Decisión para la entrega |
 |---|---|
-| [SRS v2 del maestro](https://chatgpt.com/library?file_id=libfile_7c47f7859494819185d6c7bcda81bc3a&account_id=personal), pp. 2–3, 7–10 | Se conservan los ocho actores y la RACI. PEI y POA pueden operar de forma independiente. En modo integrado, se utiliza la estructura estratégica cargada como referencia para el POA. |
+| [SRS v2 del maestro](https://campusvirtual.intec.edu.do/pluginfile.php/1432013/mod_assign/introattachment/0/SRS%20v2%20%20Reto%20PEI%20y%20POA%20Noviembre%20Enero%202027_Intec.pdf?forcedownload=1), pp. 2–3, 7–10 | Se conservan los ocho actores y la RACI. PEI y POA pueden operar de forma independiente. En modo integrado, se utiliza la estructura estratégica cargada como referencia para el POA. |
 | [Actividad del aula](https://campusvirtual.intec.edu.do/mod/assign/view.php?id=1260918), consultada el 26 de noviembre | Abre el 1 de diciembre a las 00:00 y cierra el 2 de diciembre a las 23:59, hora de Santo Domingo. Contiene el SRS v2 y dos Excel. La actividad consultada no presenta una rúbrica separada. Para el envío rige el horario del aula. |
 | Ejes y Objetivos DIGEMAPS y POA TI 2026 V2 adjuntos a la actividad | El PEI usa el catálogo estratégico provisto. F2 concilia la programación POA con el segundo Excel. Los ejemplos de F0 utilizan identidades ficticias. |
 | SRS v2 §4 y §8.1 y [adaptación al SRS](10-ADAPTACION-SRS-V2.md) | El Director de Planificación ejecuta la publicación oficial. La Máxima Autoridad la autoriza para ambos planes. El Comité Estratégico interviene en la cadena de aprobación del PEI como actor técnico adicional. El flujo de aprobación del POA se implementa en F2. |
@@ -80,3 +80,5 @@ El [JSON Schema](../../contracts/evidencia.schema.json) fija el DTO de lectura. 
 | Rúbrica adicional y disponibilidad individual | La actividad fija entrega y archivos. Coordinación verificará cualquier aclaración del maestro y el reparto real de los cinco integrantes. | Al cierre de la semana 4. |
 
 La semilla de [organización y membresías](../../infra/postgres/fixtures-f0.sql) alimenta las verificaciones con PostgreSQL. Los [casos HTTP de F0](../../tests/f0_smoke.py) ejercitan la matriz y los tres modos. Para simular las respuestas en Angular o API se puede cargar el JSON de ejemplos; el valor de una fecha, un nuevo ID de plan o un evento de ejemplo no representa una escritura ejecutada.
+
+Desde la raíz del repositorio, `python3 contracts/verificar_f0.py` comprueba las referencias, los esquemas, los ejemplos de los DTO y dos casos negativos de evidencia. Requiere PyYAML y jsonschema con soporte para Draft 2020-12. Para incluir la validación del documento OpenAPI completo, pasar `--esquema-oas RUTA` con una copia del [esquema oficial OpenAPI 3.1](https://spec.openapis.org/oas/3.1/schema/2022-10-07).

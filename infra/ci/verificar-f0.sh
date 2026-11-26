@@ -12,7 +12,9 @@ export SISPLAN_F0_TOTP_SEED="$(openssl rand -hex 16)"
 export ASPNETCORE_ENVIRONMENT=Development
 export Sisplan__Oidc__Url=http://127.0.0.1:8080
 api_pid=
+web_pid=
 limpiar() {
+  if [[ -n "$web_pid" ]]; then kill "$web_pid" 2>/dev/null || true; fi
   if [[ -n "$api_pid" ]]; then kill "$api_pid" 2>/dev/null || true; fi
   docker compose --profile institucional down --volumes >/dev/null
   rm -rf -- "$temporal"
@@ -57,8 +59,15 @@ if ! curl -fsS --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:5
   exit 1
 fi
 tokens="$temporal/tokens.json"
+(cd frontend && exec node node_modules/@angular/cli/bin/ng.js serve --host 127.0.0.1 --proxy-config proxy.conf.json) >"$temporal/angular.log" 2>&1 &
+web_pid=$!
+if ! curl -fsS --retry 60 --retry-connrefused --retry-delay 1 http://127.0.0.1:4200/ -o /dev/null; then
+  cat "$temporal/angular.log"
+  exit 1
+fi
 python3 infra/keycloak/f0.py tokens --salida "$tokens"
 python3 tests/f0_smoke.py --tokens "$tokens" --modo ambos
+python3 tests/f0_interfaz.py --capturas "${RUNNER_TEMP:-$temporal}/sisplan-f0-capturas"
 sql sisplan -c "UPDATE sisplan.institucion SET poa_habilitado=false WHERE id='00000000-0000-4000-8000-000000000001'"
 python3 tests/f0_smoke.py --tokens "$tokens" --modo solo-pei
 sql sisplan -c "UPDATE sisplan.institucion SET pei_habilitado=false, poa_habilitado=true WHERE id='00000000-0000-4000-8000-000000000001'"

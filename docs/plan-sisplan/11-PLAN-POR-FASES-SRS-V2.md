@@ -6,7 +6,7 @@ El plan cubre PEI y POA para la entrega de INTEC. Ambos módulos funcionan de fo
 
 Fuentes de aceptación: SRS v2, págs. 2–4 y 6–11, archivos Ejes y Objetivos DIGEMAPS y POA TI 2026 V2, y aclaración del maestro del 26 de noviembre. El [estado técnico y las pruebas ya ejecutadas](10-ADAPTACION-SRS-V2.md) sirven de punto de partida. El [plan anterior](01-PLAN-DE-CONSTRUCCION.md) conserva los antecedentes de la v1.
 
-La secuencia de trabajo, la capacidad estimada para cinco personas y los cortes de aceptación están en el [Calendario de entrega de semanas 4 a 7](12-ENTREGA-SEMANA-7.md). El candidato debe estar listo al iniciar la semana 7.
+La secuencia de trabajo, la capacidad estimada para cinco personas y los cortes de aceptación están en el [Calendario de entrega de semanas 4 a 7](12-ENTREGA-SEMANA-7.md). El [plazo del aula](14-CONTRATO-F0.md#alcance-y-fuentes) precede a ese calendario interno.
 
 **Subfases por fase**
 

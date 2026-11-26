@@ -65,6 +65,48 @@ def check_roles(api, year, draft):
     print("F0-02: nueve roles, consulta de auditoría y dos dependencias activas comprobados.")
 
 
+def check_workflow(api, draft):
+    pei, head = api("04", "/peis", 201, "POST", draft)
+    version = f"/pei-versiones/{pei['versionId']}/transiciones"
+    api("04", f"/peis/{pei['id']}/catalogo-digemaps", 201, "POST", {})
+
+    def advance(current, action, owner, allowed):
+        data = {"accion": action, "motivo": "Revisar datos de prueba." if action == "devolver" else None}
+        for n in range(1, len(ROLES) + 1):
+            account = f"{n:02d}"
+            available, _ = api(account, version, 200)
+            assert set(available["acciones"]) == (set(allowed) if account == owner else set())
+            if account != owner:
+                api(account, version, 403, "POST", data, current)
+        result, head = api(owner, version, 200, "POST", data, current)
+        return result["estado"], head["ETag"]
+
+    sequence = [
+        ("enviar", "04", ["enviar"]),
+        ("devolver", "03", ["revisar", "devolver"]),
+        ("corregir", "04", ["corregir"]),
+        ("enviar", "04", ["enviar"]),
+        ("revisar", "03", ["revisar", "devolver"]),
+        ("devolver", "09", ["validar_comite", "devolver"]),
+        ("corregir", "04", ["corregir"]),
+        ("enviar", "04", ["enviar"]),
+        ("revisar", "03", ["revisar", "devolver"]),
+        ("validar_comite", "09", ["validar_comite", "devolver"]),
+        ("devolver", "08", ["aprobar", "devolver"]),
+        ("corregir", "04", ["corregir"]),
+        ("enviar", "04", ["enviar"]),
+        ("revisar", "03", ["revisar", "devolver"]),
+        ("validar_comite", "09", ["validar_comite", "devolver"]),
+        ("aprobar", "08", ["aprobar", "devolver"]),
+        ("publicar", "03", ["publicar"]),
+    ]
+    tag = head["ETag"]
+    for action, owner, allowed in sequence:
+        state, tag = advance(tag, action, owner, allowed)
+    assert state == "publicado"
+    print("F0-02: matriz de transiciones recorrida con los nueve actores y devoluciones en tres etapas.")
+
+
 def ids(rows):
     return {row["id"] for row in rows}
 
@@ -147,6 +189,7 @@ def main():
         check_session(api)
         check_roles(api, args.year, draft)
         check_isolation(api, args.year, draft)
+        check_workflow(api, draft)
 
 
 if __name__ == "__main__":

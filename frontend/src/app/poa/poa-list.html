@@ -98,7 +98,9 @@
           <th scope="col">Año</th>
           <th scope="col">Período</th>
           <th scope="col">Estado</th>
-          <th scope="col">Plan estratégico</th>
+          @if (session.pei()) {
+            <th scope="col">Plan estratégico</th>
+          }
           <th scope="col">Presupuesto de referencia</th>
         </tr>
       </thead>
@@ -118,15 +120,15 @@
                     : poa.estado
               }}
             </td>
-            <td>
-              @if (poa.peiId && session.pei()) {
-                <a [routerLink]="['/peis', poa.peiId]">{{ poa.peiNombre }}</a>
-              } @else if (poa.peiId) {
-                Vinculado
-              } @else {
-                Independiente
-              }
-            </td>
+            @if (session.pei()) {
+              <td>
+                @if (poa.peiId) {
+                  <a [routerLink]="['/peis', poa.peiId]">{{ poa.peiNombre }}</a>
+                } @else {
+                  Independiente
+                }
+              </td>
+            }
             <td>
               @if (poa.presupuestoReferencia; as budget) {
                 RD$ {{ budget }}

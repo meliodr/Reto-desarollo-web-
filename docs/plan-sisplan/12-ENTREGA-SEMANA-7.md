@@ -1,6 +1,6 @@
 # Entrega de SISPLAN para la semana 7
 
-La **semana 4 está en curso**. Al terminar empieza la semana 5. La meta es llegar **al inicio de la semana 7** con un candidato que haya pasado la aceptación, con accesos, documentación y demo listos. La semana 7 queda para presentar y atender incidencias de entrega. La consigna anterior registraba el 2 de diciembre de 2026 a las 23:59. La fecha oficial vigente debe verificarse en el aula durante la semana 4. Si se mantiene una fecha anterior a la meta interna, se escala al equipo y al maestro en cuanto se confirme.
+La **semana 4 está en curso**. Al terminar empieza la semana 5. La meta es llegar **al inicio de la semana 7** con un candidato que haya pasado la aceptación, con accesos, documentación y demo listos. La semana 7 queda para presentar y atender incidencias de entrega. El 26 de noviembre se comprobó que el [Campus Virtual](https://campusvirtual.intec.edu.do/mod/assign/view.php?id=1260918) abre el envío el 1 de diciembre a las 00:00 y lo cierra el **2 de diciembre a las 23:59**. Este plazo llega antes de la meta interna y requiere que el equipo ajuste su corte de entrega.
 
 [Plan por fases y pruebas](11-PLAN-POR-FASES-SRS-V2.md) · [Avance comprobado del PR](10-ADAPTACION-SRS-V2.md)
 

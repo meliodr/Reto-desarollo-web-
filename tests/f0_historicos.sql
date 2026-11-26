@@ -4,6 +4,11 @@ INSERT INTO sisplan.pei(id) VALUES ('40000000-0000-4000-8000-000000000001');
 INSERT INTO sisplan.pei_version(id, pei_id, nombre, tipo, fecha_inicio, fecha_fin, mision, vision, valores)
 VALUES ('40000000-0000-4000-8000-000000000002', '40000000-0000-4000-8000-000000000001',
         'PEI anterior a F0', 'ordinario', '2030-01-01', '2033-12-31', 'Servir', 'Mejorar', 'Respeto');
+UPDATE sisplan.pei_version SET revision=2,estado='en_revision'
+WHERE id='40000000-0000-4000-8000-000000000002';
+INSERT INTO sisplan.pei_transicion(pei_version_id,revision,accion,estado_anterior,estado_nuevo,emisor,sujeto,registrada_en)
+VALUES ('40000000-0000-4000-8000-000000000002',2,'enviar','borrador','en_revision',
+        'https://identidad.example.invalid','analista-anterior','2026-11-23 15:00:00+00');
 INSERT INTO sisplan.eje (id, pei_version_id) VALUES
     ('40000000-0000-4000-8000-000000000003', '40000000-0000-4000-8000-000000000002');
 INSERT INTO sisplan.eje_version(eje_id, revision, nombre, activo) VALUES
@@ -27,5 +32,5 @@ INSERT INTO sisplan.f0_destino_historico(id, nombre) VALUES
     ('00000000-0000-4000-8000-000000000001', 'Institución A de prueba'),
     ('00000000-0000-4000-8000-000000000002', 'Institución B de prueba');
 INSERT INTO sisplan.f0_mapa_historico(entidad, registro_id, institucion_id) VALUES
-    ('pei', '40000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001'),
-    ('poa', '40000000-0000-4000-8000-000000000008', '00000000-0000-4000-8000-000000000002');
+    ('pei', '40000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001');
+-- El POA autónomo aún no tiene institución confirmada en el mapa.

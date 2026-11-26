@@ -4,13 +4,14 @@ La API .NET 10 usa PostgreSQL para formular, revisar y publicar PEI y para crear
 
 ## Arranque local de F0
 
-Desde la raíz del repositorio, prepara cuatro claves locales distintas. Las siguientes variables duran la sesión de shell. Para reutilizar los volúmenes en otra sesión, conserva sus valores fuera del repositorio.
+Desde la raíz del repositorio, prepara cinco claves locales distintas. Las siguientes variables duran la sesión de shell. Para reutilizar los volúmenes en otra sesión, conserva sus valores fuera del repositorio.
 
 ```sh
 export SISPLAN_DB_PASSWORD="$(openssl rand -hex 24)"
 export SISPLAN_APP_DB_PASSWORD="$(openssl rand -hex 24)"
 export SISPLAN_KEYCLOAK_PASSWORD="$(openssl rand -hex 24)"
 export SISPLAN_F0_PASSWORD="$(openssl rand -hex 24)"
+export SISPLAN_F0_TOTP_SEED="$(openssl rand -hex 32)"
 docker compose --profile institucional up -d
 docker compose up -d --wait postgres
 ```
@@ -29,7 +30,9 @@ La cuenta de migración posee el esquema. El login de la API queda sujeto a las 
 
 ### Identidades y datos de demostración
 
-La carga de pruebas se ejecuta en una base local desechable. Espera a que la URL de descubrimiento devuelva HTTP 200. Para ensayar MFA con Máxima Autoridad, define `SISPLAN_F0_TOTP_SEED` con `openssl rand -hex 32` antes de la **primera** alta de sus credenciales. Conserva esa semilla para los recorridos en ese entorno. Repetir el alta conserva las credenciales y el segundo factor existentes.
+El cliente local `sisplan-web` exige contraseña y TOTP al iniciar una sesión nueva. Las 15 identidades ficticias tienen un autenticador individual. Conserva la raíz `SISPLAN_F0_TOTP_SEED` del entorno para los arranques siguientes.
+
+**Actualización de un volumen anterior.** Recupera las contraseñas originales. Si Máxima Autoridad ya tenía TOTP en la versión anterior, guarda el valor usado entonces en `SISPLAN_F0_TOTP_AUTORIDAD_ANTERIOR` y crea una raíz independiente para `SISPLAN_F0_TOTP_SEED` una sola vez. El alta agrega el factor que falte y conserva los dispositivos y las contraseñas existentes. Las credenciales privadas se guardan fuera del repositorio.
 
 ```sh
 curl --fail --silent --output /dev/null --retry 40 --retry-all-errors --retry-delay 2 \
@@ -41,9 +44,11 @@ dotnet run --project backend/Sisplan.Api.csproj --no-launch-profile
 
 La API escucha en `http://127.0.0.1:5080` y Angular en `http://127.0.0.1:4200`. Entra con `f0-analista` para Instituto Horizonte, `f0-analista-b` para Instituto Bahía o `f0-multi` para cambiar de institución. La contraseña inicial es el valor de `SISPLAN_F0_PASSWORD`. La API resuelve por emisor y sujeto verificados las membresías cargadas en PostgreSQL.
 
+Cuando Angular te envíe a Keycloak, introduce el usuario y la contraseña. Para obtener el código de seis dígitos de `f0-multi`, ejecuta `python3 infra/keycloak/f0.py codigo multi` en tu terminal local con las variables del entorno. Para usar una aplicación autenticadora, ejecuta `python3 infra/keycloak/f0.py codigo multi --registrar` en privado y registra la clave personal mostrada como TOTP basado en tiempo, SHA-1, seis dígitos y periodo de 30 segundos. Sustituye `multi` por el alias de la cuenta ficticia que estés probando. Si una cuenta existente usa un dispositivo propio, introduce el código de ese dispositivo.
+
 ### Prueba con navegador y Keycloak
 
-Con la API en marcha y las mismas variables, instala Playwright en un entorno virtual de Python. El comando realiza accesos en Chromium mediante código de autorización y PKCE, verifica el cierre de sesión y prepara un token con vigencia vencida. Si se configuró la semilla, completa el reto TOTP interactivo de Máxima Autoridad. El archivo de salida contiene credenciales de corta duración.
+Con la API en marcha y las mismas variables, instala Playwright en un entorno virtual de Python. Chromium recorre los formularios reales de contraseña y TOTP de las 15 identidades y verifica su sujeto mediante el flujo de código de autorización con PKCE. El ensayo comprueba el rechazo de un código incorrecto, el cierre de sesión y la emisión de un token que se deja caducar. El archivo de salida contiene credenciales de corta duración.
 
 ```sh
 python3 -m venv /tmp/sisplan-f0-python

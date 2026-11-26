@@ -7,6 +7,7 @@ import json
 import os
 import secrets
 import struct
+import sys
 import time
 from pathlib import Path
 from urllib.error import HTTPError
@@ -63,7 +64,48 @@ def cliente_web():
     return next(c for c in realm["clients"] if c["clientId"] == CLIENTE)
 
 
-def preparar_retorno_local(admin):
+def flujo_totp(admin):
+    # El cliente de SISPLAN usa SSO o un formulario con sus dos pasos obligatorios.
+    # Construir antes de enlazar permite reintentar si se interrumpe el aprovisionamiento.
+    raiz = "sisplan-f0-mfa"
+    formulario = "sisplan-f0-formulario"
+    auth = ADMIN + "/authentication"
+    flujos = auth + "/flows"
+    existentes = {f["alias"]: f for f in consultar(flujos, token=admin)}
+    if raiz not in existentes:
+        consultar(flujos, datos={"alias": raiz, "providerId": "basic-flow", "topLevel": True}, token=admin)
+        existentes = {f["alias"]: f for f in consultar(flujos, token=admin)}
+    flujo_id = existentes[raiz]["id"]
+
+    def pasos(alias):
+        return [p for p in consultar(f"{flujos}/{alias}/executions", token=admin) if p["level"] == 0]
+
+    def asegurar(alias, parent_id, proveedor, requisito, orden):
+        paso = next((p for p in pasos(alias) if p.get("providerId") == proveedor), None)
+        if paso is None:
+            consultar(auth + "/executions", datos={"parentFlow": parent_id, "authenticator": proveedor,
+                      "requirement": requisito, "priority": orden}, token=admin)
+        elif (paso["requirement"], paso["priority"]) != (requisito, orden):
+            raise SystemExit(f"La configuración local de {alias}/{proveedor} difiere de la política F0.")
+
+    asegurar(raiz, flujo_id, "auth-cookie", "ALTERNATIVE", 10)
+    ruta_raiz = f"{flujos}/{raiz}/executions"
+    def subflujo():
+        return next((p for p in pasos(raiz) if p.get("displayName") == formulario), None)
+    forms = subflujo()
+    if forms is None:
+        consultar(ruta_raiz + "/flow", datos={"alias": formulario, "type": "basic-flow", "priority": 20}, token=admin)
+        forms = subflujo()
+    asegurar(formulario, forms["flowId"], "auth-username-password-form", "REQUIRED", 10)
+    asegurar(formulario, forms["flowId"], "auth-otp-form", "REQUIRED", 20)
+    if (len(pasos(raiz)), len(pasos(formulario))) != (2, 2):
+        raise SystemExit("Revisa los pasos adicionales en el flujo de autenticación local de F0.")
+    if forms["requirement"] != "ALTERNATIVE":
+        consultar(ruta_raiz, metodo="PUT", datos={**forms, "requirement": "ALTERNATIVE"}, token=admin)
+    return flujo_id
+
+
+def preparar_cliente_local(admin):
     # Keycloak conserva los realms existentes al arrancar con --import-realm.
     ficha, = consultar(ADMIN + "/clients?" + urlencode({"clientId": CLIENTE}), token=admin)
     ruta = ADMIN + "/clients/" + ficha["id"]
@@ -73,51 +115,104 @@ def preparar_retorno_local(admin):
     anteriores = atributos.get(atributo, "").split("##")
     requeridas = cliente_web()["attributes"][atributo].split("##")
     faltantes = [uri for uri in requeridas if uri not in anteriores]
-    if faltantes:
+    bindings = cliente.setdefault("authenticationFlowBindingOverrides", {})
+    flujo = flujo_totp(admin)
+    if faltantes or bindings.get("browser") != flujo:
+        bindings["browser"] = flujo
         atributos[atributo] = "##".join([uri for uri in anteriores if uri] + faltantes)
         consultar(ruta, metodo="PUT", datos=cliente, token=admin)
+
+
+ETIQUETA_TOTP = "SISPLAN F0 · autenticador de demostración"
+ETIQUETA_ANTERIOR = "Segundo factor local F0"
+
+
+def semilla_cuenta(maestra, nombre):
+    # Sólo la semilla derivada entra en la cuenta de Keycloak.
+    return hmac.digest(maestra.encode(), ("sisplan-f0/totp/" + nombre).encode(), "sha256").hex()
+
+
+def credencial_totp(maestra, nombre):
+    return {
+        "type": "otp", "userLabel": ETIQUETA_TOTP,
+        "credentialData": json.dumps({"subType": "totp", "digits": 6, "period": 30,
+                                      "counter": 0, "algorithm": "HmacSHA1"}),
+        "secretData": json.dumps({"value": semilla_cuenta(maestra, nombre)}),
+    }
+
+
+def dispositivos(admin, sujeto):
+    return [c for c in consultar(f"{ADMIN}/users/{sujeto}/credentials", token=admin) if c["type"] == "otp"]
 
 
 def alta_usuarios(password, semilla):
     usuarios = []
     for numero, (nombre, rol) in enumerate(CUENTAS, 1):
-        credenciales = [{"type": "password", "value": password, "temporary": False}]
-        if nombre == "autoridad" and semilla:
-            credenciales.append({
-                "type": "otp", "userLabel": "Segundo factor local F0",
-                "credentialData": json.dumps({"subType": "totp", "digits": 6, "period": 30,
-                                               "counter": 0, "algorithm": "HmacSHA1"}),
-                "secretData": json.dumps({"value": semilla}),
-            })
+        credenciales = [{"type": "password", "value": password, "temporary": False}, credencial_totp(semilla, nombre)]
         usuarios.append({"id": sub(numero), "username": "f0-" + nombre, "enabled": True,
                          "email": "f0-" + nombre + "@example.invalid", "emailVerified": True,
                          "firstName": "Prueba", "lastName": nombre, "credentials": credenciales,
                          "clientRoles": {CLIENTE: [rol]}})
     admin = token_admin()
-    preparar_retorno_local(admin)
+    preparar_cliente_local(admin)
     resultado = consultar(ADMIN + "/partialImport", token=admin,
                           datos={"ifResourceExists": "SKIP", "users": usuarios})
     existentes = consultar(ADMIN + "/users?search=f0-&max=200", token=admin)
     por_nombre = {u["username"]: u["id"] for u in existentes}
     for usuario in usuarios:
-        if por_nombre.get(usuario["username"]) != usuario["id"]:
+        sujeto = usuario["id"]
+        if por_nombre.get(usuario["username"]) != sujeto:
             raise SystemExit("El sub de la cuenta de prueba no coincide: " + usuario["username"])
-    print(f"15 identidades verificadas. Altas: {resultado['added']}. Existentes: {resultado['skipped']}.")
+        if not dispositivos(admin, sujeto):
+            # Para un volumen anterior, añadir sólo la credencial ausente. Keycloak
+            # exige validar también el perfil en el PUT; preservar sus campos.
+            ruta = f"{ADMIN}/users/{sujeto}"
+            perfil = consultar(ruta, token=admin)
+            perfil["credentials"] = [usuario["credentials"][1]]
+            consultar(ruta, metodo="PUT", datos=perfil, token=admin)
+    print(f"15 identidades con TOTP. Altas: {resultado['added']}. Existentes: {resultado['skipped']}.")
+
+
+def semilla_aprovisionada(admin, numero, nombre, maestra):
+    credenciales = dispositivos(admin, sub(numero))
+    if any(c.get("userLabel") == ETIQUETA_TOTP for c in credenciales):
+        return semilla_cuenta(maestra, nombre)
+    if nombre == "autoridad" and any(c.get("userLabel") == ETIQUETA_ANTERIOR for c in credenciales):
+        anterior = os.environ.get("SISPLAN_F0_TOTP_AUTORIDAD_ANTERIOR")
+        if anterior and anterior != maestra:
+            return anterior
+        raise SystemExit("Para esta Autoridad existente indica su semilla anterior en "
+                         "SISPLAN_F0_TOTP_AUTORIDAD_ANTERIOR y una raíz F0 independiente.")
+    raise SystemExit(f"f0-{nombre} no tiene un autenticador automatizable de F0. "
+                     "Revisa el dispositivo registrado. Se conservan sus credenciales.")
 
 
 def b64(dato):
     return base64.urlsafe_b64encode(dato).decode().rstrip("=")
 
 
-def totp(semilla):
-    paso = struct.pack(">Q", int(time.time()) // 30)
+def totp(semilla, instante=None):
+    paso = struct.pack(">Q", int(time.time() if instante is None else instante) // 30)
     firma = hmac.digest(semilla.encode(), paso, "sha1")
     indice = firma[-1] & 15
     valor = struct.unpack(">I", firma[indice:indice + 4])[0] & 0x7fffffff
     return f"{valor % 1000000:06d}"
 
 
-def login(navegador, cliente, nombre, password, semilla, *, probar_salida=False):
+def completar_otp(pagina, semilla):
+    campo = pagina.locator('[name="otp"]')
+    campo.fill(totp(semilla))
+    pagina.locator('#kc-otp-login-form [type="submit"]').click()
+    # Keycloak puede prohibir reutilizar el código del mismo paso entre logins.
+    if campo.is_visible():
+        time.sleep(31 - time.time() % 30)
+        campo.fill(totp(semilla))
+        pagina.locator('#kc-otp-login-form [type="submit"]').click()
+        if campo.is_visible():
+            raise SystemExit("Keycloak rechazó el TOTP. Revisa la semilla original del volumen de F0.")
+
+
+def login(navegador, cliente, nombre, password, semilla, *, probar_salida=False, probar_rechazo=False):
     verificador = secrets.token_urlsafe(48)
     estado = secrets.token_urlsafe(24)
     parametros = {"client_id": cliente, "redirect_uri": RETORNO, "response_type": "code",
@@ -130,9 +225,16 @@ def login(navegador, cliente, nombre, password, semilla, *, probar_salida=False)
         pagina.locator('[name="username"]').fill("f0-" + nombre)
         pagina.locator('[name="password"]').fill(password)
         pagina.locator('#kc-form-login [type="submit"]').click()
-        if semilla:
-            pagina.locator('[name="otp"]').fill(totp(semilla))
+        if probar_rechazo:
+            # Tiene seis dígitos y difiere de los códigos válidos en la ventana.
+            prohibidos = {totp(semilla, time.time() + d * 30) for d in range(-2, 3)}
+            incorrecto = next(f"{n:06d}" for n in range(6) if f"{n:06d}" not in prohibidos)
+            pagina.locator('[name="otp"]').fill(incorrecto)
             pagina.locator('#kc-otp-login-form [type="submit"]').click()
+            pagina.locator('[name="otp"]').wait_for(state="visible")
+            if urlsplit(pagina.url).netloc != urlsplit(ORIGEN).netloc:
+                raise SystemExit("Keycloak aceptó el código incorrecto.")
+        completar_otp(pagina, semilla)
         pagina.wait_for_url(RETORNO + "?**")
         callback = parse_qs(urlsplit(pagina.url).query)
         if callback.get("state") != [estado] or "code" not in callback:
@@ -164,20 +266,25 @@ def emitir_tokens(destino, password, semilla):
     cliente["clientId"] = cliente_corto
     cliente["attributes"]["access.token.lifespan"] = "1"
     admin = token_admin()
+    web, = consultar(ADMIN + "/clients?" + urlencode({"clientId": CLIENTE}), token=admin)
+    configurado = consultar(ADMIN + "/clients/" + web["id"], token=admin)
+    cliente["authenticationFlowBindingOverrides"] = configurado["authenticationFlowBindingOverrides"]
+    semillas = {nombre: semilla_aprovisionada(admin, i, nombre, semilla)
+                for i, (nombre, _) in enumerate(CUENTAS, 1)}
     consultar(ADMIN + "/clients", datos=cliente, token=admin)
     uuid = consultar(ADMIN + "/clients?" + urlencode({"clientId": cliente_corto}), token=admin)[0]["id"]
     nombre = "analista"
     try:
         with sync_playwright() as playwright:
             with playwright.chromium.launch() as navegador:
-                expirado = login(navegador, cliente_corto, "analista", password, None, probar_salida=True)
+                expirado = login(navegador, cliente_corto, "analista", password, semillas["analista"], probar_salida=True)
                 claims = declaraciones(expirado)
                 if not 1 <= claims["exp"] - claims["iat"] <= 2:
                     raise SystemExit("El cliente de prueba no emitió un token de un segundo.")
                 tokens = {"expirado": expirado}
                 for numero, (nombre, _) in enumerate(CUENTAS, 1):
                     token = login(navegador, CLIENTE, nombre, password,
-                                  semilla if nombre == "autoridad" else None)
+                                  semillas[nombre], probar_rechazo=(nombre == "autoridad"))
                     if declaraciones(token)["sub"] != sub(numero):
                         raise SystemExit("Identidad OIDC inesperada para f0-" + nombre)
                     clave = "sinMembresia" if nombre == "sin-membresia" else f"{numero:02d}"
@@ -191,24 +298,37 @@ def emitir_tokens(destino, password, semilla):
     time.sleep(max(0, declaraciones(expirado)["exp"] + 32 - time.time()))
     with os.fdopen(os.open(destino, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600), "w") as archivo:
         json.dump(tokens, archivo)
-    print("PKCE, cierre de sesión y sujetos verificados." +
-          (" Desafío TOTP de Máxima Autoridad verificado." if semilla else ""))
+    print("F0-08: TOTP, PKCE y sujetos verificados para las 15 cuentas. Código erróneo rechazado y salida verificada.")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     acciones = parser.add_subparsers(dest="accion", required=True)
     acciones.add_parser("usuarios")
+    nombres = [nombre for nombre, _ in CUENTAS]
+    codigo = acciones.add_parser("codigo", help="Código personal de una cuenta ficticia en terminal local")
+    codigo.add_argument("cuenta", choices=nombres)
+    codigo.add_argument("--registrar", action="store_true", help="Mostrar la clave personal para una app TOTP")
     tokens = acciones.add_parser("tokens")
     tokens.add_argument("--salida", type=Path, required=True, help="Archivo temporal nuevo (modo 600)")
     args = parser.parse_args()
     password = os.environ.get("SISPLAN_F0_PASSWORD")
-    if not password or not os.environ.get("SISPLAN_KEYCLOAK_PASSWORD"):
-        parser.error("Define SISPLAN_KEYCLOAK_PASSWORD y SISPLAN_F0_PASSWORD.")
+    if not os.environ.get("SISPLAN_KEYCLOAK_PASSWORD"):
+        parser.error("Define SISPLAN_KEYCLOAK_PASSWORD.")
+    if args.accion != "codigo" and not password:
+        parser.error("Define SISPLAN_F0_PASSWORD.")
     semilla = os.environ.get("SISPLAN_F0_TOTP_SEED")
-    if semilla and (len(semilla) < 32 or not semilla.isascii()):
+    if not semilla or len(semilla) < 32 or not semilla.isascii():
         parser.error("SISPLAN_F0_TOTP_SEED requiere al menos 32 caracteres ASCII aleatorios.")
-    if args.accion == "usuarios":
+    if semilla == os.environ.get("SISPLAN_F0_TOTP_AUTORIDAD_ANTERIOR"):
+        parser.error("La raíz de F0 debe ser independiente de la clave personal anterior de Autoridad.")
+    if args.accion == "codigo":
+        if not sys.stdout.isatty():
+            parser.error("El código y la clave personal sólo se muestran en una terminal interactiva.")
+        numero = nombres.index(args.cuenta) + 1
+        personal = semilla_aprovisionada(token_admin(), numero, args.cuenta, semilla)
+        print(base64.b32encode(personal.encode()).decode().rstrip("=") if args.registrar else totp(personal))
+    elif args.accion == "usuarios":
         alta_usuarios(password, semilla)
     else:
         if args.salida.exists():

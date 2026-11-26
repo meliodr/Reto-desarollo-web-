@@ -40,7 +40,7 @@ F1 y F2 pueden empezar con un contrato de institución, identidad y catálogos a
 
 ### Subfases de F0
 
-La [preparación de F0](13-ARRANQUE-F0.md) recoge la línea base verificada, la secuencia inicial, los casos de QA y las decisiones pendientes.
+Los [criterios de cierre de F0](13-ARRANQUE-F0.md) enlazan las decisiones adoptadas, los casos de QA y los resultados de la revisión actual.
 
 | Subfase | Entrada para cerrar | Trabajo | Evidencia de cierre |
 |---|---|---|---|

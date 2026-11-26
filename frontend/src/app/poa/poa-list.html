@@ -29,6 +29,39 @@
         (ngModelChange)="year.set($event); peiId.set('')"
       />
     </div>
+    <div class="field">
+      @if (dependenciaAsignada(); as asignada) {
+        <span>Dependencia</span>
+        <strong>{{ nombresDependencias().get(asignada) ?? 'Tu dependencia asignada' }}</strong>
+      } @else {
+        <label for="poa-dependencia">Dependencia</label>
+        <select
+          id="poa-dependencia"
+          name="dependencia"
+          [ngModel]="dependenciaElegida()"
+          [disabled]="saving() || cargandoDependencias() || errorDependencias()"
+          (ngModelChange)="dependenciaElegida.set($event)"
+        >
+          <option value="">Institucional</option>
+          @for (area of dependenciasActivas(); track area.id) {
+            <option [value]="area.id">{{ area.nombre }}</option>
+          }
+        </select>
+      }
+      @if (cargandoDependencias()) {
+        <p role="status">Consultando dependencias…</p>
+      } @else if (errorDependencias()) {
+        <p role="alert">
+          No pudimos cargar las dependencias.
+          {{
+            dependenciaAsignada()
+              ? 'El POA se guardará en tu área.'
+              : 'El POA se guardará con alcance institucional.'
+          }}
+        </p>
+        <button type="button" class="text-button" (click)="cargarDependencias()">Reintentar</button>
+      }
+    </div>
     @if (session.pei()) {
       <div class="field">
         <label for="poa-pei">Plan estratégico</label>
@@ -74,11 +107,15 @@
       class="button button-secondary"
       type="button"
       [disabled]="saving()"
-      (click)="showForm.set(false); error.set(''); budget.set('')"
+      (click)="cerrarFormulario()"
     >
       Cancelar
     </button>
-    <button class="button button-primary" type="submit" [disabled]="saving() || form.invalid">
+    <button
+      class="button button-primary"
+      type="submit"
+      [disabled]="saving() || cargandoDependencias() || form.invalid"
+    >
       {{ saving() ? 'Guardando…' : 'Guardar POA' }}
     </button>
   </form>
@@ -98,6 +135,7 @@
           <th scope="col">Año</th>
           <th scope="col">Período</th>
           <th scope="col">Estado</th>
+          <th scope="col">Dependencia</th>
           @if (session.pei()) {
             <th scope="col">Plan estratégico</th>
           }
@@ -118,6 +156,13 @@
                   : poa.estado === 'formulacion'
                     ? 'En formulación'
                     : poa.estado
+              }}
+            </td>
+            <td>
+              {{
+                poa.dependenciaId
+                  ? (nombresDependencias().get(poa.dependenciaId) ?? poa.dependenciaId)
+                  : 'Institucional'
               }}
             </td>
             @if (session.pei()) {

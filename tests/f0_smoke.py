@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
+from f0_organizacion import check_organizacion
 from flujo_smoke import call
 
 A = "00000000-0000-4000-8000-000000000001"
@@ -31,14 +32,7 @@ def check_session(api):
     assert {row["id"]: row["rol"] for row in default["instituciones"]} == {
         A: "AnalistaPlanificacion", B: "Auditor",
     }
-    org_a, _ = api("04", "/organizacion", 200)
-    org_b, _ = api("10", "/organizacion", 200, institution=B)
-    areas_a = {row["id"]: row["activa"] for row in org_a["dependencias"]}
-    assert areas_a[AREA_1] and areas_a[AREA_2] and not areas_a[INACTIVA]
-    assert set(areas_a).isdisjoint(row["id"] for row in org_b["dependencias"])
-    for org in (org_a, org_b):
-        assert org["periodos"] and org["unidadesMedida"]
-    print("F0-01: identidad, expiración, membresías y organización comprobadas.")
+    print("F0-01: identidad, expiración y membresías comprobadas.")
 
 
 def check_roles(api, year, draft):
@@ -65,10 +59,83 @@ def check_roles(api, year, draft):
     print("F0-02: nueve roles, consulta de auditoría y dos dependencias activas comprobados.")
 
 
+def check_structure(api, draft):
+    def analyst_write(path, status, method, payload, tag=None):
+        for n in range(1, len(ROLES) + 1):
+            if n != 4:
+                api(f"{n:02d}", path, 403, method, payload, tag)
+        return api("04", path, status, method, payload, tag)
+
+    recent = api("07", "/auditoria", 200)[0]
+    since = recent[0]["id"] if recent else 0
+    pei, head = api("04", "/peis", 201, "POST", draft)
+    axes = f"/peis/{pei['id']}/ejes"
+    version = f"/pei-versiones/{pei['versionId']}"
+    changed, _ = analyst_write(version, 200, "PATCH", dict(draft, nombre="Plan modificado en F0"), head["ETag"])
+    assert changed["id"] == pei["id"] and changed["nombre"] == "Plan modificado en F0"
+    axis, head = analyst_write(axes, 201, "POST", {"nombre": "Servicios ciudadanos"})
+    axis_path = f"{axes}/{axis['id']}"
+    revised, _ = analyst_write(axis_path, 200, "PUT", {"nombre": "Atención ciudadana",
+                                "activo": True, "revision": axis["revision"]}, head["ETag"])
+    assert revised["revision"] == axis["revision"] + 1
+    goals = axis_path + "/objetivos"
+    goal, _ = analyst_write(goals, 201, "POST", {"codigo": "OE-01", "nombre": "Medir espera",
+                            "descripcion": "Medir tiempos de atención.", "resultadoEsperado": "Menor espera.",
+                            "lineaAccion": "Registrar tiempos de atención."})
+    indicators = f"{goals}/{goal['id']}/indicadores"
+    indicator, _ = analyst_write(indicators, 201, "POST", {"nombre": "Tiempo de espera", "formula": "Promedio",
+                                 "unidad": "minutos", "lineaBase": 10, "meta": 5, "frecuencia": "Mensual"})
+    measurements = f"{indicators}/{indicator['id']}/mediciones"
+    measurement, _ = analyst_write(measurements, 201, "POST", {"periodo": draft["fechaInicio"], "valor": 7})
+    for collection in (axes, goals, indicators, measurements):
+        api("10", collection, 404, institution=B)
+    events = read_audit(api, since)
+    issuer = api("04", "/sesion", 200)[0]["actor"]["emisor"]
+    audit_keys = {(row["entidad"], row["accion"], row["referencia"])
+                  for row in events if row["emisor"] == issuer and row["sujeto"] == subject("04")}
+    assert {
+        ("pei", "INSERT", pei["id"]), ("pei_version", "INSERT", pei["versionId"]),
+        ("pei_version", "UPDATE", pei["versionId"]), ("eje", "INSERT", axis["id"]),
+        ("eje_version", "INSERT", f"{axis['id']}/{revised['revision']}"),
+        ("objetivo", "INSERT", goal["id"]), ("indicador", "INSERT", indicator["id"]),
+        ("indicador_medicion", "INSERT", measurement["id"]),
+    } <= audit_keys, "Faltan trazas de las escrituras de estructura PEI."
+    print("F0-02/F0-06: permisos por ruta y trazas de edición de la estructura PEI comprobados.")
+
+
+def subject(account):
+    return "30000000-0000-4000-8000-" + account.zfill(12)
+
+
+def read_audit(api, since=0):
+    rows = []
+    path = "/auditoria"
+    while True:
+        page = api("07", path, 200)[0]
+        if not page:
+            return rows
+        for row in page:
+            assert row["institucionId"] == A and datetime.fromisoformat(row["fecha"]).tzinfo
+            if row["id"] <= since:
+                return rows
+            if rows:
+                assert row["id"] < rows[-1]["id"], "La paginación de auditoría repitió una traza."
+            rows.append(row)
+        if len(page) < 100:
+            return rows
+        path = f"/auditoria?antesDe={rows[-1]['id']}"
+
+
 def check_workflow(api, draft):
+    recent = api("07", "/auditoria", 200)[0]
+    since = recent[0]["id"] if recent else 0
     pei, head = api("04", "/peis", 201, "POST", draft)
     version = f"/pei-versiones/{pei['versionId']}/transiciones"
-    api("04", f"/peis/{pei['id']}/catalogo-digemaps", 201, "POST", {})
+    catalog = f"/peis/{pei['id']}/catalogo-digemaps"
+    for n in range(1, len(ROLES) + 1):
+        if n != 4:
+            api(f"{n:02d}", catalog, 403, "POST", {})
+    api("04", catalog, 201, "POST", {})
 
     def advance(current, action, owner, allowed):
         data = {"accion": action, "motivo": "Revisar datos de prueba." if action == "devolver" else None}
@@ -104,6 +171,15 @@ def check_workflow(api, draft):
     for action, owner, allowed in sequence:
         state, tag = advance(tag, action, owner, allowed)
     assert state == "publicado"
+    audit = read_audit(api, since)
+    issuer = api("04", "/sesion", 200)[0]["actor"]["emisor"]
+    steps = [(row["referencia"], row["sujeto"]) for row in reversed(audit)
+             if row["entidad"] == "pei_transicion" and row["accion"] == "INSERT" and row["emisor"] == issuer]
+    assert steps == [(f"{pei['versionId']}/{revision}", subject(who))
+                     for revision, (_, who, _) in enumerate(sequence, 2)]
+    changes = [row["sujeto"] for row in reversed(audit) if row["entidad"] == "pei_version"
+               and row["referencia"] == pei["versionId"] and row["accion"] == "UPDATE" and row["emisor"] == issuer]
+    assert changes == [subject(who) for _, who, _ in sequence]
     link = {"anio": int(draft["fechaInicio"][:4]), "peiId": pei["id"]}
     linked, _ = api("04", "/poas", 201, "POST", link)
     assert linked["peiId"] == pei["id"]
@@ -179,6 +255,7 @@ def main():
     assert session["instituciones"][0]["modulos"] == {"pei": peis, "poa": poas}
     api("04", "/peis", 200 if peis else 403)
     api("04", "/poas", 200 if poas else 403)
+    check_organizacion(api)
     draft = {"nombre": "Plan institucional F0", "tipo": "ordinario",
              "fechaInicio": f"{args.year}-01-01", "fechaFin": f"{args.year+3}-12-31",
              "mision": "Atender solicitudes.", "vision": "Mejorar la atención.", "valores": "Servicio."}
@@ -192,6 +269,7 @@ def main():
     if peis and poas:
         check_session(api)
         check_roles(api, args.year, draft)
+        check_structure(api, draft)
         check_isolation(api, args.year, draft)
         check_workflow(api, draft)
 

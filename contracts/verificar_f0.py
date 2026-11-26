@@ -1,4 +1,4 @@
-"""Valida las referencias y los ejemplos de F0 con PyYAML y jsonschema."""
+"""Valida OpenAPI 3.1, los esquemas de F0 y sus ejemplos."""
 
 import argparse
 import json
@@ -36,11 +36,15 @@ def main():
     data = json.loads((ROOT / "fixtures/f0.json").read_text())
     formats = FormatChecker()
 
+    check_references(api, api)
     if options.esquema_oas:
         official = yaml.safe_load(options.esquema_oas.read_text())
-        Draft202012Validator(official).validate(api)
+        Draft202012Validator(official, format_checker=formats).validate(api)
+    else:
+        from openapi_spec_validator import OpenAPIV31SpecValidator
 
-    check_references(api, api)
+        OpenAPIV31SpecValidator(api).validate()
+
     for component in api["components"]["schemas"].values():
         Draft202012Validator.check_schema(component)
     check_references(schema, schema)
@@ -71,7 +75,11 @@ def main():
     for key, body in fixtures:
         dto = body["content"]["application/json"]["schema"]
         Draft202012Validator(dto, resolver=resolver, format_checker=formats).validate(data[key])
-    print(f"{len(paths)} rutas, referencias, esquemas y {len(data)} ejemplos de F0 válidos.")
+    operations = sum(
+        method in {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
+        for item in paths.values() for method in item
+    )
+    print(f"OpenAPI 3.1 válido: {len(paths)} rutas, {operations} operaciones y {len(data)} ejemplos de F0.")
 
 
 if __name__ == "__main__":

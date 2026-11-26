@@ -65,6 +65,32 @@ BEGIN
     IF NOT EXISTS (SELECT FROM sisplan.pei_version WHERE id = '50000000-0000-4000-8000-000000000002' AND mision = 'Atender')
     THEN RAISE EXCEPTION 'F0-04: la versión original fue alterada.'; END IF;
 END $$;
+-- La auditoría se revierte en la misma transacción que el dato modificado.
+SAVEPOINT cambio_temporal;
+SELECT set_config('sisplan.sujeto','30000000-0000-4000-8000-000000000004',true);
+UPDATE sisplan.pei_version SET mision='Misión temporal de prueba'
+WHERE id='50000000-0000-4000-8000-000000000002';
+SELECT set_config('sisplan.sujeto','30000000-0000-4000-8000-000000000007',true);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM sisplan.auditoria WHERE entidad='pei_version' AND accion='UPDATE'
+                   AND referencia='50000000-0000-4000-8000-000000000002'
+                   AND anterior->>'mision'='Atender' AND nuevo->>'mision'='Misión temporal de prueba'
+                   AND sujeto='30000000-0000-4000-8000-000000000004') THEN
+        RAISE EXCEPTION 'F0-06: la escritura aún abierta carece de los valores y actor esperados.';
+    END IF;
+END $$;
+ROLLBACK TO SAVEPOINT cambio_temporal;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM sisplan.auditoria WHERE entidad='pei_version' AND accion='UPDATE'
+               AND referencia='50000000-0000-4000-8000-000000000002')
+       OR NOT EXISTS (SELECT FROM sisplan.pei_version WHERE id='50000000-0000-4000-8000-000000000002'
+                      AND mision='Atender') THEN
+        RAISE EXCEPTION 'F0-06: la reversión dejó una escritura o una traza temporal.';
+    END IF;
+END $$;
+RELEASE SAVEPOINT cambio_temporal;
 -- Un único backend físico alterna las identidades sin cerrar la conexión.
 DO $$
 DECLARE

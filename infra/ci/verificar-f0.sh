@@ -8,7 +8,8 @@ export SISPLAN_DB_PASSWORD="$(openssl rand -hex 20)"
 export SISPLAN_APP_DB_PASSWORD="$(openssl rand -hex 20)"
 export SISPLAN_KEYCLOAK_PASSWORD="$(openssl rand -hex 20)"
 export SISPLAN_F0_PASSWORD="$(openssl rand -hex 20)"
-export SISPLAN_F0_TOTP_SEED="$(openssl rand -hex 16)"
+export SISPLAN_F0_TOTP_SEED="$(openssl rand -hex 32)"
+export SISPLAN_F0_TOTP_AUTORIDAD_ANTERIOR="$(openssl rand -hex 32)"
 export ASPNETCORE_ENVIRONMENT=Development
 export Sisplan__Oidc__Url=http://127.0.0.1:8080
 api_pid=
@@ -46,11 +47,30 @@ dotnet build "$temporal/backend/Sisplan.Api.csproj" -c Release
 ConnectionStrings__Sisplan="$historica" dotnet "$temporal/backend/bin/Release/net10.0/Sisplan.Api.dll" --migrate
 sql sisplan_anterior < infra/postgres/preparar-historicos.sql
 sql sisplan_anterior < tests/f0_historicos.sql
+# Un mapa incompleto debe dejar la base anterior intacta, lista para reintentar.
+if ConnectionStrings__SisplanMigraciones="$historica" dotnet "$api_dll" --migrate; then
+  echo 'Se aceptó un POA histórico sin institución asignada.' >&2
+  exit 1
+fi
+sql sisplan_anterior < tests/f0_completar_historicos.sql
 ConnectionStrings__SisplanMigraciones="$historica" dotnet "$api_dll" --migrate
 ConnectionStrings__SisplanMigraciones="$historica" dotnet "$api_dll" --migrate
 sql sisplan_anterior < tests/f0_verificar_historicos.sql
 
 curl -fsS --retry 80 --retry-connrefused --retry-delay 2 --max-time 8 "$Sisplan__Oidc__Url/realms/sisplan/.well-known/openid-configuration" -o /dev/null
+# Ocho usuarios del incremento anterior (la Autoridad ya tiene TOTP) y siete altas.
+git archive 3ab90c257a11f18e525d00414677218f0b5927fe infra/keycloak | tar -x -C "$temporal"
+python3 - "$temporal/infra/keycloak" <<'IDENTIDADES'
+import os
+import sys
+
+sys.path.insert(0, sys.argv[1])
+import f0 as anterior
+
+anterior.CUENTAS = anterior.CUENTAS[:8]
+anterior.alta_usuarios(os.environ["SISPLAN_F0_PASSWORD"], os.environ["SISPLAN_F0_TOTP_AUTORIDAD_ANTERIOR"])
+IDENTIDADES
+python3 infra/keycloak/f0.py usuarios
 python3 infra/keycloak/f0.py usuarios
 dotnet "$api_dll" >"$temporal/api.log" 2>&1 &
 api_pid=$!
@@ -67,11 +87,14 @@ if ! curl -fsS --retry 60 --retry-connrefused --retry-delay 1 http://127.0.0.1:4
 fi
 python3 infra/keycloak/f0.py tokens --salida "$tokens"
 python3 tests/f0_smoke.py --tokens "$tokens" --modo ambos
-python3 tests/f0_interfaz.py --capturas "${RUNNER_TEMP:-$temporal}/sisplan-f0-capturas"
+capturas="${RUNNER_TEMP:-$temporal}/sisplan-f0-capturas"
+python3 tests/f0_interfaz.py --modo ambos --capturas "$capturas"
 sql sisplan -c "UPDATE sisplan.institucion SET poa_habilitado=false WHERE id='00000000-0000-4000-8000-000000000001'"
 python3 tests/f0_smoke.py --tokens "$tokens" --modo solo-pei
+python3 tests/f0_interfaz.py --modo solo-pei --capturas "$capturas"
 sql sisplan -c "UPDATE sisplan.institucion SET pei_habilitado=false, poa_habilitado=true WHERE id='00000000-0000-4000-8000-000000000001'"
 python3 tests/f0_smoke.py --tokens "$tokens" --modo solo-poa
+python3 tests/f0_interfaz.py --modo solo-poa --capturas "$capturas"
 sql sisplan -c "UPDATE sisplan.institucion SET pei_habilitado=true WHERE id='00000000-0000-4000-8000-000000000001'"
 
 python3 - "$tokens" <<'PY'

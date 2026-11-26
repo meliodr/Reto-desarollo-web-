@@ -28,6 +28,10 @@ SELECT i.id,u.codigo,u.nombre FROM sisplan.institucion i
 CROSS JOIN (VALUES ('unidad','Unidad'),('porcentaje','Porcentaje')) AS u(codigo,nombre)
 WHERE i.id IN ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002')
 ON CONFLICT DO NOTHING;
+INSERT INTO sisplan.unidad_medida(institucion_id,codigo,nombre) VALUES
+    ('00000000-0000-4000-8000-000000000001','expediente','Expediente'),
+    ('00000000-0000-4000-8000-000000000002','inspeccion','Inspección')
+ON CONFLICT DO NOTHING;
 
 WITH cuentas(cuenta,institucion,rol,dependencia) AS (VALUES
     (1,1,'SuperAdministrador',NULL),(2,1,'AdministradorInstitucional',NULL),

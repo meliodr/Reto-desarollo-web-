@@ -8,6 +8,12 @@ import { finalize } from 'rxjs';
 import { Session } from '../auth/session';
 import { Pei } from '../pei/pei-api';
 
+interface Dependencia {
+  id: string;
+  nombre: string;
+  activa: boolean;
+}
+
 interface Poa {
   id: string;
   anio: number;
@@ -17,6 +23,7 @@ interface Poa {
   peiId: string | null;
   peiNombre: string | null;
   presupuestoReferencia: string | null;
+  dependenciaId: string | null;
 }
 
 @Component({
@@ -42,6 +49,15 @@ export class PoaList {
   readonly year = signal<number | null>(new Date().getFullYear());
   readonly peiId = signal('');
   readonly budget = signal('');
+  readonly dependenciaElegida = signal('');
+  readonly dependencias = signal<Dependencia[]>([]);
+  readonly dependenciasActivas = computed(() => this.dependencias().filter((area) => area.activa));
+  readonly nombresDependencias = computed(
+    () => new Map(this.dependencias().map((area) => [area.id, area.nombre])),
+  );
+  readonly dependenciaAsignada = computed(() => this.session.active()?.dependenciaId ?? null);
+  readonly cargandoDependencias = signal(false);
+  readonly errorDependencias = signal(false);
   readonly candidates = computed(() => {
     const year = this.year();
     return this.strategic().filter(
@@ -54,6 +70,30 @@ export class PoaList {
 
   constructor() {
     this.load();
+    this.cargarDependencias();
+  }
+
+  cargarDependencias() {
+    this.cargandoDependencias.set(true);
+    this.errorDependencias.set(false);
+    this.http
+      .get<{ dependencias: Dependencia[] }>('/api/v1/organizacion')
+      .pipe(
+        takeUntilDestroyed(this.destroy),
+        finalize(() => this.cargandoDependencias.set(false)),
+      )
+      .subscribe({
+        next: ({ dependencias }) => this.dependencias.set(dependencias),
+        error: () => this.errorDependencias.set(true),
+      });
+  }
+
+  cerrarFormulario() {
+    this.showForm.set(false);
+    this.error.set('');
+    this.budget.set('');
+    this.dependenciaElegida.set('');
+    this.peiId.set('');
   }
 
   load() {
@@ -91,6 +131,7 @@ export class PoaList {
     if (
       !this.session.canFormulatePoa() ||
       this.saving() ||
+      this.cargandoDependencias() ||
       anio === null ||
       !Number.isInteger(anio) ||
       anio < 1 ||
@@ -110,6 +151,7 @@ export class PoaList {
         anio,
         peiId: (this.session.pei() && this.peiId()) || null,
         presupuestoReferencia: budget || null,
+        dependenciaId: this.dependenciaAsignada() ?? (this.dependenciaElegida() || null),
       })
       .pipe(
         takeUntilDestroyed(this.destroy),
@@ -119,8 +161,7 @@ export class PoaList {
         next: (poa) => {
           this.plans.update((plans) => [...plans, poa].sort((a, b) => b.anio - a.anio));
           this.notice.set(`POA ${poa.anio} creado.`);
-          this.budget.set('');
-          this.showForm.set(false);
+          this.cerrarFormulario();
         },
         error: (error: HttpErrorResponse) =>
           this.error.set(

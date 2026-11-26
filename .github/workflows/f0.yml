@@ -47,7 +47,7 @@ jobs:
       - run: npm ci --prefix frontend
       - name: Preparar Chromium para el recorrido OIDC
         run: |
-          python -m pip install playwright==1.56.0 PyYAML==6.0.3 jsonschema==4.25.1
+          python -m pip install playwright==1.56.0 PyYAML==6.0.3 jsonschema==4.25.1 openapi-spec-validator==0.7.2
           python -m playwright install --with-deps chromium
       - run: python contracts/verificar_f0.py
       - name: Probar migraciones, autorización y módulos con PostgreSQL y Keycloak

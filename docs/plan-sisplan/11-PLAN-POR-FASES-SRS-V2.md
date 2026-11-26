@@ -62,7 +62,7 @@ Los [criterios de cierre de F0](13-ARRANQUE-F0.md) enlazan las decisiones adopta
 
 ## F1 · PEI · Carga y publicación
 
-**Trabajo y entregables.** Completar la carga de la estructura estratégica, su consulta y los datos que hacen medibles los indicadores. Preparar el mapa de eje, objetivo, resultado, indicador, meta y línea de acción e incorporar los riesgos estratégicos asociados al objetivo conforme al alcance de carga que se acuerde. Cerrar el flujo de envío, revisión, observaciones, corrección, aprobación y publicación con historial de versiones. La carga DIGEMAPS y el recorrido de aprobación ya tienen una implementación parcial verificada en el PR. El arranque del reto utiliza estructura precargada, conforme a la pág. 9.
+**Trabajo y entregables.** Completar la carga de la estructura estratégica, su consulta y los datos que hacen medibles los indicadores. Preparar el mapa de eje, objetivo, resultado, indicador, meta y línea de acción e incorporar los riesgos estratégicos asociados al objetivo conforme al alcance de carga que se acuerde. Cerrar el flujo de envío, revisión, observaciones, corrección, aprobación y publicación con historial de versiones. La [implementación de F1](15-CIERRE-F1.md) documenta la fuente del catálogo, el recorrido de publicación y su verificación. El arranque del reto utiliza estructura precargada, conforme a la pág. 9.
 
 ### Subfases de F1
 

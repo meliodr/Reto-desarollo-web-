@@ -26,9 +26,11 @@ import { PeiEjes } from './pei-ejes';
 import { Session } from '../auth/session';
 import { PeiWorkflow } from './pei-workflow';
 import { PeiPoas } from './pei-poas';
+import { PeiMapa } from './pei-mapa';
+import { PeiVersiones } from './pei-versiones';
 
 @Component({
-  imports: [RouterLink, ReactiveFormsModule, PeiEjes, PeiWorkflow, PeiPoas],
+  imports: [RouterLink, ReactiveFormsModule, PeiEjes, PeiWorkflow, PeiPoas, PeiMapa, PeiVersiones],
   templateUrl: './pei-form.html',
 })
 export class PeiForm implements OnInit {
@@ -39,6 +41,7 @@ export class PeiForm implements OnInit {
   private readonly feedback = inject(Feedback);
   @ViewChild('errorSummary') errorSummary?: ElementRef<HTMLElement>;
   @ViewChild(PeiEjes) private ejes?: PeiEjes;
+  @ViewChild(PeiMapa) private mapa?: PeiMapa;
   readonly form = this.fb.group(
     {
       nombre: ['', [trimmedRequired, trimmedMinLength(3), Validators.maxLength(200)]],
@@ -54,6 +57,8 @@ export class PeiForm implements OnInit {
   readonly session = inject(Session);
   readonly current = signal<Pei | null>(null);
   readonly workflowPending = signal(false);
+  readonly structureRevision = signal(0);
+  readonly objectiveRevision = signal(0);
   readonly stateLabels = peiStateLabels;
   readonly etag = signal<string | null>(null);
   readonly loading = signal(false);
@@ -131,7 +136,8 @@ export class PeiForm implements OnInit {
       this.saving() ||
       this.conflict() ||
       this.requestUncertain() ||
-      !!this.ejes?.hasPendingChanges()
+      !!this.ejes?.hasPendingChanges() ||
+      !!this.mapa?.hasPendingChanges()
     );
   }
   applyTransition(value: VersionedPei) {
@@ -155,6 +161,11 @@ export class PeiForm implements OnInit {
       this.form.disable({ emitEvent: false });
     } else {
       this.form.enable({ emitEvent: false });
+      if (this.current()?.versionOrigenId) {
+        this.form.controls.tipo.disable({ emitEvent: false });
+        this.form.controls.fechaInicio.disable({ emitEvent: false });
+        this.form.controls.fechaFin.disable({ emitEvent: false });
+      }
     }
   }
   isNew() {
@@ -162,6 +173,26 @@ export class PeiForm implements OnInit {
   }
   years() {
     return this.form.controls.tipo.value === 'ordinario' ? 4 : 5;
+  }
+
+  completePeriod() {
+    const { fechaInicio } = this.form.getRawValue();
+    const firstYear = Number(fechaInicio.slice(0, 4));
+    const lastYear = firstYear + this.years() - 1;
+    if (this.form.controls.fechaFin.disabled || !fechaInicio || firstYear < 1 || lastYear > 9999)
+      return;
+    const end = this.form.controls.fechaFin;
+    end.setValue(`${String(lastYear).padStart(4, '0')}-12-31`);
+    end.markAsDirty();
+    this.clearFieldError('fechaFin');
+  }
+
+  refreshStructure() {
+    this.structureRevision.update((value) => value + 1);
+  }
+
+  refreshObjectives() {
+    this.objectiveRevision.update((value) => value + 1);
   }
   periodLabel() {
     const { fechaInicio, fechaFin } = this.form.getRawValue();
@@ -281,7 +312,8 @@ export class PeiForm implements OnInit {
             error.status === 403
               ? 'No tienes permiso para guardar este registro.'
               : error.status === 409
-                ? 'El estado del PEI cambió y ya no permite esta operación. Consulta la versión actual.'
+                ? (error.error?.detail ??
+                  'El PEI cambió. Consulta el estado y el período del plan.')
                 : 'No fue posible guardar el borrador. Tus datos permanecen en el formulario.',
           );
         }
@@ -340,12 +372,12 @@ export class PeiForm implements OnInit {
   }
   canLeave() {
     return (
-      (!this.workflowPending() && !this.form.dirty && !this.ejes?.hasPendingChanges()) ||
+      (!this.workflowPending() && !this.workflowBlocked()) ||
       window.confirm('Tienes cambios sin guardar. ¿Quieres salir y descartarlos?')
     );
   }
   @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent) {
-    if (this.workflowPending() || this.form.dirty || this.ejes?.hasPendingChanges()) {
+    if (this.workflowPending() || this.workflowBlocked()) {
       event.preventDefault();
       event.returnValue = '';
     }

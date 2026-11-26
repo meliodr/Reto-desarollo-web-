@@ -10,7 +10,9 @@ internal static class ObjetivoEndpoints
         objetivos.MapGet("", ListAsync);
         objetivos.MapPost("", CreateAsync).RequireAuthorization("EditarPei");
         objetivos.MapGet("/{objetivoId:guid}", FindAsync);
+        objetivos.MapPatch("/{objetivoId:guid}/estado", SetActiveAsync).RequireAuthorization("EditarPei");
         objetivos.MapIndicadores();
+        objetivos.MapRiesgosEstrategicos();
     }
 
     private static async Task<IResult> ListAsync(Guid peiId, Guid ejeId, ObjetivoRepository repository,
@@ -20,16 +22,54 @@ internal static class ObjetivoEndpoints
         return objetivos is null ? MissingEje() : Results.Ok(objetivos);
     }
 
-    private static async Task<IResult> FindAsync(Guid peiId, Guid ejeId, Guid objetivoId,
+    private static async Task<IResult> FindAsync(Guid peiId, Guid ejeId, Guid objetivoId, HttpResponse response,
         ObjetivoRepository repository, CancellationToken cancellationToken)
     {
         var objetivo = await repository.FindAsync(peiId, ejeId, objetivoId, cancellationToken);
-        return objetivo is null
-            ? Results.Problem(statusCode: 404, title: "No se encontró el objetivo en el eje de este PEI.")
-            : Results.Ok(objetivo);
+        if (objetivo is null)
+            return MissingObjective();
+        response.Headers.ETag = objetivo.ETag();
+        return Results.Ok(objetivo);
     }
 
-    private static async Task<IResult> CreateAsync(Guid peiId, Guid ejeId, HttpRequest request,
+    private static async Task<IResult> SetActiveAsync(Guid peiId, Guid ejeId, Guid objetivoId, HttpRequest request,
+        HttpResponse response, ObjetivoRepository repository, CancellationToken ct)
+    {
+        var expectedTag = request.Headers.IfMatch.ToString();
+        if (string.IsNullOrWhiteSpace(expectedTag))
+            return Results.Problem(statusCode: 428, title: "Envía el ETag vigente del objetivo en If-Match.");
+        if (!request.HasJsonContentType())
+            return Results.Problem(statusCode: 415, title: "Envía el estado del objetivo como JSON.");
+
+        ObjetivoEstadoInput? input;
+        try
+        {
+            input = await request.ReadFromJsonAsync<ObjetivoEstadoInput>(ct);
+        }
+        catch (JsonException)
+        {
+            return Results.Problem(statusCode: 400, title: "El cuerpo JSON del estado no es válido.");
+        }
+        if (input?.Activo is not bool active)
+            return InvalidFields(new() { ["activo"] = ["Indica si el objetivo está activo."] });
+
+        var result = await repository.SetActiveAsync(peiId, ejeId, objetivoId, expectedTag, active, ct);
+        if (result.Objetivo is { } saved)
+        {
+            response.Headers.ETag = saved.ETag();
+            return Results.Ok(saved);
+        }
+        return result.Status switch
+        {
+            ObjetivoEstadoStatus.NotFound => MissingObjective(),
+            ObjetivoEstadoStatus.Stale => Results.Problem(statusCode: 412, title: "El objetivo cambió. Carga la revisión actual."),
+            ObjetivoEstadoStatus.ReadOnlyPei => Results.Problem(statusCode: 409, title: "El PEI no está disponible para edición."),
+            ObjetivoEstadoStatus.InactiveAxis => Results.Problem(statusCode: 409, title: "Activa el eje antes de activar el objetivo."),
+            _ => throw new InvalidOperationException("Resultado inesperado al cambiar el estado del objetivo.")
+        };
+    }
+
+    private static async Task<IResult> CreateAsync(Guid peiId, Guid ejeId, HttpRequest request, HttpResponse response,
         ObjetivoRepository repository, CancellationToken cancellationToken)
     {
         if (!request.HasJsonContentType())
@@ -59,6 +99,8 @@ internal static class ObjetivoEndpoints
             return InvalidFields(errors);
 
         var result = await repository.CreateAsync(peiId, ejeId, fields, cancellationToken);
+        if (result.Objetivo is { } saved)
+            response.Headers.ETag = saved.ETag();
         return result.Status switch
         {
             ObjetivoCreateStatus.Saved => Results.Created(
@@ -84,4 +126,6 @@ internal static class ObjetivoEndpoints
         Results.ValidationProblem(errors, statusCode: 422, title: "Revisa los campos del objetivo.");
 
     private static IResult MissingEje() => Results.Problem(statusCode: 404, title: "No se encontró el eje en la versión actual del PEI.");
+
+    private static IResult MissingObjective() => Results.Problem(statusCode: 404, title: "No se encontró el objetivo en el eje de este PEI.");
 }

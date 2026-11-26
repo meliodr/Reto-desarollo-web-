@@ -30,7 +30,15 @@ internal sealed record PeiDto(
     string Mision,
     string Vision,
     string Valores,
-    string Estado);
+    string Estado,
+    Guid? VersionOrigenId);
+
+internal sealed record PeiVersionDto(Guid VersionId, int Numero, long Revision, string Estado,
+    DateOnly FechaInicio, DateOnly FechaFin, DateTime ActualizadoEn, DateTime? PublicadoEn,
+    Guid? VersionOrigenId, string? MotivoRevision, string? CreadaPorEmisor, string? CreadaPorSujeto, DateTime CreadoEn);
+
+internal enum PeiRevisionStatus { Saved, NotFound, Stale, NotPublished }
+internal sealed record PeiRevisionResult(PeiRevisionStatus Status, PeiSnapshot? Snapshot = null);
 
 internal sealed record PeiSnapshot(PeiDto Pei, long Revision)
 {

@@ -73,6 +73,8 @@ builder.Services.AddScoped<SesionInstitucional>();
 builder.Services.AddScoped<PeiRepository>();
 builder.Services.AddScoped<EjeRepository>();
 builder.Services.AddScoped<ObjetivoRepository>();
+builder.Services.AddScoped<RiesgoEstrategicoRepository>();
+builder.Services.AddScoped<MapaEstrategicoRepository>();
 builder.Services.AddScoped<IndicadorRepository>();
 builder.Services.AddScoped<FlujoPeiRepository>();
 
@@ -118,11 +120,12 @@ var api = app.MapGroup("/api/v1").RequireAuthorization("LeerPlanes");
 api.MapInstitucional();
 var pei = api.MapGroup("").WithMetadata(new RequiereModulo(Pei: true));
 pei.MapEjes();
+pei.MapMapaEstrategico();
 pei.MapCatalogoPei();
 api.MapGroup("").WithMetadata(new RequiereModulo(Poa: true)).MapPoas();
 pei.MapFlujoPei();
-pei.MapGet("/peis", async (PeiRepository repository, CancellationToken cancellationToken) =>
-    Results.Ok(await repository.ListAsync(cancellationToken)));
+pei.MapGet("/peis", async (bool? oficiales, PeiRepository repository, CancellationToken cancellationToken) =>
+    Results.Ok(await repository.ListAsync(oficiales is true, cancellationToken)));
 
 pei.MapGet("/peis/{id:guid}", async (Guid id, HttpResponse response, PeiRepository repository, CancellationToken cancellationToken) =>
 {
@@ -163,6 +166,20 @@ pei.MapPatch("/pei-versiones/{versionId:guid}", async (Guid versionId, HttpReque
     var (fields, error) = await ReadFieldsAsync(request, cancellationToken);
     if (error is not null)
         return error;
+
+    if (current.Pei.VersionOrigenId is not null)
+    {
+        const string fixedPeriod = "Una revisión conserva el tipo y las fechas de vigencia del PEI oficial.";
+        var errors = new Dictionary<string, string[]>();
+        if (fields!.Tipo != current.Pei.Tipo)
+            errors["tipo"] = [fixedPeriod];
+        if (fields.FechaInicio != current.Pei.FechaInicio)
+            errors["fechaInicio"] = [fixedPeriod];
+        if (fields.FechaFin != current.Pei.FechaFin)
+            errors["fechaFin"] = [fixedPeriod];
+        if (errors.Count > 0)
+            return Results.ValidationProblem(errors, statusCode: 422);
+    }
 
     PeiSnapshot? saved;
     try

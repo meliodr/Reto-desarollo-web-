@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, inject, input, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PeiIndicadores } from './pei-indicadores';
@@ -13,12 +13,14 @@ import { trimmedMinLength, trimmedRequired } from './pei-validation';
   templateUrl: './pei-objetivos.html',
   styleUrl: './pei-objetivos.css',
 })
-export class PeiObjetivos implements OnInit {
+export class PeiObjetivos {
   private readonly api = inject(PeiObjetivosApi);
   private readonly destroyRef = inject(DestroyRef);
   readonly peiId = input.required<string>();
   readonly eje = input.required<Eje>();
   readonly readOnly = input(false);
+  readonly revision = input(0);
+  readonly structureChange = output<void>();
   readonly selectedObjective = signal<string | null>(null);
   private readonly indicadores = viewChild(PeiIndicadores);
   readonly objetivos = signal<Objetivo[]>([]);
@@ -44,8 +46,11 @@ export class PeiObjetivos implements OnInit {
     lineaAccion: ['', [trimmedRequired, Validators.maxLength(4000)]],
   });
 
-  ngOnInit() {
-    this.load();
+  constructor() {
+    effect(() => {
+      this.revision();
+      untracked(() => this.load());
+    });
   }
 
   hasPendingChanges() {
@@ -119,6 +124,7 @@ export class PeiObjetivos implements OnInit {
         next: (saved) => {
           this.saving.set(false);
           this.objetivos.update((items) => [...items, saved]);
+          this.structureChange.emit();
           this.resetForm();
           this.notice.set(`Objetivo «${saved.nombre}» guardado.`);
         },

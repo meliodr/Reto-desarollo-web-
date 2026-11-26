@@ -98,6 +98,33 @@ python3 tests/f0_interfaz.py --modo ambos --capturas "$capturas"
 sql sisplan -c "UPDATE sisplan.institucion SET poa_habilitado=false WHERE id='00000000-0000-4000-8000-000000000001'"
 python3 tests/f0_smoke.py --tokens "$tokens" --modo solo-pei
 python3 tests/f0_interfaz.py --modo solo-pei --capturas "$capturas"
+
+# La matriz F0 estresa una sola conexión. Para F1, permitir escrituras concurrentes
+# en dos conexiones físicas del mismo PostgreSQL.
+kill "$api_pid"
+wait "$api_pid" || true
+export ConnectionStrings__Sisplan="${ConnectionStrings__Sisplan%1}4"
+dotnet "$api_dll" >"$temporal/api-f1.log" 2>&1 &
+api_pid=$!
+if ! curl -fsS --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:5080/api/configuracion -o /dev/null; then
+  cat "$temporal/api-f1.log"
+  exit 1
+fi
+
+poas_antes=$(sql sisplan -Atc 'SELECT count(*) FROM sisplan.poa')
+sql sisplan < tests/f1_fallo_catalogo.sql
+python3 tests/f1_catalogo.py --tokens "$tokens"
+sql sisplan -c 'DROP TRIGGER f1_fallo_catalogo_ci ON sisplan.objetivo'
+sql sisplan -c 'DROP FUNCTION sisplan.f1_fallo_catalogo_ci()'
+python3 tests/f1_mapa.py --tokens "$tokens"
+python3 tests/f1_indicadores.py --tokens "$tokens"
+python3 tests/f1_publicacion.py --tokens "$tokens"
+python3 tests/f1_interfaz.py --capturas "$capturas"
+if [[ "$(sql sisplan -Atc 'SELECT count(*) FROM sisplan.poa')" != "$poas_antes" ]]; then
+  echo 'La publicación autónoma del PEI cambió el conjunto de POA.' >&2
+  exit 1
+fi
+echo 'F1.4: las publicaciones no generaron POA en PostgreSQL.'
 sql sisplan -c "UPDATE sisplan.institucion SET pei_habilitado=false, poa_habilitado=true WHERE id='00000000-0000-4000-8000-000000000001'"
 python3 tests/f0_smoke.py --tokens "$tokens" --modo solo-poa
 python3 tests/f0_interfaz.py --modo solo-poa --capturas "$capturas"

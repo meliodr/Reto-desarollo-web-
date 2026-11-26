@@ -49,6 +49,12 @@ export const routes: Routes = [
     canDeactivate: [pendingChangesGuard],
   },
   {
+    path: 'peis/:id/versiones/:versionId',
+    canActivate: [allow((session) => session.pei())],
+    title: 'Versión del PEI · SISPLAN',
+    loadComponent: () => import('./pei/pei-version-page').then((m) => m.PeiVersionPage),
+  },
+  {
     path: 'peis/:id',
     canActivate: [allow((session) => session.pei())],
     title: 'Plan estratégico · SISPLAN',

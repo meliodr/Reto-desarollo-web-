@@ -94,4 +94,13 @@ describe('PeiForm save failure recovery', () => {
       'Cambio de otra sesión.',
     );
   });
+  it('propone el último día del cuarto o quinto año según el tipo de PEI', () => {
+    component.form.controls.fechaInicio.setValue('2026-06-01');
+    component.completePeriod();
+    expect(component.form.controls.fechaFin.value).toBe('2029-12-31');
+    component.form.controls.tipo.setValue('extraordinario');
+    component.completePeriod();
+    expect(component.form.controls.fechaFin.value).toBe('2030-12-31');
+    expect(component.form.dirty).toBe(true);
+  });
 });

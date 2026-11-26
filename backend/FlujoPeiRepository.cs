@@ -5,8 +5,6 @@ namespace Sisplan.Api;
 
 internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiRepository peis)
 {
-    private const string Fields = "pei_id, id, nombre, tipo, fecha_inicio, fecha_fin, mision, vision, valores, estado, revision";
-
     public async Task<FlujoPeiOpciones?> OptionsAsync(Guid versionId, FlujoPeiActor actor, CancellationToken ct)
     {
         var connection = source.Conexion;
@@ -27,6 +25,26 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
             returnReason = await command.ExecuteScalarAsync(ct) as string;
         }
         return new FlujoPeiOpciones(actions, returnReason);
+    }
+
+    public async Task<IReadOnlyList<FlujoPeiTransicionDto>?> HistoryAsync(Guid versionId, CancellationToken ct)
+    {
+        if (await peis.FindVersionAsync(versionId, ct) is null)
+            return null;
+
+        const string sql = """
+            SELECT revision, accion, estado_anterior, estado_nuevo, emisor, sujeto, motivo, registrada_en
+            FROM sisplan.pei_transicion WHERE pei_version_id = @id ORDER BY revision
+            """;
+        await using var command = source.CreateCommand(sql);
+        command.Parameters.AddWithValue("id", versionId);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var history = new List<FlujoPeiTransicionDto>();
+        while (await reader.ReadAsync(ct))
+            history.Add(new FlujoPeiTransicionDto(reader.GetInt64(0), reader.GetString(1), reader.GetString(2),
+                reader.GetString(3), reader.GetString(4), reader.GetString(5),
+                reader.IsDBNull(6) ? null : reader.GetString(6), reader.GetDateTime(7)));
+        return history;
     }
 
     public async Task<FlujoPeiResult> ApplyAsync(Guid versionId, string expectedTag, string action, string? reason,
@@ -133,22 +151,11 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
     private static async Task<PeiSnapshot?> FindCurrentAsync(Guid versionId, NpgsqlConnection connection,
         NpgsqlTransaction? transaction, CancellationToken ct)
     {
-        // Los cambios de ejes, objetivos e indicadores toman primero el bloqueo del PEI.
-        if (transaction is not null)
-        {
-            const string parentSql = """
-                SELECT p.id FROM sisplan.pei p
-                JOIN sisplan.pei_version v ON v.pei_id = p.id
-                WHERE v.id = @versionId FOR UPDATE OF p
-                """;
-            await using var parent = new NpgsqlCommand(parentSql, connection, transaction);
-            parent.Parameters.AddWithValue("versionId", versionId);
-            if (await parent.ExecuteScalarAsync(ct) is null)
-                return null;
-        }
+        if (transaction is not null && !await PeiRepository.LockParentAsync(versionId, connection, transaction, ct))
+            return null;
 
         var sql = $"""
-            SELECT {Fields} FROM sisplan.pei_version v WHERE id = @versionId
+            SELECT {PeiRepository.Fields} FROM sisplan.pei_version v WHERE id = @versionId
             AND NOT EXISTS (SELECT 1 FROM sisplan.pei_version posterior
                 WHERE posterior.pei_id = v.pei_id AND posterior.numero > v.numero)
             """;
@@ -158,11 +165,7 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("versionId", versionId);
         await using var reader = await command.ExecuteReaderAsync(ct);
-        return await reader.ReadAsync(ct)
-            ? new PeiSnapshot(new PeiDto(reader.GetGuid(0), reader.GetGuid(1), reader.GetString(2), reader.GetString(3),
-                reader.GetFieldValue<DateOnly>(4), reader.GetFieldValue<DateOnly>(5), reader.GetString(6),
-                reader.GetString(7), reader.GetString(8), reader.GetString(9)), reader.GetInt64(10))
-            : null;
+        return await reader.ReadAsync(ct) ? PeiRepository.Read(reader) : null;
     }
 
     private static bool IsActionForState(string state, string action) => state switch
@@ -232,9 +235,10 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
             SELECT EXISTS (SELECT 1 FROM activos)
                 AND NOT EXISTS (
                     SELECT 1 FROM activos e
-                    WHERE NOT EXISTS (SELECT 1 FROM sisplan.objetivo o WHERE o.eje_id = e.id)
+                    WHERE NOT EXISTS (SELECT 1 FROM sisplan.objetivo o WHERE o.eje_id = e.id AND o.activo)
                     OR EXISTS (
                         SELECT 1 FROM sisplan.objetivo o WHERE o.eje_id = e.id
+                        AND o.activo
                         AND NOT EXISTS (SELECT 1 FROM sisplan.indicador i WHERE i.objetivo_id = o.id)
                     )
                 )

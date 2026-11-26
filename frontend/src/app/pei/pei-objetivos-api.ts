@@ -11,6 +11,7 @@ export interface ObjetivoWrite {
 
 export interface Objetivo extends ObjetivoWrite {
   id: string;
+  activo?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

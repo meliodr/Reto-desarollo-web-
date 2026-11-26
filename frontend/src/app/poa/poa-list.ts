@@ -113,7 +113,7 @@ export class PoaList {
     if (!this.session.pei()) return;
     this.peiLoadError.set(false);
     this.http
-      .get<Pei[]>('/api/v1/peis')
+      .get<Pei[]>('/api/v1/peis', { params: { oficiales: true } })
       .pipe(takeUntilDestroyed(this.destroy))
       .subscribe({
         next: (peis) => this.strategic.set(peis.filter((plan) => plan.estado === 'publicado')),

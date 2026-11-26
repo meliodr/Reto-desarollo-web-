@@ -166,6 +166,8 @@
                 [peiId]="peiId()"
                 [eje]="eje"
                 [readOnly]="readOnly()"
+                [revision]="objectiveRevision()"
+                (structureChange)="structureChange.emit()"
               />
             }
           </li>

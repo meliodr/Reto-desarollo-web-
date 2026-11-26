@@ -7,11 +7,12 @@ La [adaptación al SRS v2](plan-sisplan/10-ADAPTACION-SRS-V2.md) recoge el alcan
 | Componente | Estado | Detalle |
 |---|---|---|
 | Consigna y SRS | Analizados | SRS v2 comparado con el SRS original y las dos hojas de cálculo |
-| Catálogo DIGEMAPS | Analizado | 6 ejes y 20 objetivos con resultados, indicadores y líneas de acción |
+| Catálogo DIGEMAPS | Cotejado | 20 filas del Excel coinciden con los 6 ejes, objetivos, indicadores, resultados y líneas de acción del catálogo |
 | POA TI 2026 | Analizado | 11 registros de productos con metas mensuales y datos pendientes |
 | Organización del equipo | Cinco plazas configuradas | Incorporación y recorridos con las cinco cuentas reales pendientes |
 | Portal de trabajo v2 | Publicado y revisado | [Portal público](https://sisplan-reto-web-equipo.bzps4s5pp8.chatgpt.site/) con tareas compartidas, checklist, notas, encuestas y revisión cruzada |
 | Base institucional F0 | Implementada en el [PR #2](https://github.com/meliodr/Reto-desarollo-web-/pull/2) | Sesión por institución, roles y dependencias, módulos autónomos, RLS, datos históricos y auditoría. [Matriz, contratos y decisiones](plan-sisplan/14-CONTRATO-F0.md). |
+| Formulación y publicación PEI F1 | Implementada en la rama de F1 | [Criterios y verificación de F1](plan-sisplan/15-CIERRE-F1.md) |
 | Repositorio | Plan vigente para el SRS v2 | [Fases, subfases y criterios de aceptación](plan-sisplan/11-PLAN-POR-FASES-SRS-V2.md) |
 | Nombre de la aplicación | SISPLAN | Nombre de trabajo para la entrega académica |
 | Arquitectura | Definida en la base | Angular 22, .NET 10 LTS, PostgreSQL 18, Npgsql y Keycloak con MFA. Demo local reproducible |
@@ -76,6 +77,6 @@ Estamos en la semana 4. El objetivo es entregar en la semana 7 con el candidato 
 ## Trabajo siguiente
 
 1. Confirmar responsables, revisores y horas del equipo al cerrar la semana 4.
-2. Aplicar en F1 y F2 la política de [autenticación, validación del Comité, aprobación y publicación](plan-sisplan/14-CONTRATO-F0.md#decisiones-operativas-para-el-cierre-de-f0).
+2. Aplicar en F2 la política de [autenticación, validación del Comité, aprobación y publicación](plan-sisplan/14-CONTRATO-F0.md#decisiones-operativas-para-el-cierre-de-f0).
 3. Usar las cuentas ficticias de F0 para el primer ensayo de PEI y POA.
 4. Construir y probar el POA mínimo de la semana 5 con un producto, una actividad, una meta y un responsable.

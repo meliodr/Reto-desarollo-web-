@@ -50,11 +50,11 @@ jobs:
           python -m pip install playwright==1.56.0 PyYAML==6.0.3 jsonschema==4.25.1 openapi-spec-validator==0.7.2
           python -m playwright install --with-deps chromium
       - run: python contracts/verificar_f0.py
-      - name: Probar migraciones, autorización y módulos con PostgreSQL y Keycloak
+      - name: Probar F0 y F1 con PostgreSQL, Keycloak y Chromium
         run: bash infra/ci/verificar-f0.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: capturas-f0
+          name: capturas-sisplan
           path: ${{ runner.temp }}/sisplan-f0-capturas/*.png
           if-no-files-found: error
           retention-days: 14

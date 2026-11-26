@@ -84,7 +84,8 @@ def check_structure(api, draft):
                             "lineaAccion": "Registrar tiempos de atención."})
     indicators = f"{goals}/{goal['id']}/indicadores"
     indicator, _ = analyst_write(indicators, 201, "POST", {"nombre": "Tiempo de espera", "formula": "Promedio",
-                                 "unidad": "minutos", "lineaBase": 10, "meta": 5, "frecuencia": "Mensual"})
+                                 "unidad": "minutos", "lineaBase": 10, "meta": 5, "frecuencia": "Mensual",
+                                 "sentido": "descendente", "metodoCalculo": "valor_directo"})
     measurements = f"{indicators}/{indicator['id']}/mediciones"
     measurement, _ = analyst_write(measurements, 201, "POST", {"periodo": draft["fechaInicio"], "valor": 7})
     for collection in (axes, goals, indicators, measurements):
@@ -127,8 +128,6 @@ def read_audit(api, since=0):
 
 
 def check_workflow(api, draft):
-    recent = api("07", "/auditoria", 200)[0]
-    since = recent[0]["id"] if recent else 0
     pei, head = api("04", "/peis", 201, "POST", draft)
     version = f"/pei-versiones/{pei['versionId']}/transiciones"
     catalog = f"/peis/{pei['id']}/catalogo-digemaps"
@@ -136,6 +135,7 @@ def check_workflow(api, draft):
         if n != 4:
             api(f"{n:02d}", catalog, 403, "POST", {})
     api("04", catalog, 201, "POST", {})
+    since = api("07", "/auditoria", 200)[0][0]["id"]
 
     def advance(current, action, owner, allowed):
         data = {"accion": action, "motivo": "Revisar datos de prueba." if action == "devolver" else None}

@@ -4,7 +4,7 @@ namespace Sisplan.Api;
 
 internal sealed class ObjetivoRepository(SesionInstitucional source, EjeRepository ejes)
 {
-    private const string Fields = "id, codigo, nombre, descripcion, resultado_esperado, linea_accion";
+    internal const string Fields = "id, codigo, nombre, descripcion, resultado_esperado, linea_accion, activo, revision";
 
     public async Task<IReadOnlyList<ObjetivoDto>?> ListAsync(Guid peiId, Guid ejeId, CancellationToken cancellationToken)
     {
@@ -71,12 +71,56 @@ internal sealed class ObjetivoRepository(SesionInstitucional source, EjeReposito
         return new(ObjetivoCreateStatus.Saved, saved);
     }
 
+    public async Task<ObjetivoEstadoResult> SetActiveAsync(Guid peiId, Guid ejeId, Guid objetivoId, string expectedTag,
+        bool active, CancellationToken ct)
+    {
+        var connection = source.Conexion;
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+        var parent = await EjeRepository.LockCurrentPeiVersionAsync(peiId, connection, transaction, ct);
+        if (parent is null)
+            return new(ObjetivoEstadoStatus.NotFound);
+        var axis = await EjeRepository.FindCurrentAsync(parent.Value.Id, ejeId, connection, transaction, ct);
+        if (axis is null)
+            return new(ObjetivoEstadoStatus.NotFound);
+
+        await using var find = new NpgsqlCommand($"SELECT {Fields} FROM sisplan.objetivo WHERE eje_id=@eje AND id=@id",
+            connection, transaction);
+        find.Parameters.AddWithValue("eje", ejeId);
+        find.Parameters.AddWithValue("id", objetivoId);
+        var current = await ReadOneAsync(find, ct);
+        if (current is null)
+            return new(ObjetivoEstadoStatus.NotFound);
+        if (expectedTag != current.ETag())
+            return new(ObjetivoEstadoStatus.Stale);
+        if (!PeiEstados.Editable(parent.Value.State))
+            return new(ObjetivoEstadoStatus.ReadOnlyPei);
+        if (!axis.Activo && active)
+            return new(ObjetivoEstadoStatus.InactiveAxis);
+        if (current.Activo == active)
+            return new(ObjetivoEstadoStatus.Saved, current);
+
+        await using var update = new NpgsqlCommand($"""
+            UPDATE sisplan.objetivo SET activo=@activo, revision=revision+1
+            WHERE eje_id=@eje AND id=@id RETURNING {Fields}
+            """, connection, transaction);
+        update.Parameters.AddWithValue("activo", active);
+        update.Parameters.AddWithValue("eje", ejeId);
+        update.Parameters.AddWithValue("id", objetivoId);
+        var saved = await ReadOneAsync(update, ct);
+        if (saved is null)
+            return new(ObjetivoEstadoStatus.NotFound);
+        await transaction.CommitAsync(ct);
+        return new(ObjetivoEstadoStatus.Saved, saved);
+    }
+
     private static async Task<ObjetivoDto?> ReadOneAsync(NpgsqlCommand command, CancellationToken cancellationToken)
     {
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? Read(reader) : null;
     }
 
-    private static ObjetivoDto Read(NpgsqlDataReader reader) => new(
-        reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3), reader.GetString(4), reader.GetString(5));
+    internal static ObjetivoDto Read(NpgsqlDataReader reader, int offset = 0) => new(
+        reader.GetGuid(offset), reader.GetString(offset + 1), reader.GetString(offset + 2),
+        reader.GetString(offset + 3), reader.GetString(offset + 4), reader.GetString(offset + 5),
+        reader.GetBoolean(offset + 6), reader.GetInt64(offset + 7));
 }

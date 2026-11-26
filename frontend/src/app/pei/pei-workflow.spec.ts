@@ -140,4 +140,78 @@ describe('Flujo del PEI en Angular', () => {
     expect(view.querySelectorAll('.poa-detail li')).toHaveLength(3);
     expect(view.textContent).toContain('Cuatrimestre 3');
   });
+
+  it('consulta la versión oficial y el motivo de devolución en modo solo PEI', () => {
+    activateAnalyst(true, false);
+    http.expectOne('/api/v1/peis/pei-1').flush(
+      { ...pei, estado: 'publicado' },
+      { headers: { ETag: '"rev-9"' } },
+    );
+    fixture.detectChanges();
+    http.expectOne('/api/v1/peis/pei-1/ejes').flush([]);
+    http.expectNone('/api/v1/peis/pei-1/poas');
+    expect(view.querySelector('h1')?.textContent).toContain('PEI oficial');
+    click('Ver versiones e historial');
+    http.expectOne('/api/v1/peis/pei-1/versiones').flush([
+      { versionId: 'version-1', numero: 1, revision: 9, estado: 'publicado' },
+    ]);
+    http.expectOne('/api/v1/pei-versiones/version-1/historial').flush([
+      {
+        revision: 3,
+        accion: 'devolver',
+        estadoAnterior: 'en_revision',
+        estadoNuevo: 'observado',
+        motivo: 'Revisar el resultado esperado.',
+        registradaEn: '2026-11-26T12:00:00Z',
+        emisor: 'http://127.0.0.1:8080/realms/sisplan',
+        sujeto: 'director-plan',
+      },
+    ]);
+    fixture.detectChanges();
+    expect(view.querySelector('a[href="/peis/pei-1/versiones/version-1"]')?.textContent).toContain(
+      'Versión 1 · Publicado',
+    );
+    expect(view.textContent).toContain('Revisar el resultado esperado.');
+    expect(view.textContent).toContain('director-plan');
+  });
+
+  it('abre una revisión de la versión oficial con motivo y protege su vigencia', () => {
+    activateAnalyst(true, false);
+    http.expectOne('/api/v1/peis/pei-1').flush(
+      { ...pei, estado: 'publicado' },
+      { headers: { ETag: '"rev-9"' } },
+    );
+    fixture.detectChanges();
+    http.expectOne('/api/v1/peis/pei-1/ejes').flush([]);
+    click('Ver versiones e historial');
+    http.expectOne('/api/v1/peis/pei-1/versiones').flush([]);
+    http.expectOne('/api/v1/pei-versiones/version-1/historial').flush([]);
+    fixture.detectChanges();
+    click('Crear revisión');
+    expect(button('Confirmar nueva revisión')?.disabled).toBe(true);
+    const reason = view.querySelector<HTMLTextAreaElement>('#pei-revision-reason')!;
+    reason.value = 'Actualizar los indicadores del servicio.';
+    reason.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    click('Confirmar nueva revisión');
+    const draft = {
+      ...pei,
+      versionId: 'version-2',
+      versionOrigenId: 'version-1',
+    };
+    const create = http.expectOne({ method: 'POST', url: '/api/v1/peis/pei-1/versiones' });
+    expect(create.request.headers.get('If-Match')).toBe('"rev-9"');
+    expect(create.request.body).toEqual({ motivo: 'Actualizar los indicadores del servicio.' });
+    create.flush(draft, { status: 201, statusText: 'Created', headers: { ETag: '"rev-1"' } });
+    fixture.detectChanges();
+    http.expectOne('/api/v1/peis/pei-1').flush(draft, { headers: { ETag: '"rev-1"' } });
+    fixture.detectChanges();
+    http.expectOne('/api/v1/peis/pei-1/ejes').flush([]);
+    http.expectOne('/api/v1/pei-versiones/version-2/transiciones').flush({ acciones: ['enviar'] });
+    const form = fixture.componentInstance.form.controls;
+    expect(form.nombre.enabled).toBe(true);
+    expect(form.fechaInicio.disabled).toBe(true);
+    expect(form.fechaFin.disabled).toBe(true);
+    expect(form.tipo.disabled).toBe(true);
+  });
 });

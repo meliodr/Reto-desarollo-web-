@@ -1,0 +1,99 @@
+<section class="panel form-section" aria-labelledby="pei-versions-heading">
+  <header class="form-section-heading">
+    <div><h2 id="pei-versions-heading">Versiones e historial</h2></div>
+    <button
+      type="button"
+      class="button button-secondary"
+      aria-controls="pei-versiones-panel"
+      [attr.aria-expanded]="open()"
+      (click)="open.set(!open())"
+    >
+      {{ open() ? 'Ocultar versiones e historial' : 'Ver versiones e historial' }}
+    </button>
+  </header>
+  <div class="form-section-body" id="pei-versiones-panel" [hidden]="!open()">
+    @if (open()) {
+      @if (loading()) {
+        <p role="status">Consultando versiones…</p>
+      } @else if (error()) {
+        <p class="notice notice-error" role="alert">No pudimos consultar las versiones del PEI.</p>
+        <button type="button" class="button button-secondary" (click)="reload()">Reintentar versiones</button>
+      } @else if (versions().length) {
+        <ul>
+          @for (version of versions(); track version.versionId) {
+            <li>
+              <a [routerLink]="['/peis', pei().id, 'versiones', version.versionId]">
+                Versión {{ version.numero }} · {{ states[version.estado] }}
+              </a>
+              @if (version.publicadoEn; as date) {
+                <small> · {{ date | date: 'dd/MM/yyyy, HH:mm' }}</small>
+              }
+              @if (version.motivoRevision; as reason) {
+                <p><strong>Motivo de revisión</strong> {{ reason }}</p>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">Aún no hay versiones registradas.</p>
+      }
+      <h3>Historial de la versión del plan</h3>
+      <app-pei-historial [versionId]="pei().versionId" [refreshKey]="refreshKey()" />
+      @if (session.canPlan() && pei().estado === 'publicado') {
+        @if (editRevision()) {
+          <div class="field">
+            <label for="pei-revision-reason">Motivo de la nueva revisión</label>
+            <textarea
+              id="pei-revision-reason"
+              rows="3"
+              maxlength="4000"
+              required
+              [value]="reason()"
+              [disabled]="saving()"
+              (input)="reason.set($any($event.target).value)"
+            ></textarea>
+            @if (revisionError()) {
+              <p class="notice notice-error" role="alert">{{ revisionError() }}</p>
+            }
+          </div>
+          @if (reloadRequired()) {
+            <button type="button" class="button button-secondary" (click)="refreshPlan.emit()">
+              Actualizar PEI
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="button button-primary"
+              [disabled]="!reason().trim() || !refreshKey() || saving()"
+              (click)="createRevision()"
+            >
+              {{ saving() ? 'Creando revisión…' : 'Confirmar nueva revisión' }}
+            </button>
+          }
+          <button
+            type="button"
+            class="button button-secondary"
+            [disabled]="saving()"
+            (click)="editRevision.set(false)"
+          >
+            Cancelar
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="button button-secondary"
+            [disabled]="reloadRequired()"
+            (click)="startRevision()"
+          >
+            Crear revisión
+          </button>
+          @if (reloadRequired()) {
+            <button type="button" class="button button-secondary" (click)="refreshPlan.emit()">
+              Actualizar PEI
+            </button>
+          }
+        }
+      }
+    }
+  </div>
+</section>

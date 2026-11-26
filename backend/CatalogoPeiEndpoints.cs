@@ -6,6 +6,7 @@ namespace Sisplan.Api;
 internal static class CatalogoPeiEndpoints
 {
     private sealed record EjeCatalogo(string Nombre, ObjetivoCatalogo[] Objetivos);
+    private static readonly JsonSerializerOptions CatalogJson = new(JsonSerializerDefaults.Web);
     private sealed record ObjetivoCatalogo(string Codigo, string Nombre, string Descripcion,
         string ResultadoEsperado, string Indicador, string LineaAccion);
 
@@ -21,21 +22,31 @@ internal static class CatalogoPeiEndpoints
         var parent = await EjeRepository.LockCurrentPeiVersionAsync(peiId, connection, transaction, ct);
         if (parent is null)
             return Results.NotFound();
+        const string check = """
+            SELECT v.catalogo_digemaps_cargado,
+                   EXISTS (SELECT 1 FROM sisplan.eje e WHERE e.pei_version_id = v.id)
+            FROM sisplan.pei_version v WHERE v.id = @version
+            """;
+        await using var existing = new NpgsqlCommand(check, connection, transaction);
+        existing.Parameters.AddWithValue("version", parent.Value.Id);
+        bool loaded;
+        bool hasAxes;
+        await using (var reader = await existing.ExecuteReaderAsync(ct))
+        {
+            await reader.ReadAsync(ct);
+            loaded = reader.GetBoolean(0);
+            hasAxes = reader.GetBoolean(1);
+        }
+        if (loaded)
+            return Results.Ok(Summary(await ReadCatalogAsync(ct)));
+
         if (!PeiEstados.Editable(parent.Value.State))
             return Results.Problem(statusCode: 409, title: "El PEI no está disponible para cargar su estructura.");
 
-        const string check = "SELECT EXISTS (SELECT 1 FROM sisplan.eje WHERE pei_version_id = @version)";
-        await using var existing = new NpgsqlCommand(check, connection, transaction);
-        existing.Parameters.AddWithValue("version", parent.Value.Id);
-        if (await existing.ExecuteScalarAsync(ct) is true)
+        if (hasAxes)
             return Results.Problem(statusCode: 409, title: "La carga de DIGEMAPS requiere un PEI sin ejes.");
 
-        using var resource = typeof(CatalogoPeiEndpoints).Assembly
-            .GetManifestResourceStream("Sisplan.Api.Catalogos.digemaps.json")!;
-        var catalog = await JsonSerializer.DeserializeAsync<EjeCatalogo[]>(resource,
-            new JsonSerializerOptions(JsonSerializerDefaults.Web), ct)
-            ?? throw new InvalidOperationException("El catálogo DIGEMAPS no está disponible.");
-        var count = 0;
+        var catalog = await ReadCatalogAsync(ct);
         foreach (var axis in catalog)
         {
             const string insertAxis = """
@@ -53,7 +64,8 @@ internal static class CatalogoPeiEndpoints
                 const string insertGoal = """
                     INSERT INTO sisplan.objetivo (id, eje_id, eje_revision, codigo, nombre, descripcion, resultado_esperado, linea_accion)
                     VALUES (@id, @eje, 1, @codigo, @nombre, @descripcion, @resultado, @linea);
-                    INSERT INTO sisplan.indicador (id, objetivo_id, nombre) VALUES (@indicatorId, @id, @indicador);
+                    INSERT INTO sisplan.indicador (id, objetivo_id, nombre, origen_digemaps)
+                    VALUES (@indicatorId, @id, @indicador, true);
                     """;
                 await using var goalCommand = new NpgsqlCommand(insertGoal, connection, transaction);
                 goalCommand.Parameters.AddWithValue("id", Guid.NewGuid());
@@ -66,11 +78,29 @@ internal static class CatalogoPeiEndpoints
                 goalCommand.Parameters.AddWithValue("linea", goal.LineaAccion);
                 goalCommand.Parameters.AddWithValue("indicador", goal.Indicador);
                 await goalCommand.ExecuteNonQueryAsync(ct);
-                count++;
             }
         }
 
+        await using var mark = new NpgsqlCommand("""
+            UPDATE sisplan.pei_version SET catalogo_digemaps_cargado = true WHERE id = @version
+            """, connection, transaction);
+        mark.Parameters.AddWithValue("version", parent.Value.Id);
+        await mark.ExecuteNonQueryAsync(ct);
         await transaction.CommitAsync(ct);
-        return Results.Json(new { Ejes = catalog.Length, Objetivos = count, Indicadores = count }, statusCode: 201);
+        return Results.Json(Summary(catalog), statusCode: 201);
+    }
+
+    private static object Summary(EjeCatalogo[] catalog)
+    {
+        var goals = catalog.Sum(axis => axis.Objetivos.Length);
+        return new { Ejes = catalog.Length, Objetivos = goals, Indicadores = goals };
+    }
+
+    private static async Task<EjeCatalogo[]> ReadCatalogAsync(CancellationToken ct)
+    {
+        using var resource = typeof(CatalogoPeiEndpoints).Assembly
+            .GetManifestResourceStream("Sisplan.Api.Catalogos.digemaps.json")!;
+        return await JsonSerializer.DeserializeAsync<EjeCatalogo[]>(resource, CatalogJson, ct)
+            ?? throw new InvalidOperationException("El catálogo DIGEMAPS no está disponible.");
     }
 }

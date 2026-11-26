@@ -22,7 +22,7 @@ const successMessages: Record<PeiAction, string> = {
   validar_comite: 'Validación del comité registrada.',
   corregir: 'Corrección registrada.',
   devolver: 'PEI observado.',
-  publicar: 'PEI publicado. Puedes vincularle un POA desde Planes operativos.',
+  publicar: 'PEI publicado. La versión oficial está disponible para consulta.',
 };
 
 @Component({
@@ -32,7 +32,7 @@ const successMessages: Record<PeiAction, string> = {
 })
 export class PeiWorkflow {
   private readonly api = inject(PeiWorkflowApi);
-  private readonly session = inject(Session);
+  readonly session = inject(Session);
   private readonly destroyRef = inject(DestroyRef);
   readonly pei = input.required<Pei>();
   readonly etag = input.required<string | null>();

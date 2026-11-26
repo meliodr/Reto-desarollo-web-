@@ -112,7 +112,8 @@
           @if (selectedObjective() === objetivo.id) {
             <app-pei-indicadores
               [ruta]="{ peiId: peiId(), ejeId: eje().id, objetivoId: objetivo.id }"
-              [readOnly]="readOnly() || !eje().activo"
+              [readOnly]="readOnly() || !eje().activo || objetivo.activo === false"
+              (structureChange)="structureChange.emit()"
             />
           }
         </li>

@@ -213,6 +213,14 @@ describe('Flujo del PEI en Angular', () => {
     reason.value = 'Actualizar los indicadores del servicio.';
     reason.dispatchEvent(new Event('input'));
     fixture.detectChanges();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    try {
+      expect(fixture.componentInstance.canLeave()).toBe(false);
+      expect(confirm).toHaveBeenCalledOnce();
+      expect(reason.value).toBe('Actualizar los indicadores del servicio.');
+    } finally {
+      confirm.mockRestore();
+    }
     click('Confirmar nueva revisión');
     const draft = {
       ...pei,

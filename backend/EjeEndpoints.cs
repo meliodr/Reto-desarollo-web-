@@ -134,7 +134,7 @@ internal static class EjeEndpoints
 
     private static IResult MissingPei() => Results.Problem(statusCode: 404, title: "No se encontró el PEI.");
 
-    private static IResult MissingEje() => Results.Problem(statusCode: 404, title: "No se encontró el eje en la versión actual del PEI.");
+    private static IResult MissingEje() => Results.Problem(statusCode: 404, title: "No se encontró el eje solicitado en este PEI.");
 
     private static IResult ReadOnlyPei() => Results.Problem(statusCode: 409, title: "Solo se pueden cambiar los ejes de un PEI en borrador.");
 

@@ -156,7 +156,7 @@ internal static class ObjetivoEndpoints
     private static IResult InvalidFields(Dictionary<string, string[]> errors) =>
         Results.ValidationProblem(errors, statusCode: 422, title: "Revisa los campos del objetivo.");
 
-    private static IResult MissingEje() => Results.Problem(statusCode: 404, title: "No se encontró el eje en la versión actual del PEI.");
+    private static IResult MissingEje() => Results.Problem(statusCode: 404, title: "No se encontró el eje solicitado en este PEI.");
 
     private static IResult MissingObjective() => Results.Problem(statusCode: 404, title: "No se encontró el objetivo en el eje de este PEI.");
 

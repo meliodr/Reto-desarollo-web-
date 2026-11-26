@@ -47,6 +47,8 @@ export class PeiForm implements OnInit {
   @ViewChild('errorSummary') errorSummary?: ElementRef<HTMLElement>;
   @ViewChild(PeiEjes) private ejes?: PeiEjes;
   @ViewChild(PeiMapa) private mapa?: PeiMapa;
+  @ViewChild(PeiWorkflow) private workflow?: PeiWorkflow;
+  @ViewChild(PeiVersiones) private versions?: PeiVersiones;
   readonly form = this.fb.group(
     {
       nombre: ['', [trimmedRequired, trimmedMinLength(3), Validators.maxLength(200)]],
@@ -165,7 +167,7 @@ export class PeiForm implements OnInit {
   }
   refreshWorkflow() {
     if (
-      !this.workflowBlocked() ||
+      !this.navigationBlocked() ||
       window.confirm('Actualiza el estado del PEI y descarta los cambios sin guardar. ¿Continuar?')
     ) {
       this.load();
@@ -390,14 +392,22 @@ export class PeiForm implements OnInit {
       this.saveError.set('');
     }
   }
+  private navigationBlocked() {
+    return (
+      this.workflowPending() ||
+      this.workflowBlocked() ||
+      (this.workflow?.confirmAction() === 'devolver' && !!this.workflow.reason().trim()) ||
+      (!!this.versions?.editRevision() && !!this.versions.reason().trim())
+    );
+  }
   canLeave() {
     return (
-      (!this.workflowPending() && !this.workflowBlocked()) ||
+      !this.navigationBlocked() ||
       window.confirm('Tienes cambios sin guardar. ¿Quieres salir y descartarlos?')
     );
   }
   @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent) {
-    if (this.workflowPending() || this.workflowBlocked()) {
+    if (this.navigationBlocked()) {
       event.preventDefault();
       event.returnValue = '';
     }

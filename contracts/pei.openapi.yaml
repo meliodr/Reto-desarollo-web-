@@ -246,7 +246,7 @@ paths:
         '401': { $ref: '#/components/responses/SinSesion' }
         '403': { $ref: '#/components/responses/SinPermiso' }
         '200': { $ref: '#/components/responses/Eje' }
-        '404': { description: Eje no encontrado en la versión actual del PEI }
+        '404': { description: Eje fuera del PEI o inexistente }
     put:
       summary: Guardar los cambios del eje, incluida su inactivación
       description: Un cambio agrega una revisión y conserva las anteriores. Una solicitud sin cambios conserva la revisión actual.
@@ -284,7 +284,7 @@ paths:
         '401': { $ref: '#/components/responses/SinSesion' }
         '403': { $ref: '#/components/responses/SinPermiso' }
         '200': { $ref: '#/components/responses/Ejes' }
-        '404': { description: Eje no encontrado en la versión actual del PEI }
+        '404': { description: Eje fuera del PEI o inexistente }
   /peis/{peiId}/ejes/{ejeId}/objetivos:
     parameters:
       - $ref: '#/components/parameters/InstitucionActiva'
@@ -303,7 +303,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Objetivo' }
-        '404': { description: Eje no encontrado en la versión actual del PEI }
+        '404': { description: Eje fuera del PEI o inexistente }
     post:
       summary: Registrar un objetivo estratégico bajo un eje activo
       requestBody:

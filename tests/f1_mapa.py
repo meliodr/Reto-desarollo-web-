@@ -20,7 +20,7 @@ def verify(api):
         "vision": "Servicios accesibles.",
         "valores": "Transparencia.",
     }
-    pei, _ = api("04", "/peis", 201, "POST", draft)
+    pei, pei_headers = api("04", "/peis", 201, "POST", draft)
     path = f"/peis/{pei['id']}"
     empty = {"peiId": pei["id"], "versionId": pei["versionId"], "estado": "borrador", "ejes": []}
     assert api("04", f"{path}/mapa", 200)[0] == empty
@@ -70,25 +70,48 @@ def verify(api):
     changed, head = api("04", f"{objetivo_path}/estado", 200, "PATCH", {"activo": False}, objetivo_etag)
     assert not changed["activo"] and changed["revision"] == 2
     api("04", f"{objetivo_path}/estado", 412, "PATCH", {"activo": True}, objetivo_etag)
+    api("04", objetivo_path, 409, "PUT", goal, head["ETag"])
     api("04", riesgos, 409, "POST", risk)
     api("07", riesgos, 200)
-    api("04", f"{objetivo_path}/estado", 200, "PATCH", {"activo": True}, head["ETag"])
+    reactivado, head = api("04", f"{objetivo_path}/estado", 200, "PATCH", {"activo": True}, head["ETag"])
+    tag = head["ETag"]
+
+    _, head = api("04", goals, 201, "POST", dict(goal, codigo="OE-02"))
+    ruta_transiciones = f"/pei-versiones/{pei['versionId']}/transiciones"
+    _, head = api("04", ruta_transiciones, 200, "POST", {"accion": "enviar"}, pei_headers["ETag"])
+    api("04", objetivo_path, 409, "PUT", goal, tag)
+    api("03", ruta_transiciones, 200, "POST", {"accion": "devolver", "motivo": "Precisar el resultado esperado."},
+        head["ETag"])
+
+    api("07", objetivo_path, 403, "PUT", goal, tag)
+    api("04", objetivo_path, 428, "PUT", goal)
+    api("04", objetivo_path, 422, "PUT", dict(goal, lineaAccion=" "), tag)
+    api("04", objetivo_path, 409, "PUT", dict(goal, codigo="OE-02"), tag)
+    corregido = dict(goal, resultadoEsperado="Trámites en línea disponibles.")
+    actualizado, head = api("04", objetivo_path, 200, "PUT", corregido, tag)
+    assert actualizado["id"] == objetivo["id"] and actualizado["activo"]
+    assert actualizado["revision"] == reactivado["revision"] + 1
+    api("04", objetivo_path, 412, "PUT", goal, tag)
+    repetido, repeat_headers = api("04", objetivo_path, 200, "PUT", corregido, head["ETag"])
+    assert repetido == actualizado and repeat_headers["ETag"] == head["ETag"]
 
     mapa, _ = api("07", f"{path}/mapa?versionId={pei['versionId']}", 200)
     assert mapa["versionId"] == pei["versionId"] and len(mapa["ejes"]) == 1
     axis, = mapa["ejes"]
-    objective, = axis["objetivos"]
+    objective = next(o for o in axis["objetivos"] if o["id"] == actualizado["id"])
     assert axis["id"] == eje["id"] and axis["activo"]
-    assert all(objective[key] == value for key, value in goal.items()) and objective["activo"]
+    assert all(objective[key] == value for key, value in corregido.items()) and objective["activo"]
     assert objective["indicadores"] == [indicador]
     assert saved in objective["riesgos"] and {r["nivel"] for r in objective["riesgos"]} == {"bajo", "medio", "alto"}
 
     other, _ = api("04", "/peis", 201, "POST", draft)
     api("04", f"{path}/mapa?versionId={other['versionId']}", 404)
+    api("04", f"/peis/{other['id']}/ejes/{eje['id']}/versiones", 404)
+    api("04", f"/peis/{other['id']}/ejes/{eje['id']}/objetivos/{objetivo['id']}", 404)
     api("10", f"{path}/mapa", 404, institution=B)
     api("10", risk_path, 404, institution=B)
     api("10", riesgos, 404, "POST", risk, institution=B)
-    print("F1.2: mapa completo, escalas de riesgo, mitigación, revisión obsoleta y aislamiento verificados.")
+    print("F1.2: mapa completo, corrección de objetivos tras devolución, vínculos, riesgos y aislamiento verificados.")
 
 
 def main():

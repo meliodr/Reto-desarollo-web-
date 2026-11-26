@@ -3,6 +3,9 @@ import argparse
 import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 from zipfile import ZipFile
 
@@ -45,7 +48,9 @@ def probar_carga(base, tokens, catalogo):
     call(base, catalog_path, 403, "POST", {}, auditor)
     call(base, catalog_path, 404, "POST", {}, bahia)
     # El disparador de CI falla a mitad de la carga, incluso tras insertar otros ejes.
+    auditoria_previa = call(base, "/auditoria", 200, token=auditor)[0]
     call(base, catalog_path, 503, "POST", {}, analista)
+    assert call(base, "/auditoria", 200, token=auditor)[0] == auditoria_previa
     assert call(base, path + "/ejes", 200, token=analista)[0] == []
     assert call(base, path + "/mapa", 200, token=auditor)[0]["ejes"] == []
 
@@ -53,13 +58,23 @@ def probar_carga(base, tokens, catalogo):
     version_path = f"/pei-versiones/{plan['versionId']}"
     tag = call(base, version_path, 200, token=analista)[1]["ETag"]
     call(base, version_path, 200, "PATCH", dict(draft, nombre="PEI DIGEMAPS verificado"), analista, tag)
-    assert call(base, catalog_path, 201, "POST", {}, analista)[0] == RESUMEN
+    # Cuatro altas sobre el mismo borrador libre deben producir exactamente un 201.
+    inicio = Barrier(4, timeout=8)
 
-    def reintentar(_):
-        return call(base, catalog_path, 200, "POST", {}, analista)[0]
+    def cargar_en_paralelo(_):
+        carga = Request(base + catalog_path, data=b"{}", method="POST",
+                        headers={"Authorization": f"Bearer {analista}", "Content-Type": "application/json"})
+        inicio.wait()
+        try:
+            response = urlopen(carga, timeout=12)
+        except HTTPError as error:
+            response = error
+        with response:
+            assert json.load(response) == RESUMEN, response.status
+            return response.status
 
     with ThreadPoolExecutor(max_workers=4) as pool:
-        assert list(pool.map(reintentar, range(4))) == [RESUMEN] * 4
+        assert sorted(pool.map(cargar_en_paralelo, range(4))) == [200, 200, 200, 201]
     mapa, _ = call(base, path + "/mapa", 200, token=auditor)
     ejes = {e["nombre"]: e for e in mapa["ejes"]}
     assert len(mapa["ejes"]) == len(ejes) == 6
@@ -80,7 +95,7 @@ def probar_carga(base, tokens, catalogo):
     call(base, manual_path + "/ejes", 201, "POST", {"nombre": "Eje manual de prueba"}, analista)
     call(base, manual_path + "/catalogo-digemaps", 409, "POST", {}, analista)
     assert len(call(base, manual_path + "/ejes", 200, token=analista)[0]) == 1
-    print("F1.1: fidelidad de 20 filas, vigencia extraordinaria, rollback y reintentos de DIGEMAPS comprobados.")
+    print("F1.1: fidelidad de 20 filas, vigencia extraordinaria, rollback de datos y auditoría, y carga concurrente comprobados.")
 
 
 if __name__ == "__main__":

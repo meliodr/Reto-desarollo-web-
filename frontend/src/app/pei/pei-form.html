@@ -325,37 +325,39 @@
     </div>
   </form>
   @if (current(); as pei) {
-    @if (session.canRead() || session.canPlan()) {
-      <app-pei-workflow
-        [pei]="pei"
-        [etag]="etag()"
-        [dirty]="workflowBlocked()"
-        (changed)="applyTransition($event)"
-        (pendingChange)="setWorkflowPending($event)"
-        (refresh)="refreshWorkflow()"
-      />
-      <app-pei-versiones
-        [pei]="pei"
-        [refreshKey]="etag()"
-        (creating)="setWorkflowPending($event)"
-        (refreshPlan)="refreshWorkflow()"
-        (revisionCreated)="load()"
-      />
-      @if (pei.estado === 'publicado' && session.poa()) {
-        <app-pei-poas [peiId]="pei.id" />
+    @for (version of [pei]; track version.versionId) {
+      @if (session.canRead() || session.canPlan()) {
+        <app-pei-workflow
+          [pei]="version"
+          [etag]="etag()"
+          [dirty]="workflowBlocked()"
+          (changed)="applyTransition($event)"
+          (pendingChange)="setWorkflowPending($event)"
+          (refresh)="refreshWorkflow()"
+        />
+        <app-pei-versiones
+          [pei]="version"
+          [refreshKey]="etag()"
+          (creating)="setWorkflowPending($event)"
+          (refreshPlan)="refreshWorkflow()"
+          (revisionCreated)="load()"
+        />
+        @if (version.estado === 'publicado' && session.poa()) {
+          <app-pei-poas [peiId]="version.id" />
+        }
       }
+      <app-pei-mapa
+        [peiId]="version.id"
+        [readOnly]="isReadOnly() || workflowPending()"
+        [refreshKey]="version.versionId + ':' + etag() + ':' + structureRevision()"
+        (structureChange)="refreshObjectives()"
+      />
+      <app-pei-ejes
+        [peiId]="version.id"
+        [readOnly]="isReadOnly() || workflowPending()"
+        [objectiveRevision]="objectiveRevision()"
+        (structureChange)="refreshStructure()"
+      />
     }
-    <app-pei-mapa
-      [peiId]="pei.id"
-      [readOnly]="isReadOnly() || workflowPending()"
-      [refreshKey]="pei.versionId + ':' + etag() + ':' + structureRevision()"
-      (structureChange)="refreshObjectives()"
-    />
-    <app-pei-ejes
-      [peiId]="pei.id"
-      [readOnly]="isReadOnly() || workflowPending()"
-      [objectiveRevision]="objectiveRevision()"
-      (structureChange)="refreshStructure()"
-    />
   }
 }

@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { Pei } from './pei-api';
 import { PeiForm } from './pei-form';
 
@@ -34,7 +35,7 @@ describe('Flujo del PEI en Angular', () => {
         provideHttpClientTesting(),
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ id: pei.id }) } },
+          useValue: { paramMap: of(convertToParamMap({ id: pei.id })) },
         },
       ],
     });
@@ -90,6 +91,27 @@ describe('Flujo del PEI en Angular', () => {
     expect(button('Agregar eje')).toBeUndefined();
     expect(button('Aprobar PEI')).toBeUndefined();
     expect(view.textContent).toContain('En revisión');
+  });
+
+  it('carga la estructura de una nueva revisión al reemplazar la versión mostrada', () => {
+    openPlan('borrador', ['enviar']);
+    const form = fixture.componentInstance;
+    form.fetchLatest();
+    http
+      .expectOne('/api/v1/peis/pei-1')
+      .flush(
+        { ...pei, versionId: 'version-2', versionOrigenId: pei.versionId },
+        { headers: { ETag: '"rev-2"' } },
+      );
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    try {
+      form.replaceWithLatest();
+      fixture.detectChanges();
+      http.expectOne('/api/v1/peis/pei-1/ejes').flush([]);
+      http.expectOne('/api/v1/pei-versiones/version-2/transiciones').flush({ acciones: [] });
+    } finally {
+      confirm.mockRestore();
+    }
   });
 
   it('pide confirmar la publicación y muestra los POA y sus cuatrimestres', () => {

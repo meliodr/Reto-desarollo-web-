@@ -63,6 +63,10 @@ def check_f1_indicadores(api):
                    dict(fields, metodoCalculo="desconocido", sentido="impredecible"), tag)
     assert set(wrong["errors"]) == {"metodoCalculo", "sentido"}
 
+    wrong, _ = api("04", detail, 422, "PUT", dict(fields, meta=1e-29,
+                   lineaBase="1.000000000000000000000000000001"), tag)
+    assert set(wrong["errors"]) == {"meta", "lineaBase"}
+
     configured, new_headers = api("04", detail, 200, "PUT", fields, tag)
     assert configured["id"] == pending["id"]
     assert configured["listoParaMedir"] is True and configured["revision"] == 2
@@ -71,6 +75,13 @@ def check_f1_indicadores(api):
     assert api("04", detail, 200)[0] == configured
     valid, _ = api("04", f"{detail}/mediciones", 201, "POST", measurement)
     assert valid["valor"] == "7.5"
+    precision_date = "2146-01-02"
+    wrong, _ = api("04", f"{detail}/mediciones", 422, "POST",
+                   {"periodo": precision_date, "valor": "-1e-29"})
+    assert set(wrong["errors"]) == {"valor"}
+    tiny, _ = api("04", f"{detail}/mediciones", 201, "POST",
+                  {"periodo": precision_date, "valor": "-0.0001"})
+    assert tiny["valor"] == "-0.0001"
 
     with_baseline, latest = api("04", detail, 200, "PUT",
                                 dict(fields, metodoCalculo="variacion_porcentual", lineaBase="5"),
@@ -84,7 +95,7 @@ def check_f1_indicadores(api):
     api("04", indicators, 409, "POST", fields)
     api("04", detail, 409, "PUT", fields, latest["ETag"])
     api("04", f"{detail}/mediciones", 409, "POST", dict(measurement, periodo="2146-02-01"))
-    assert api("04", f"{detail}/mediciones", 200)[0] == [valid]
+    assert api("04", f"{detail}/mediciones", 200)[0] == [tiny, valid]
     print("F1.2: configuración DIGEMAPS, rechazos, ETag y medición de un indicador listo comprobados.")
 
 

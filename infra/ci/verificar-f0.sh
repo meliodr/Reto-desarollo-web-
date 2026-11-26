@@ -118,7 +118,10 @@ sql sisplan -c 'DROP TRIGGER f1_fallo_catalogo_ci ON sisplan.objetivo'
 sql sisplan -c 'DROP FUNCTION sisplan.f1_fallo_catalogo_ci()'
 python3 tests/f1_mapa.py --tokens "$tokens"
 python3 tests/f1_indicadores.py --tokens "$tokens"
+sql sisplan < tests/f1_indicador_legacy.sql
 python3 tests/f1_publicacion.py --tokens "$tokens"
+sql sisplan -c 'DROP TRIGGER f1_indicador_legacy_ci ON sisplan.indicador'
+sql sisplan -c 'DROP FUNCTION sisplan.f1_indicador_legacy_ci()'
 python3 tests/f1_interfaz.py --capturas "$capturas"
 if [[ "$(sql sisplan -Atc 'SELECT count(*) FROM sisplan.poa')" != "$poas_antes" ]]; then
   echo 'La publicación autónoma del PEI cambió el conjunto de POA.' >&2
@@ -129,6 +132,7 @@ sql sisplan -c "UPDATE sisplan.institucion SET pei_habilitado=false, poa_habilit
 python3 tests/f0_smoke.py --tokens "$tokens" --modo solo-poa
 python3 tests/f0_interfaz.py --modo solo-poa --capturas "$capturas"
 sql sisplan -c "UPDATE sisplan.institucion SET pei_habilitado=true WHERE id='00000000-0000-4000-8000-000000000001'"
+python3 tests/f1_publicacion.py --tokens "$tokens" --comprobar-poa
 
 python3 - "$tokens" <<'PY'
 import json

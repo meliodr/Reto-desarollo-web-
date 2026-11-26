@@ -2,7 +2,7 @@ import { activateAnalyst } from '../../testing/membresia';
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of, Subject, throwError } from 'rxjs';
+import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
 import { PeiForm } from './pei-form';
 import { Pei, PeiApi, VersionedPei } from './pei-api';
 import { Feedback } from './feedback';
@@ -21,11 +21,13 @@ const example: Pei = {
 };
 describe('PeiForm save failure recovery', () => {
   let component: PeiForm;
+  let routeParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   const api = { get: vi.fn(), update: vi.fn(), create: vi.fn() };
   beforeEach(() => {
     api.get.mockReturnValue(of({ data: { ...example }, etag: '"rev-1"' }));
     api.update.mockReset();
     api.create.mockReset();
+    routeParams = new BehaviorSubject(convertToParamMap({ id: 'pei-1' }));
     TestBed.configureTestingModule({
       imports: [PeiForm],
       providers: [
@@ -33,7 +35,7 @@ describe('PeiForm save failure recovery', () => {
         { provide: PeiApi, useValue: api },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ id: 'pei-1' }) } },
+          useValue: { paramMap: routeParams },
         },
       ],
     });
@@ -102,5 +104,22 @@ describe('PeiForm save failure recovery', () => {
     component.completePeriod();
     expect(component.form.controls.fechaFin.value).toBe('2030-12-31');
     expect(component.form.dirty).toBe(true);
+  });
+  it('descarta las respuestas del plan anterior cuando cambia la ruta', () => {
+    const pending = new Subject<VersionedPei>();
+    api.get.mockReturnValueOnce(pending);
+    component.fetchLatest();
+    expect(component.checkingLatest()).toBe(true);
+
+    const anotherPlan = { ...example, id: 'pei-2', versionId: 'version-2' };
+    api.get.mockReturnValueOnce(of({ data: anotherPlan, etag: '"rev-other"' }));
+    routeParams.next(convertToParamMap({ id: anotherPlan.id }));
+    pending.next({ data: example, etag: '"rev-old"' });
+
+    expect(api.get).toHaveBeenLastCalledWith(anotherPlan.id);
+    expect(component.current()).toBe(anotherPlan);
+    expect(component.etag()).toBe('"rev-other"');
+    expect(component.latest()).toBeNull();
+    expect(component.checkingLatest()).toBe(false);
   });
 });

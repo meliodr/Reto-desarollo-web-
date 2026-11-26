@@ -33,7 +33,8 @@ internal static class CatalogoPeiEndpoints
         bool hasAxes;
         await using (var reader = await existing.ExecuteReaderAsync(ct))
         {
-            await reader.ReadAsync(ct);
+            if (!await reader.ReadAsync(ct))
+                return Results.NotFound();
             loaded = reader.GetBoolean(0);
             hasAxes = reader.GetBoolean(1);
         }
@@ -85,7 +86,8 @@ internal static class CatalogoPeiEndpoints
             UPDATE sisplan.pei_version SET catalogo_digemaps_cargado = true WHERE id = @version
             """, connection, transaction);
         mark.Parameters.AddWithValue("version", parent.Value.Id);
-        await mark.ExecuteNonQueryAsync(ct);
+        if (await mark.ExecuteNonQueryAsync(ct) != 1)
+            return Results.Problem(statusCode: 403, title: "La versión ya no permite guardar la carga.");
         await transaction.CommitAsync(ct);
         return Results.Json(Summary(catalog), statusCode: 201);
     }

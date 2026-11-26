@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 
 namespace Sisplan.Api;
@@ -111,16 +112,17 @@ internal static class IndicadorEndpoints
         if (metodo is not ("valor_directo" or "variacion_absoluta" or "variacion_porcentual"))
             errors["metodoCalculo"] = ["Selecciona un método de cálculo válido."];
 
-        if (input.LineaBase is not null || metodo is "variacion_absoluta" or "variacion_porcentual")
-            RequiredDecimal(input.LineaBase, "lineaBase", errors);
-        if (metodo == "variacion_porcentual" && input.LineaBase == 0)
+        var lineaBase = input.LineaBase is not null || metodo is "variacion_absoluta" or "variacion_porcentual"
+            ? RequiredDecimal(input.LineaBase, "lineaBase", errors)
+            : null;
+        if (metodo == "variacion_porcentual" && lineaBase == 0)
             errors["lineaBase"] = ["Para la variación porcentual indica una línea base distinta de cero."];
 
         return new IndicadorDto(id,
             RequiredText(input.Nombre, "nombre", 3, 200, errors),
             RequiredText(input.Formula, "formula", 1, 4000, errors),
             RequiredText(input.Unidad, "unidad", 1, 100, errors),
-            input.LineaBase,
+            lineaBase,
             RequiredDecimal(input.Meta, "meta", errors),
             RequiredText(input.Frecuencia, "frecuencia", 1, 100, errors),
             sentido, metodo, errors.Count == 0, Revision: 1);
@@ -140,7 +142,7 @@ internal static class IndicadorEndpoints
         if (errors.Count > 0)
             return InvalidFields(errors);
 
-        var data = new IndicadorMedicionDto(Guid.NewGuid(), input.Periodo!.Value, value);
+        var data = new IndicadorMedicionDto(Guid.NewGuid(), input.Periodo!.Value, value!.Value);
         var result = await repository.CreateMeasurementAsync(peiId, ejeId, objetivoId, indicadorId, data, cancellationToken);
         return result switch
         {
@@ -183,12 +185,41 @@ internal static class IndicadorEndpoints
         return text;
     }
 
-    private static decimal RequiredDecimal(decimal? value, string field, Dictionary<string, string[]> errors)
+    private static decimal? RequiredDecimal(JsonElement? input, string field, Dictionary<string, string[]> errors)
     {
         const decimal max = 999999999999.9999m;
-        if (value is null || value < -max || value > max || decimal.Round(value.Value, 4) != value)
-            errors[field] = ["Indica un número con hasta 12 cifras enteras y 4 decimales."];
-        return value.GetValueOrDefault();
+        var raw = input?.ValueKind switch
+        {
+            JsonValueKind.Number => input.Value.GetRawText(),
+            JsonValueKind.String => input.Value.GetString(),
+            _ => null,
+        };
+        var text = raw.AsSpan().Trim();
+        if (!text.Contains('\0') && decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
+            && value is >= -max and <= max && FitsDecimalScale(text))
+            return value;
+
+        errors[field] = ["Indica un número con hasta 12 cifras enteras y 4 decimales."];
+        return null;
+    }
+
+    private static bool FitsDecimalScale(ReadOnlySpan<char> raw)
+    {
+        // decimal.TryParse puede redondear durante la conversión. Medir la escala del valor original.
+        var exponentStart = raw.IndexOfAny('e', 'E');
+        var mantissa = exponentStart >= 0 ? raw[..exponentStart] : raw;
+        var lastNonZero = mantissa.LastIndexOfAnyInRange('1', '9');
+        if (lastNonZero < 0)
+            return true;
+        var exponent = 0;
+        if (exponentStart >= 0 && !int.TryParse(raw[(exponentStart + 1)..], NumberStyles.AllowLeadingSign,
+                CultureInfo.InvariantCulture, out exponent))
+            return false;
+
+        var point = mantissa.IndexOf('.');
+        var scale = point < 0 ? lastNonZero - (mantissa.Length - 1)
+            : lastNonZero - point + (lastNonZero < point ? 1 : 0);
+        return scale - (long)exponent <= 4;
     }
 
     private static IResult InvalidFields(Dictionary<string, string[]> errors) =>

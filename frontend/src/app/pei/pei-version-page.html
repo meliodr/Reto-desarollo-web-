@@ -1,4 +1,4 @@
-<a class="back-link" [routerLink]="['/peis', peiId]">
+<a class="back-link" [routerLink]="['/peis', peiId()]">
   <span aria-hidden="true">←</span> Volver al plan estratégico
 </a>
 @if (loading()) {
@@ -17,9 +17,7 @@
       <h1>{{ pei.nombre }}</h1>
       <p>{{ pei.fechaInicio }} — {{ pei.fechaFin }}</p>
     </div>
-    <span class="badge-draft">
-      {{ pei.estado === 'publicado' ? 'Versión oficial' : stateLabels[pei.estado] }}
-    </span>
+    <span class="badge-draft">{{ stateLabel() }}</span>
   </section>
   <section class="panel form-section" aria-labelledby="version-plan-heading">
     <header class="form-section-heading">
@@ -27,6 +25,29 @@
     </header>
     <div class="form-section-body">
       <p>PEI {{ pei.tipo }} · {{ pei.tipo === 'ordinario' ? 4 : 5 }} años calendario</p>
+      @if (version(); as detail) {
+        <p>
+          <strong>Versión {{ detail.numero }}</strong>
+          @if (detail.publicadoEn; as date) {
+            · Publicada el {{ date | date: 'dd/MM/yyyy, HH:mm' : '-0400' }}
+          }
+        </p>
+        @if (detail.motivoRevision; as reason) {
+          <p class="narrative"><strong>Motivo de revisión</strong> {{ reason }}</p>
+        }
+        @if (detail.versionOrigenId || nextVersion()) {
+          <nav class="version-links" aria-label="Versiones relacionadas">
+            @if (detail.versionOrigenId; as previous) {
+              <a [routerLink]="['/peis', pei.id, 'versiones', previous]">Ver versión anterior</a>
+            }
+            @if (nextVersion(); as next) {
+              <a [routerLink]="['/peis', pei.id, 'versiones', next.versionId]">
+                Ver versión siguiente
+              </a>
+            }
+          </nav>
+        }
+      }
       <dl class="narrative">
         <dt><strong>Misión</strong></dt>
         <dd>{{ pei.mision }}</dd>

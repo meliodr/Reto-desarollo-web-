@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  DestroyRef,
   ElementRef,
   HostListener,
   OnInit,
@@ -8,8 +9,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import {
   Pei,
   PeiApi,
@@ -39,6 +42,8 @@ export class PeiForm implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly feedback = inject(Feedback);
+  private readonly destroy = inject(DestroyRef);
+  private readonly cancelReads = new Subject<void>();
   @ViewChild('errorSummary') errorSummary?: ElementRef<HTMLElement>;
   @ViewChild(PeiEjes) private ejes?: PeiEjes;
   @ViewChild(PeiMapa) private mapa?: PeiMapa;
@@ -76,27 +81,37 @@ export class PeiForm implements OnInit {
   readonly narrativeFields: PeiField[] = ['mision', 'vision', 'valores'];
   private id: string | null = null;
   ngOnInit() {
-    this.id = this.route.snapshot.paramMap.get('id');
-    if (this.id) this.load();
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
+      this.id = params.get('id');
+      this.current.set(null);
+      this.etag.set(null);
+      this.saved.set(false);
+      this.load();
+    });
   }
   load() {
+    this.cancelReads.next();
+    this.checkingLatest.set(false);
     if (!this.id) return;
     this.loading.set(true);
     this.loadError.set('');
-    this.api.get(this.id).subscribe({
-      next: (value) => {
-        this.apply(value);
-        this.loading.set(false);
-      },
-      error: (error: HttpErrorResponse) => {
-        this.loadError.set(
-          error.status === 404
-            ? 'Este PEI no existe o ya no está disponible.'
-            : 'No pudimos abrir el PEI. Comprueba la API local y vuelve a intentarlo.',
-        );
-        this.loading.set(false);
-      },
-    });
+    this.api
+      .get(this.id)
+      .pipe(takeUntil(this.cancelReads), takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: (value) => {
+          this.apply(value);
+          this.loading.set(false);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.loadError.set(
+            error.status === 404
+              ? 'Este PEI no existe o ya no está disponible.'
+              : 'No pudimos abrir el PEI. Comprueba la API local y vuelve a intentarlo.',
+          );
+          this.loading.set(false);
+        },
+      });
   }
   private apply(value: VersionedPei) {
     this.current.set(value.data);
@@ -264,7 +279,7 @@ export class PeiForm implements OnInit {
     const request = existing
       ? this.api.update(existing.versionId, this.form.getRawValue(), etag!)
       : this.api.create(this.form.getRawValue());
-    request.subscribe({
+    request.pipe(takeUntilDestroyed(this.destroy)).subscribe({
       next: (value) => {
         this.saving.set(false);
         this.syncFormDisabled();
@@ -324,23 +339,28 @@ export class PeiForm implements OnInit {
   fetchLatest() {
     if (!this.id) return;
     this.checkingLatest.set(true);
-    this.api.get(this.id).subscribe({
-      next: (value) => {
-        this.latest.set(value);
-        this.checkingLatest.set(false);
-      },
-      error: () => {
-        this.saveError.set(
-          'No pudimos consultar la versión actual. Tus cambios se conservan; inténtalo de nuevo.',
-        );
-        this.checkingLatest.set(false);
-      },
-    });
+    this.api
+      .get(this.id)
+      .pipe(takeUntil(this.cancelReads), takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: (value) => {
+          this.latest.set(value);
+          this.checkingLatest.set(false);
+        },
+        error: () => {
+          this.saveError.set(
+            'No pudimos consultar la versión actual. Tus cambios se conservan; inténtalo de nuevo.',
+          );
+          this.checkingLatest.set(false);
+        },
+      });
   }
   replaceWithLatest() {
     const latest = this.latest();
     if (
       latest &&
+      !this.saving() &&
+      !this.workflowPending() &&
       window.confirm(
         'Se reemplazarán los campos de este formulario por la versión guardada en el servidor. Tus cambios sin guardar se descartarán. ¿Continuar?',
       )

@@ -18,6 +18,6 @@ internal enum ObjetivoCreateStatus { Saved, NotFound, ReadOnlyPei, InactiveAxis,
 
 internal sealed record ObjetivoCreateResult(ObjetivoCreateStatus Status, ObjetivoDto? Objetivo = null);
 
-internal enum ObjetivoEstadoStatus { Saved, NotFound, ReadOnlyPei, InactiveAxis, Stale }
+internal enum ObjetivoUpdateStatus { Saved, NotFound, ReadOnlyPei, InactiveAxis, InactiveObjective, DuplicateCode, Stale }
 
-internal sealed record ObjetivoEstadoResult(ObjetivoEstadoStatus Status, ObjetivoDto? Objetivo = null);
+internal sealed record ObjetivoUpdateResult(ObjetivoUpdateStatus Status, ObjetivoDto? Objetivo = null);

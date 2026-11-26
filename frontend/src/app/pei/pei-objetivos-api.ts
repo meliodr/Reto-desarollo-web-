@@ -26,7 +26,18 @@ export class PeiObjetivosApi {
     return this.http.post<Objetivo>(this.url(peiId, ejeId), value);
   }
 
-  private url(peiId: string, ejeId: string) {
-    return `/api/v1/peis/${encodeURIComponent(peiId)}/ejes/${encodeURIComponent(ejeId)}/objetivos`;
+  get(peiId: string, ejeId: string, id: string) {
+    return this.http.get<Objetivo>(this.url(peiId, ejeId, id), { observe: 'response' });
+  }
+
+  update(peiId: string, ejeId: string, id: string, tag: string, value: ObjetivoWrite) {
+    return this.http.put<Objetivo>(this.url(peiId, ejeId, id), value, {
+      headers: { 'If-Match': tag },
+    });
+  }
+
+  private url(peiId: string, ejeId: string, id?: string) {
+    const collection = `/api/v1/peis/${encodeURIComponent(peiId)}/ejes/${encodeURIComponent(ejeId)}/objetivos`;
+    return id ? `${collection}/${encodeURIComponent(id)}` : collection;
   }
 }

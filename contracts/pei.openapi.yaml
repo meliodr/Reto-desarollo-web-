@@ -342,12 +342,28 @@ paths:
         '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '401': { $ref: '#/components/responses/SinSesion' }
         '403': { $ref: '#/components/responses/SinPermiso' }
-        '200':
-          description: Objetivo registrado
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Objetivo' }
+        '200': { $ref: '#/components/responses/ObjetivoF1' }
         '404': { description: Objetivo no encontrado en el eje de este PEI }
+    put:
+      summary: Corregir el objetivo sin cambiar sus vínculos en una versión editable
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DatosObjetivo' }
+      responses:
+        '200': { $ref: '#/components/responses/ObjetivoF1' }
+        '400': { $ref: '#/components/responses/SolicitudInvalida' }
+        '401': { $ref: '#/components/responses/SinSesion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { description: Objetivo fuera del ámbito de edición o inexistente }
+        '409': { description: 'Versión de sólo lectura, estructura inactiva o código duplicado' }
+        '412': { $ref: '#/components/responses/VersionObsoleta' }
+        '415': { description: Se requiere application/json }
+        '422': { $ref: '#/components/responses/Validacion' }
+        '428': { $ref: '#/components/responses/IfMatchAusente' }
   /peis/{peiId}/ejes/{ejeId}/objetivos/{objetivoId}/estado:
     parameters:
       - $ref: '#/components/parameters/InstitucionActiva'
@@ -443,7 +459,7 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/Indicador' } }
-        '404': { description: Objetivo ajeno a la versión actual del PEI }
+        '404': { description: Objetivo fuera del ámbito solicitado }
     post:
       summary: Registrar un indicador en un eje activo de un PEI en borrador
       requestBody:
@@ -575,7 +591,7 @@ paths:
         '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '415': { description: Se requiere application/json }
         '404': { description: Versión no encontrada }
-        '409': { description: 'Estado incompatible, estructura incompleta o vigencia solapada' }
+        '409': { description: 'Estado incompatible, estructura incompleta, indicador manual pendiente o vigencia solapada' }
         '412': { description: ETag obsoleto }
         '422': { $ref: '#/components/responses/Validacion' }
         '428': { description: Falta If-Match }
@@ -866,7 +882,12 @@ components:
     DecimalIndicador:
       type: string
       pattern: '^-?[0-9]{1,12}(\.[0-9]{1,4})?$'
-      description: Decimal exacto en formato de texto. La API también acepta números JSON en solicitudes existentes.
+      description: Decimal exacto en formato de texto.
+    DecimalIndicadorInput:
+      description: Hasta 12 cifras enteras y 4 decimales en el valor. Se rechaza un valor que requiera redondeo.
+      anyOf:
+        - type: number
+        - $ref: '#/components/schemas/DecimalIndicador'
     DatosIndicador:
       type: object
       required: [nombre, formula, unidad, meta, frecuencia, sentido, metodoCalculo]
@@ -876,10 +897,10 @@ components:
         unidad: { type: string, minLength: 1, maxLength: 100 }
         lineaBase:
           anyOf:
-            - $ref: '#/components/schemas/DecimalIndicador'
+            - $ref: '#/components/schemas/DecimalIndicadorInput'
             - type: 'null'
           description: Obligatoria para métodos de variación. En variación porcentual debe ser distinta de cero.
-        meta: { $ref: '#/components/schemas/DecimalIndicador' }
+        meta: { $ref: '#/components/schemas/DecimalIndicadorInput' }
         frecuencia: { type: string, minLength: 1, maxLength: 100 }
         sentido: { type: string, enum: [ascendente, descendente] }
         metodoCalculo: { type: string, enum: [valor_directo, variacion_absoluta, variacion_porcentual] }
@@ -909,14 +930,14 @@ components:
       required: [periodo, valor]
       properties:
         periodo: { type: string, format: date }
-        valor: { $ref: '#/components/schemas/DecimalIndicador' }
+        valor: { $ref: '#/components/schemas/DecimalIndicadorInput' }
     Medicion:
-      allOf:
-        - $ref: '#/components/schemas/DatosMedicion'
-        - type: object
-          required: [id]
-          properties:
-            id: { type: string, format: uuid }
+      type: object
+      required: [id, periodo, valor]
+      properties:
+        id: { type: string, format: uuid }
+        periodo: { type: string, format: date }
+        valor: { $ref: '#/components/schemas/DecimalIndicador' }
     AccionPei:
       type: string
       enum: [enviar, revisar, validar_comite, devolver, corregir, aprobar, publicar]

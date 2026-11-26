@@ -7,11 +7,35 @@ from urllib.parse import urlsplit
 
 from playwright.sync_api import Error, Page, expect, sync_playwright
 
-from f0_interfaz import captura, entrar_como_multi
+from f0_interfaz import A, B, captura, comprobar_rol, entrar_como_multi, sesion
 
 ORIGINAL = "Plan estratégico 2170-01-01 a 2173-12-31"
 REVISADO = "Plan estratégico revisado de 2170"
 MOTIVO = "El objetivo de prueba todavía no tiene un indicador."
+
+
+def corregir_objetivo_observado(pagina: Page):
+    pagina.get_by_label("Estado del plan").select_option("observado")
+    pagina.get_by_role("link", name="PEI de mapa y riesgos", exact=True).click()
+    expect(pagina.get_by_role("heading", name="Corregir PEI observado")).to_be_visible()
+    expect(pagina.get_by_text("Precisar el resultado esperado.")).to_be_visible()
+    pagina.get_by_role("button", name="Ver objetivos de Canales de atención").click()
+    objetivo = pagina.get_by_role("listitem").filter(
+        has=pagina.get_by_role("heading", name="OE-01 · Dar acceso", exact=True)
+    )
+    objetivo.get_by_role("button", name="Editar objetivo Dar acceso").click()
+    campo = pagina.get_by_role("textbox", name="Resultado esperado", exact=True)
+    expect(campo).to_have_value("Trámites en línea disponibles.")
+    corregido = "Trámites en línea disponibles con confirmación."
+    campo.fill(corregido)
+    with pagina.expect_response(lambda r: "/objetivos/" in r.url and r.request.method == "PUT") as escritura:
+        pagina.get_by_role("button", name="Guardar objetivo", exact=True).click()
+    assert escritura.value.ok
+    assert escritura.value.request.headers.get("if-match")
+    expect(objetivo.get_by_text(corregido, exact=True)).to_be_visible()
+    pagina.reload()
+    pagina.get_by_role("button", name="Ver objetivos de Canales de atención").click()
+    expect(objetivo.get_by_text(corregido, exact=True)).to_be_visible()
 
 
 def consultar_pei_oficial(pagina: Page, password: str, semilla: str, carpeta: Path | None):
@@ -35,13 +59,21 @@ def consultar_pei_oficial(pagina: Page, password: str, semilla: str, carpeta: Pa
     pagina.get_by_role("link", name=REVISADO, exact=True).click()
     expect(pagina.get_by_role("heading", name=REVISADO, exact=True)).to_be_visible()
     expect(pagina.get_by_text("Versión oficial", exact=True)).to_be_visible()
+    expect(pagina.get_by_text("Ajustar la visión del plan oficial.")).to_be_visible()
+    pagina.get_by_role("link", name="Ver versión anterior").click()
+    expect(pagina.get_by_role("heading", name=ORIGINAL, exact=True)).to_be_visible()
+    expect(pagina.get_by_text("Publicación histórica", exact=True)).to_be_visible()
+    expect(pagina.get_by_text(MOTIVO)).to_be_visible()
+    pagina.get_by_role("link", name="Ver versión siguiente").click()
+    expect(pagina.get_by_role("heading", name=REVISADO, exact=True)).to_be_visible()
+    expect(pagina.get_by_text(MOTIVO)).to_have_count(0)
     pagina.get_by_role("link", name="Volver al plan estratégico").click()
     expect(pagina.get_by_role("heading", name="PEI oficial", exact=True)).to_be_visible()
     pagina.get_by_role("button", name="Ver versiones e historial", exact=True).click()
     expect(pagina.get_by_role("link", name="Versión 2 · Publicado", exact=True)).to_be_visible()
     pagina.get_by_role("link", name="Versión 1 · Publicado", exact=True).click()
     expect(pagina.get_by_role("heading", name=ORIGINAL, exact=True)).to_be_visible()
-    expect(pagina.get_by_text("Versión oficial", exact=True)).to_be_visible()
+    expect(pagina.get_by_text("Publicación histórica", exact=True)).to_be_visible()
     expect(pagina.get_by_text(MOTIVO)).to_be_visible()
     expect(pagina.get_by_text("Publicación oficial", exact=True)).to_be_visible()
     pagina.get_by_role("button", name="Consultar mapa", exact=True).click()
@@ -56,8 +88,20 @@ def consultar_pei_oficial(pagina: Page, password: str, semilla: str, carpeta: Pa
             f"La vista de versión oficial desborda a {ancho} px."
         )
         captura(pagina, carpeta, f"f1-oficial-{ancho}.png")
+    pagina.get_by_role("link", name="Volver al plan estratégico").click()
+    expect(pagina.get_by_role("heading", name="PEI oficial", exact=True)).to_be_visible()
+    with pagina.expect_response(sesion) as cambio:
+        pagina.get_by_role("combobox", name="Institución activa").select_option(B)
+    comprobar_rol(cambio.value, B, "Auditor")
+    expect(pagina.get_by_role("heading", name="Planes estratégicos institucionales")).to_be_visible()
+    expect(pagina.get_by_text(REVISADO, exact=True)).to_have_count(0)
     assert not consultas_poa, consultas_poa
-    print("F1.4: Chromium consultó dos versiones, mapa, motivos y publicación oficial a 1280 y 390 px.")
+    print("F1.4: historial y publicación oficial comprobados a 1280 y 390 px, con cambio de versión e institución.")
+    with pagina.expect_response(sesion) as regreso:
+        pagina.get_by_role("combobox", name="Institución activa").select_option(A)
+    comprobar_rol(regreso.value, A, "AnalistaPlanificacion")
+    corregir_objetivo_observado(pagina)
+    print("F1.2: Chromium corrigió un objetivo tras una devolución y verificó su persistencia.")
 
 
 def main():

@@ -10,27 +10,24 @@ internal sealed class IndicadorRepository(SesionInstitucional source)
         i.sentido, i.metodo_calculo, i.listo_para_medir, i.revision
         """;
 
-    private const string CurrentObjective = """
-        WITH objetivo_actual AS (
+    // Los IDs de la ruta identifican la versión de origen, aun después de abrir una sucesora.
+    private const string ObjectivePath = """
+        WITH objetivo_del_pei AS (
             SELECT o.id
-            FROM sisplan.pei p
-            JOIN LATERAL (
-                SELECT id FROM sisplan.pei_version
-                WHERE pei_id = p.id ORDER BY numero DESC LIMIT 1
-            ) v ON true
-            JOIN sisplan.eje e ON e.pei_version_id = v.id
-            JOIN sisplan.objetivo o ON o.eje_id = e.id
-            WHERE p.id = @peiId AND e.id = @ejeId AND o.id = @objetivoId
+            FROM sisplan.objetivo o
+            JOIN sisplan.eje e ON e.id = o.eje_id
+            JOIN sisplan.pei_version v ON v.id = e.pei_version_id
+            WHERE v.pei_id = @peiId AND e.id = @ejeId AND o.id = @objetivoId
         )
         """;
 
     public async Task<IReadOnlyList<IndicadorDto>?> ListAsync(Guid peiId, Guid ejeId, Guid objetivoId,
         CancellationToken cancellationToken)
     {
-        var sql = CurrentObjective + $"""
+        var sql = ObjectivePath + $"""
 
             SELECT {Fields}
-            FROM objetivo_actual o LEFT JOIN sisplan.indicador i ON i.objetivo_id = o.id
+            FROM objetivo_del_pei o LEFT JOIN sisplan.indicador i ON i.objetivo_id = o.id
             ORDER BY i.nombre, i.id
             """;
         await using var command = source.CreateCommand(sql);
@@ -51,10 +48,10 @@ internal sealed class IndicadorRepository(SesionInstitucional source)
     public async Task<IndicadorDto?> FindAsync(Guid peiId, Guid ejeId, Guid objetivoId, Guid indicadorId,
         CancellationToken cancellationToken)
     {
-        await using var command = source.CreateCommand(CurrentObjective + $"""
+        await using var command = source.CreateCommand(ObjectivePath + $"""
 
             SELECT {Fields}
-            FROM objetivo_actual o JOIN sisplan.indicador i ON i.objetivo_id = o.id
+            FROM objetivo_del_pei o JOIN sisplan.indicador i ON i.objetivo_id = o.id
             WHERE i.id = @indicadorId
             """);
         AddObjectivePath(command, peiId, ejeId, objetivoId);
@@ -82,10 +79,10 @@ internal sealed class IndicadorRepository(SesionInstitucional source)
     public async Task<IReadOnlyList<IndicadorMedicionDto>?> ListMeasurementsAsync(Guid peiId, Guid ejeId,
         Guid objetivoId, Guid indicadorId, CancellationToken cancellationToken)
     {
-        var sql = CurrentObjective + """
+        var sql = ObjectivePath + """
 
             SELECT m.id, m.periodo, m.valor
-            FROM objetivo_actual o JOIN sisplan.indicador i ON i.objetivo_id = o.id
+            FROM objetivo_del_pei o JOIN sisplan.indicador i ON i.objetivo_id = o.id
             LEFT JOIN sisplan.indicador_medicion m ON m.indicador_id = i.id
             WHERE i.id = @indicadorId
             ORDER BY m.periodo DESC

@@ -2,7 +2,12 @@
   <div class="objetivos-heading">
     <h4 id="pei-objetivos-heading">Objetivos de {{ eje().nombre }}</h4>
     @if (!readOnly() && eje().activo && !editing() && !loading() && !loadError()) {
-      <button type="button" class="button button-primary" (click)="startCreate()">
+      <button
+        type="button"
+        class="button button-primary"
+        [disabled]="!canStart()"
+        (click)="startCreate()"
+      >
         Agregar objetivo
       </button>
     }
@@ -12,13 +17,23 @@
     <p class="notice notice-success" role="status">{{ notice() }}</p>
   }
 
+  @if (saveError()) {
+    <p class="notice notice-error" role="alert">{{ saveError() }}</p>
+  }
+  @if (loadingEdit()) {
+    <p role="status">Consultando la revisión del objetivo…</p>
+  }
   @if (editing()) {
-    @if (saveError()) {
-      <p class="notice notice-error" role="alert">{{ saveError() }}</p>
+    @if (targetInactive()) {
+      <p class="notice" role="status">
+        El objetivo quedó inactivo. Tu edición sigue en el formulario.
+      </p>
     }
     <form [formGroup]="form" (ngSubmit)="save()">
-      <fieldset [disabled]="saving() || uncertain() || !eje().activo || readOnly()">
-        <legend>Nuevo objetivo</legend>
+      <fieldset
+        [disabled]="saving() || uncertain() || !eje().activo || readOnly() || targetInactive()"
+      >
+        <legend>{{ editTarget() ? 'Editar objetivo' : 'Nuevo objetivo' }}</legend>
         <p class="objetivos-muted">Todos los campos son obligatorios.</p>
         @for (field of fields; track field.key) {
           <div class="field">
@@ -59,7 +74,15 @@
         <button
           type="submit"
           class="button button-primary"
-          [disabled]="saving() || uncertain() || !eje().activo || readOnly()"
+          [disabled]="
+            saving() ||
+            uncertain() ||
+            !eje().activo ||
+            readOnly() ||
+            targetInactive() ||
+            loading() ||
+            !!loadError()
+          "
         >
           {{ saving() ? 'Guardando…' : 'Guardar objetivo' }}
         </button>
@@ -79,12 +102,26 @@
     </button>
   } @else if (!objetivos().length && !editing()) {
     <p class="objetivos-muted">Este eje todavía no tiene objetivos.</p>
-  } @else if (objetivos().length) {
+  }
+  @if (objetivos().length) {
     <ul class="objetivos-list">
       @for (objetivo of objetivos(); track objetivo.id) {
         <li>
           <div class="objetivos-heading">
             <h5>{{ objetivo.codigo }} · {{ objetivo.nombre }}</h5>
+            @if (objetivo.activo === false) {
+              <span class="objetivos-muted">Objetivo inactivo</span>
+            }
+            @if (!readOnly() && eje().activo && objetivo.activo !== false) {
+              <button
+                type="button"
+                class="button button-secondary"
+                [disabled]="!canStart()"
+                (click)="startEdit(objetivo)"
+              >
+                Editar objetivo<span class="sr-only"> {{ objetivo.nombre }}</span>
+              </button>
+            }
             <button
               type="button"
               class="button button-secondary"
@@ -112,7 +149,13 @@
           @if (selectedObjective() === objetivo.id) {
             <app-pei-indicadores
               [ruta]="{ peiId: peiId(), ejeId: eje().id, objetivoId: objetivo.id }"
-              [readOnly]="readOnly() || !eje().activo || objetivo.activo === false"
+              [readOnly]="
+                readOnly() ||
+                !eje().activo ||
+                objetivo.activo === false ||
+                loading() ||
+                !!loadError()
+              "
               (structureChange)="structureChange.emit()"
             />
           }

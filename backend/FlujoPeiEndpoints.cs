@@ -75,6 +75,9 @@ internal static class FlujoPeiEndpoints
             FlujoPeiStatus.Forbidden => Results.Problem(statusCode: 403, title: "Tu rol o participación en este PEI no autoriza la acción."),
             FlujoPeiStatus.IncompleteStructure => Results.Problem(statusCode: 409, title: "El PEI no tiene su estructura estratégica completa.",
                 detail: "Incluye al menos un eje activo. Cada eje activo debe tener un objetivo activo y cada objetivo activo debe tener un indicador vinculado."),
+            FlujoPeiStatus.PendingManualIndicators => Results.Problem(statusCode: 409,
+                title: "Hay indicadores manuales pendientes de configuración.",
+                detail: "Devuelve el PEI para completar la fórmula, unidad, frecuencia, sentido, método y meta de cada indicador manual aplicable. Los indicadores de DIGEMAPS pueden quedar pendientes."),
             FlujoPeiStatus.OverlappingPeriod => Results.Problem(statusCode: 409, title: "El período coincide con otro PEI publicado."),
             _ => throw new InvalidOperationException("Resultado de transición de PEI inesperado.")
         };

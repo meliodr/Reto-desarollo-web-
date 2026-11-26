@@ -188,10 +188,12 @@ export class PeiEjes implements OnInit {
   }
 
   toggleObjetivos(ejeId: string) {
-    if (this.objetivos?.saving()) return;
+    if (this.objetivos?.hasPendingWrite()) return;
     if (
       this.objetivos?.hasPendingChanges() &&
-      !window.confirm('Tienes un objetivo sin guardar. ¿Quieres descartar sus cambios?')
+      !window.confirm(
+        'Tienes cambios de objetivos o indicadores sin guardar. ¿Quieres descartarlos?',
+      )
     )
       return;
     this.objetivosEjeId.update((current) => (current === ejeId ? null : ejeId));

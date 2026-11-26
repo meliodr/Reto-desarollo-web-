@@ -4,8 +4,8 @@ F1 usa los permisos, la institución activa y la auditoría de F0. Desde **Plane
 
 | Subfase | Criterio reproducible |
 |---|---|
-| F1.1 · Vigencia y catálogo | Cuatro años calendario inclusivos en el PEI ordinario y cinco en el extraordinario. La primera carga de DIGEMAPS registra seis ejes, veinte objetivos y veinte indicadores en una transacción. Los reintentos conservan las filas originales. Un error intermedio revierte el conjunto. |
-| F1.2 · Mapa y metas | El mapa muestra ejes, objetivos, resultados, indicadores, metas, líneas de acción, riesgos y el estado activo de la estructura. Sólo los indicadores configurados admiten nuevas mediciones. |
+| F1.1 · Vigencia y catálogo | Cuatro años calendario inclusivos en el PEI ordinario y cinco en el extraordinario. La primera carga de DIGEMAPS registra seis ejes, veinte objetivos y veinte indicadores en una transacción. Los reintentos conservan las filas originales. Un error intermedio revierte los datos y su auditoría. Si se inicia la carga desde varias sesiones a la vez, una sola registra el catálogo. |
+| F1.2 · Mapa y metas | El mapa muestra ejes, objetivos, resultados, indicadores, metas, líneas de acción, riesgos y el estado activo de la estructura. El analista puede corregir el texto de un objetivo en la versión editable y conservar sus vínculos. Sólo los indicadores configurados admiten nuevas mediciones. |
 | F1.3 · Revisión y aprobación | El analista envía. El Director de Planificación revisa. Un representante del Comité valida. Máxima Autoridad aprueba. El Director publica. Las devoluciones conservan autor, fecha y motivo. Cada escritura con ETag rechaza una versión obsoleta. |
 | F1.4 · PEI oficial | Una institución con solo PEI puede publicar, consultar por fecha y abrir el mapa exacto de una versión. La publicación y sus reintentos generan cero POA. |
 
@@ -15,10 +15,10 @@ El cotejo de **Hoja1, A4:E23** compara el eje, el objetivo completo, el resultad
 
 ## Reglas de formulación y publicación
 
-- Un eje activo necesita al menos un objetivo activo. Cada objetivo activo necesita un indicador vinculado. Los indicadores precargados pueden permanecer **Pendientes de configuración** y quedan fuera del registro de nuevas mediciones hasta estar listos.
+- Un eje activo necesita al menos un objetivo activo. Cada objetivo activo necesita un indicador vinculado. Los indicadores precargados pueden permanecer **Pendientes de configuración** y quedan fuera del registro de nuevas mediciones hasta estar listos. Para aprobar o publicar una nueva versión, completa los indicadores manuales de los objetivos activos, incluidos los creados antes de F1.
 - El método **Valor directo** admite una línea base vacía. **Variación absoluta** requiere línea base. **Variación porcentual** requiere una línea base distinta de cero. La fórmula, unidad, frecuencia, sentido y meta completan la configuración. F3 consume estos datos para el seguimiento y la evaluación.
 - Los riesgos se registran en el objetivo. La puntuación es probabilidad × impacto, con valores de uno a cinco. Un riesgo alto requiere tratamiento, acción, responsable, fecha y un enlace a la evidencia para cerrarse.
-- Al abrir una revisión de un PEI publicado, el analista registra el motivo y trabaja sobre una nueva versión con la vigencia de la oficial. La publicación anterior sigue disponible para consulta y para el POA durante la revisión. Las mediciones y los POA existentes siguen vinculados a la versión original. La sucesora pasa por el mismo flujo antes de convertirse en la versión oficial.
+- Al abrir una revisión de un PEI publicado, el analista registra el motivo y trabaja sobre una nueva versión con la vigencia de la oficial. La publicación anterior sigue disponible para consulta y para el POA durante la revisión. El historial permite consultar también los ejes, objetivos, riesgos, indicadores y mediciones de una versión publicada anterior. Las mediciones y los POA existentes siguen vinculados a la versión original. La sucesora pasa por el mismo flujo antes de convertirse en la versión oficial.
 - La fecha inicial y la final forman parte de la vigencia. Si sus intervalos coinciden siquiera en un día, dos PEI distintos de la misma institución no pueden quedar publicados a la vez.
 
 ## Verificación

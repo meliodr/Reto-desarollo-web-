@@ -18,6 +18,7 @@ internal enum FlujoPeiStatus
     Conflict,
     Forbidden,
     IncompleteStructure,
+    PendingManualIndicators,
     OverlappingPeriod
 }
 

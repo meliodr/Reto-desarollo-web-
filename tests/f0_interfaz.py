@@ -85,8 +85,23 @@ def modo_autonomo(page: Page, modo: str, data, directory: Path | None):
     print(f"Angular: acceso directo y navegación autónoma verificados en {modo}.")
 
 
-def crear_poa_de_area(page: Page):
-    page.get_by_role("link", name="Planes operativos", exact=True).click()
+def verificar_salto_en_poa(page: Page, directory: Path | None):
+    # Un documento nuevo reproduce la resolución de enlaces con base href.
+    page.goto(WEB + "/poas")
+    expect(page).to_have_url(WEB + "/poas", timeout=15_000)
+    expect(page.get_by_role("heading", name="Planes operativos anuales", exact=True)).to_be_visible()
+    documento = page.evaluate("performance.timeOrigin")
+    page.keyboard.press("Tab")
+    expect(page.get_by_role("link", name="Saltar al contenido", exact=True)).to_be_focused()
+    page.keyboard.press("Enter")
+    expect(page.locator("#main-content")).to_be_focused()
+    expect(page).to_have_url(WEB + "/poas")
+    assert page.evaluate("performance.timeOrigin") == documento, "El salto recargó el documento."
+    captura(page, directory, "F0-QA-08-salto-en-poa.png")
+    print("QA-08: Tab y Enter conservan /poas y enfocan el contenido sin recargar.", flush=True)
+
+
+def crear_poa_de_area(page: Page, directory: Path | None):
     page.get_by_role("button", name="Crear POA", exact=True).click()
     dependencia = page.get_by_role("combobox", name="Dependencia", exact=True)
     area = "00000000-0000-4000-8000-000000000102"
@@ -94,14 +109,49 @@ def crear_poa_de_area(page: Page):
     expect(dependencia.locator("option", has_text="Archivo anterior")).to_have_count(0)
     expect(dependencia.locator("option", has_text="Operaciones")).to_have_count(0)
     dependencia.select_option(area)
-    page.get_by_label("Año del POA").fill("2230")
+    anio = page.get_by_label("Año del POA", exact=True)
+    monto = page.get_by_label("Presupuesto de referencia (RD$, opcional)", exact=True)
+    guardar = page.get_by_role("button", name="Guardar POA", exact=True)
+    envios = []
+
+    def registrar(solicitud):
+        if solicitud.url == WEB + "/api/v1/poas" and solicitud.method == "POST":
+            envios.append(solicitud.post_data_json)
+
+    page.on("request", registrar)
+    viewport = page.viewport_size
+    page.set_viewport_size({"width": 320, "height": 900})
+    monto.fill("12,50")
+    anio.fill("2243.5")
+    expect(guardar).to_be_disabled()
+    anio.press("Enter")
+    aviso = page.locator("#poa-year-error")
+    expect(aviso).to_contain_text("entero")
+    expect(anio).to_have_attribute("aria-invalid", "true")
+    expect(anio).to_have_attribute("aria-describedby", "poa-year-error")
+    assert not envios, "El POA con año decimal llegó a la API."
+    expect(monto).to_have_value("12,50")
+    expect(dependencia).to_have_value(area)
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+    captura(page, directory, "F0-QA-01-anio-invalido-320.png")
+
+    anio.fill("2243")
+    expect(aviso).to_have_count(0)
+    expect(monto).to_have_value("12,50")
+    expect(dependencia).to_have_value(area)
     with page.expect_response(lambda r: r.url == WEB + "/api/v1/poas" and r.request.method == "POST") as alta:
-        page.get_by_role("button", name="Guardar POA", exact=True).click()
-    assert alta.value.status == 201 and alta.value.json()["dependenciaId"] == area
-    expect(page.get_by_text("POA 2230 creado.", exact=True)).to_be_visible()
-    fila = page.get_by_role("row").filter(has=page.get_by_role("cell", name="2230", exact=True))
+        guardar.click()
+    assert alta.value.status == 201
+    registro = alta.value.json()
+    assert (registro["anio"], registro["presupuestoReferencia"], registro["dependenciaId"]) == (2243, "12.50", area)
+    assert [envio["anio"] for envio in envios] == [2243]
+    page.remove_listener("request", registrar)
+    if viewport:
+        page.set_viewport_size(viewport)
+    expect(page.get_by_text("POA 2243 creado.", exact=True)).to_be_visible()
+    fila = page.get_by_role("row").filter(has=page.get_by_role("cell", name="2243", exact=True))
     expect(fila.get_by_role("cell", name="Tecnología", exact=True)).to_be_visible()
-    print("Angular: el analista asignó un POA a una dependencia activa de su institución.")
+    print("QA-01: el año decimal muestra un aviso, no se envía y permite guardar al corregirlo.", flush=True)
 
 
 def verificar(page: Page, password: str, semilla: str, directory: Path | None, modo: str):
@@ -114,7 +164,8 @@ def verificar(page: Page, password: str, semilla: str, directory: Path | None, m
     auditoria = page.get_by_role("link", name="Auditoría", exact=True)
     crear = page.get_by_role("link", name="Crear nuevo PEI").first
     expect(selector).to_have_value(A)
-    crear_poa_de_area(page)
+    verificar_salto_en_poa(page, directory)
+    crear_poa_de_area(page, directory)
     page.get_by_role("link", name="Planes estratégicos", exact=True).click()
     expect(page.get_by_role("heading", name="Planes estratégicos institucionales")).to_be_visible()
     expect(crear).to_be_visible()
@@ -135,7 +186,7 @@ def verificar(page: Page, password: str, semilla: str, directory: Path | None, m
     expect(page.get_by_text("Consultando POA…", exact=True)).to_have_count(0)
     expect(page.get_by_role("heading", name="Planes operativos anuales")).to_be_visible()
     expect(page.get_by_role("button", name="Crear POA")).to_have_count(0)
-    expect(page.get_by_role("cell", name="2230", exact=True)).to_have_count(0)
+    expect(page.get_by_role("cell", name="2243", exact=True)).to_have_count(0)
 
     with page.expect_response(lambda r: r.url == WEB + "/api/v1/auditoria") as consulta:
         auditoria.click()

@@ -1,4 +1,6 @@
-<a class="skip-link" href="#main-content">Saltar al contenido</a>
+<a class="skip-link" href="#main-content" (click)="$event.preventDefault(); mainContent.focus()"
+  >Saltar al contenido</a
+>
 <div class="app-shell">
   <header class="institutional-header">
     <div class="institutional-header-inner">
@@ -25,7 +27,7 @@
     </div>
   </header>
   <div class="workspace">
-    <main id="main-content" tabindex="-1">
+    <main #mainContent id="main-content" tabindex="-1">
       @if (session.active(); as active) {
         <div class="institution-context">
           @if (session.institutions().length > 1) {

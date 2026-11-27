@@ -198,3 +198,69 @@ it('conserva la dependencia del responsable al reintentar el catálogo', () => {
   request.flush({ anio: 2230, dependenciaId: 'area-1', id: 'poa-area', estado: 'borrador' });
   http.verify();
 });
+
+it('explica el año inválido, conserva el borrador y permite corregirlo antes de guardar', async () => {
+  TestBed.configureTestingModule({
+    imports: [PoaList],
+    providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+  });
+  activateAnalyst();
+  const fixture = TestBed.createComponent(PoaList);
+  const http = TestBed.inject(HttpTestingController);
+  http.expectOne('/api/v1/poas').flush([]);
+  http.expectOne('/api/v1/organizacion').flush({ dependencias: areas });
+  http.expectOne('/api/v1/peis').flush([
+    {
+      id: 'pei-vigente',
+      nombre: 'Plan estratégico',
+      estado: 'publicado',
+      fechaInicio: '2026-01-01',
+      fechaFin: '2029-12-31',
+    },
+  ]);
+  const component = fixture.componentInstance;
+  component.year.set(2027);
+  component.peiId.set('pei-vigente');
+  component.dependenciaElegida.set('area-2');
+  component.budget.set('125,50');
+  component.showForm.set(true);
+  fixture.detectChanges();
+  await fixture.whenStable();
+  const view: HTMLElement = fixture.nativeElement;
+  const year = view.querySelector<HTMLInputElement>('#poa-year')!;
+  const submit = view.querySelector<HTMLButtonElement>('[type="submit"]')!;
+  const form = view.querySelector('form')!;
+  for (const value of ['', '0', '10000', '2027.5']) {
+    year.value = value;
+    year.dispatchEvent(new Event('input'));
+    year.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    const error = view.querySelector<HTMLElement>('#poa-year-error')!;
+    expect(year.getAttribute('aria-describedby')).toBe(error.id);
+    expect(year.getAttribute('aria-invalid')).toBe('true');
+    expect(error.textContent).toContain(value ? 'entero' : 'año del POA');
+    expect(submit.disabled).toBe(true);
+    form.dispatchEvent(new Event('submit'));
+    http.expectNone({ method: 'POST', url: '/api/v1/poas' });
+    expect(component.showForm()).toBe(true);
+    expect(component.peiId()).toBe('pei-vigente');
+  }
+  year.value = '2028';
+  year.dispatchEvent(new Event('input'));
+  year.dispatchEvent(new Event('blur'));
+  fixture.detectChanges();
+  expect(view.querySelector('#poa-year-error')).toBeNull();
+  expect(year.hasAttribute('aria-invalid')).toBe(false);
+  expect(submit.disabled).toBe(false);
+  submit.click();
+  const request = http.expectOne({ method: 'POST', url: '/api/v1/poas' });
+  expect(request.request.body).toEqual({
+    anio: 2028,
+    peiId: 'pei-vigente',
+    dependenciaId: 'area-2',
+    presupuestoReferencia: '125.50',
+  });
+  request.flush({ id: 'poa-prueba', anio: 2028 });
+  expect(component.showForm()).toBe(false);
+  http.verify();
+});

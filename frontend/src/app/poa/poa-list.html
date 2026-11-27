@@ -24,10 +24,17 @@
         required
         min="1"
         max="9999"
+        step="1"
+        [attr.aria-invalid]="yearError() ? 'true' : null"
+        [attr.aria-describedby]="yearError() ? 'poa-year-error' : null"
         [ngModel]="year()"
         [disabled]="saving()"
-        (ngModelChange)="year.set($event); peiId.set('')"
+        (ngModelChange)="year.set($event)"
+        (blur)="comprobarVigenciaPei()"
       />
+      @if (yearError(); as message) {
+        <p id="poa-year-error" class="field-error" role="alert">{{ message }}</p>
+      }
     </div>
     <div class="field">
       @if (dependenciaAsignada(); as asignada) {
@@ -114,7 +121,7 @@
     <button
       class="button button-primary"
       type="submit"
-      [disabled]="saving() || cargandoDependencias() || form.invalid"
+      [disabled]="saving() || cargandoDependencias() || form.invalid || !!yearError()"
     >
       {{ saving() ? 'Guardando…' : 'Guardar POA' }}
     </button>

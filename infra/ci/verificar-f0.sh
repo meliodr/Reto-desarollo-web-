@@ -148,3 +148,4 @@ for name, key in {"ANALISTA": "04", "DIRECTOR": "03", "COMITE": "09", "AUTORIDAD
 for test in ["pei", "ejes", "objetivos", "indicadores", "flujo"]:
     subprocess.run([sys.executable, f"tests/{test}_smoke.py"], env=env, check=True)
 PY
+python3 tests/f1_interfaz.py --vinculos-poa --capturas "$capturas"

@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 
 from playwright.sync_api import Error, Page, expect, sync_playwright
 
-from f0_interfaz import A, B, cambiar_institucion, captura, entrar_como_multi, etapa_chromium
+from f0_interfaz import A, B, WEB, cambiar_institucion, captura, entrar_como_multi, etapa_chromium
 
 ORIGINAL = "Plan estratégico 2170-01-01 a 2173-12-31"
 REVISADO = "Plan estratégico revisado de 2170"
@@ -121,9 +121,43 @@ def consultar_pei_oficial(pagina: Page, password: str, semilla: str, carpeta: Pa
     print("F1.2: Chromium corrigió un objetivo tras una devolución y verificó su persistencia.")
 
 
+def consultar_vinculos_poa(pagina: Page, password: str, semilla: str, carpeta: Path | None):
+    session = entrar_como_multi(pagina, password, semilla)
+    activa = next(i for i in session["instituciones"] if i["id"] == session["institucionActivaId"])
+    assert activa["modulos"] == {"pei": True, "poa": True}
+    casos = (
+        (2260, "Plan estratégico 2260-01-01 a 2263-12-31", "Publicación histórica"),
+        (2262, "PEI con programación posterior", "Versión oficial"),
+    )
+    destinos = []
+    for anio, nombre, estado in casos:
+        with etapa_chromium(f"abrir la versión del PEI vinculada al POA {anio}"):
+            with pagina.expect_response(lambda r: r.url == WEB + "/api/v1/poas" and r.request.method == "GET") as lista:
+                pagina.get_by_role("link", name="Planes operativos", exact=True).click()
+            assert lista.value.ok
+            vinculo, = [p for p in lista.value.json() if p["anio"] == anio and p["peiNombre"] == nombre]
+            fila = pagina.get_by_role("row").filter(has=pagina.get_by_role("cell", name=str(anio), exact=True))
+            enlace = fila.get_by_role("link", name=nombre, exact=True)
+            assert vinculo["peiId"] and vinculo["peiVersionId"]
+            destino = f"/peis/{vinculo['peiId']}/versiones/{vinculo['peiVersionId']}"
+            expect(enlace).to_have_attribute("href", destino)
+            if anio == 2262:
+                expect(fila.get_by_role("cell", name="RD$ 0.00", exact=True)).to_be_visible()
+            enlace.click()
+            expect(pagina).to_have_url(WEB + destino)
+            expect(pagina.get_by_role("heading", name=nombre, exact=True)).to_be_visible()
+            expect(pagina.get_by_text(estado, exact=True)).to_be_visible()
+            destinos.append(destino)
+            captura(pagina, carpeta, f"INT-01-poa-{anio}-version-pei.png")
+    assert destinos[0] != destinos[1]
+    print("INT-01: cada POA abrió la versión histórica u oficial que tiene vinculada en PostgreSQL.", flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--capturas", type=Path)
+    parser.add_argument("--vinculos-poa", action="store_true",
+                        help="Prueba los enlaces a las versiones vinculadas con ambos módulos habilitados.")
     args = parser.parse_args()
     password = os.environ.get("SISPLAN_F0_PASSWORD")
     semilla = os.environ.get("SISPLAN_F0_TOTP_SEED")
@@ -135,7 +169,8 @@ def main():
                 with navegador.new_context(
                     viewport={"width": 1280, "height": 900}, locale="es-DO"
                 ) as contexto:
-                    consultar_pei_oficial(contexto.new_page(), password, semilla, args.capturas)
+                    prueba = consultar_vinculos_poa if args.vinculos_poa else consultar_pei_oficial
+                    prueba(contexto.new_page(), password, semilla, args.capturas)
     except Error as exc:
         raise SystemExit(f"Falló el recorrido oficial del PEI ({type(exc).__name__}).") from None
 

@@ -174,10 +174,12 @@
             </td>
             @if (session.pei()) {
               <td>
-                @if (poa.peiId) {
-                  <a [routerLink]="['/peis', poa.peiId]">{{ poa.peiNombre }}</a>
+                @if (poa.peiId && poa.peiVersionId) {
+                  <a [routerLink]="['/peis', poa.peiId, 'versiones', poa.peiVersionId]">
+                    {{ poa.peiNombre }}
+                  </a>
                 } @else {
-                  Independiente
+                  {{ poa.peiNombre ?? 'Independiente' }}
                 }
               </td>
             }

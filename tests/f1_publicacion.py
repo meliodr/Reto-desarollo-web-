@@ -85,7 +85,15 @@ def run(base, tokens, comprobar_poa=False):
 
     load(plan)
     axes = f"/peis/{plan['id']}/ejes"
-    axis = api("04", axes, 200)[0][0]
+    catalog_axes = api("04", axes, 200)[0]
+    axis = catalog_axes[0]
+    # Excluir un objetivo de un eje activo y los objetivos de otro eje inactivo.
+    retired_axis = next(e for e in catalog_axes[1:] if e["nombre"] != "Conducción")
+    retired_axis_path = f"{axes}/{retired_axis['id']}"
+    retired_goals = api("04", retired_axis_path + "/objetivos", 200)[0]
+    _, retired_headers = api("04", retired_axis_path, 200)
+    api("04", retired_axis_path, 200, "PUT", dict(retired_axis, activo=False), retired_headers["ETag"])
+    expected_pending = 18 - len(retired_goals)
     axis_path = f"{axes}/{axis['id']}"
     _, axis_headers_for_original = api("04", axis_path, 200)
     axis_history, _ = api("04", axis_path + "/versiones", 200)
@@ -94,7 +102,11 @@ def run(base, tokens, comprobar_poa=False):
         "nombre": inactive["nombre"], "activo": False, "revision": inactive["revision"],
     }, axis_headers["ETag"])
     goals = f"{axes}/{axis['id']}/objetivos"
-    seeded_goal = api("04", goals, 200)[0][0]
+    catalog_goals = api("04", goals, 200)[0]
+    seeded_goal = catalog_goals[0]
+    retired_goal_path = f"{goals}/{catalog_goals[1]['id']}"
+    _, retired_headers = api("04", retired_goal_path, 200)
+    api("04", retired_goal_path + "/estado", 200, "PATCH", {"activo": False}, retired_headers["ETag"])
     goal_path = f"{goals}/{seeded_goal['id']}"
     _, seeded_goal_headers = api("04", goal_path, 200)
     indicators = f"{goals}/{seeded_goal['id']}/indicadores"
@@ -149,9 +161,18 @@ def run(base, tokens, comprobar_poa=False):
     configured, _ = api("04", legacy_path, 200, "PUT", legacy_fields, legacy_headers["ETag"])
     assert configured["listoParaMedir"]
     tag = transition(version, "corregir", "04", tag)
+    corrected_options, _ = api("04", version + "/transiciones", 200)
+    assert "indicadoresDigemapsPendientes" not in corrected_options
     version, approved = approve(plan, tag)
+    publication_options, _ = api("03", version + "/transiciones", 200)
+    assert publication_options["acciones"] == ["publicar"]
+    assert publication_options["indicadoresDigemapsPendientes"] == expected_pending
+    authority_options, _ = api("08", version + "/transiciones", 200)
+    assert "indicadoresDigemapsPendientes" not in authority_options
     transition(version, "publicar", "08", approved, 403)
     published_tag = transition(version, "publicar", "03", approved)
+    published_options, _ = api("03", version + "/transiciones", 200)
+    assert "indicadoresDigemapsPendientes" not in published_options
     assert transition(version, "publicar", "03", published_tag) == published_tag
     transition(version, "publicar", "03", approved, 412)
 
@@ -312,6 +333,23 @@ def comprobar_vinculos_poa(api, create, approve, load, transition, concurrent_po
                       after_publication["id"]: different_name}
     assert {r["id"] for r in api("07", path + "/poas", 200)[0]} == set(linked)
     print("F1.4: los POA anteriores conservaron su versión y los nuevos usaron la oficial vigente.")
+
+    manual, tag = create("2264-01-01", "2267-12-31")
+    axes = f"/peis/{manual['id']}/ejes"
+    axis, _ = api("04", axes, 201, "POST", {"nombre": "Eje sin indicadores DIGEMAPS"})
+    goals = f"{axes}/{axis['id']}/objetivos"
+    goal, _ = api("04", goals, 201, "POST", {
+        "codigo": "MAN-01", "nombre": "Resolver solicitudes", "descripcion": "Mejorar el tiempo de atención.",
+        "resultadoEsperado": "Responder las solicitudes a tiempo.", "lineaAccion": "Registrar el tiempo de atención.",
+    })
+    api("04", f"{goals}/{goal['id']}/indicadores", 201, "POST", {
+        "nombre": "Solicitudes respondidas", "formula": "Conteo de solicitudes", "unidad": "solicitudes",
+        "frecuencia": "Mensual", "sentido": "ascendente", "meta": "10", "metodoCalculo": "valor_directo",
+    })
+    path, tag = approve(manual, tag)
+    options, _ = api("03", path + "/transiciones", 200)
+    assert options["acciones"] == ["publicar"] and options["indicadoresDigemapsPendientes"] == 0
+    transition(path, "publicar", "03", tag)
 
 
 def main():

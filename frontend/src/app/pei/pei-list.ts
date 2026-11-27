@@ -18,13 +18,18 @@ export class PeiList {
   readonly states = Object.keys(peiStateLabels) as PeiState[];
   readonly filtered = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('es');
-    return this.peis().filter(
-      (p) =>
-        (!query ||
-          `${p.nombre} ${p.fechaInicio} ${p.fechaFin}`.toLocaleLowerCase('es').includes(query)) &&
+    const year = /^\d{4}$/.test(query) ? Number(query) : null;
+    return this.peis().filter((p) => {
+      const matches =
+        year === null
+          ? `${p.nombre} ${p.fechaInicio} ${p.fechaFin}`.toLocaleLowerCase('es').includes(query)
+          : year >= Number(p.fechaInicio.slice(0, 4)) && year <= Number(p.fechaFin.slice(0, 4));
+      return (
+        matches &&
         (this.type() === 'todos' || p.tipo === this.type()) &&
-        (this.state() === 'todos' || p.estado === this.state()),
-    );
+        (this.state() === 'todos' || p.estado === this.state())
+      );
+    });
   });
   constructor() {
     effect((cleanup) => {

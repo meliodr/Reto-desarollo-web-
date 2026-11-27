@@ -62,7 +62,7 @@ ConnectionStrings__SisplanMigraciones="$historica" dotnet "$api_dll" --migrate
 ConnectionStrings__SisplanMigraciones="$historica" dotnet "$api_dll" --migrate
 sql sisplan_anterior < tests/f0_verificar_historicos.sql
 
-curl -fsS --retry 80 --retry-connrefused --retry-delay 2 --max-time 8 "$Sisplan__Oidc__Url/realms/sisplan/.well-known/openid-configuration" -o /dev/null
+curl -fsS --retry 80 --retry-all-errors --retry-delay 2 --retry-max-time 180 --max-time 8 "$Sisplan__Oidc__Url/realms/sisplan/.well-known/openid-configuration" -o /dev/null
 # Ocho usuarios del incremento anterior (la Autoridad ya tiene TOTP) y siete altas.
 git archive 3ab90c257a11f18e525d00414677218f0b5927fe infra/keycloak | tar -x -C "$temporal"
 python3 - "$temporal/infra/keycloak" <<'IDENTIDADES'

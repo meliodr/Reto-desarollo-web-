@@ -47,6 +47,13 @@ export class PoaList {
   readonly notice = signal('');
   readonly showForm = signal(false);
   readonly year = signal<number | null>(new Date().getFullYear());
+  readonly yearError = computed(() => {
+    const year = this.year();
+    if (year === null) return 'Introduce el año del POA.';
+    if (!Number.isInteger(year) || year < 1 || year > 9999)
+      return 'Introduce un año entero entre 1 y 9999.';
+    return '';
+  });
   readonly peiId = signal('');
   readonly budget = signal('');
   readonly dependenciaElegida = signal('');
@@ -60,6 +67,7 @@ export class PoaList {
   readonly errorDependencias = signal(false);
   readonly candidates = computed(() => {
     const year = this.year();
+    if (this.yearError()) return this.strategic().filter((plan) => plan.id === this.peiId());
     return this.strategic().filter(
       (plan) =>
         year !== null &&
@@ -121,6 +129,13 @@ export class PoaList {
       });
   }
 
+  comprobarVigenciaPei() {
+    const id = this.peiId();
+    if (id && !this.yearError() && !this.candidates().some((plan) => plan.id === id)) {
+      this.peiId.set('');
+    }
+  }
+
   canLeave() {
     if (this.saving()) return false;
     return !this.showForm() || window.confirm('¿Salir y descartar el formulario del POA?');
@@ -132,10 +147,7 @@ export class PoaList {
       !this.session.canFormulatePoa() ||
       this.saving() ||
       this.cargandoDependencias() ||
-      anio === null ||
-      !Number.isInteger(anio) ||
-      anio < 1 ||
-      anio > 9999
+      this.yearError()
     )
       return;
     this.error.set('');
@@ -145,6 +157,7 @@ export class PoaList {
       this.error.set('Indica un presupuesto con hasta 12 dígitos enteros y 2 decimales.');
       return;
     }
+    this.comprobarVigenciaPei();
     this.saving.set(true);
     this.http
       .post<Poa>('/api/v1/poas', {

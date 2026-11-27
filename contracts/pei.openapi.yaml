@@ -554,7 +554,7 @@ paths:
       - $ref: '#/components/parameters/InstitucionActiva'
       - { name: versionId, in: path, required: true, schema: { type: string, format: uuid } }
     get:
-      summary: Consultar acciones habilitadas para el planificador autenticado
+      summary: Consultar acciones de revisión y publicación disponibles para la sesión
       responses:
         '400': { $ref: '#/components/responses/SolicitudInvalida' }
         '200':
@@ -567,6 +567,10 @@ paths:
                 properties:
                   acciones: { type: array, items: { $ref: '#/components/schemas/AccionPei' } }
                   motivoDevolucion: { type: [string, 'null'] }
+                  indicadoresDigemapsPendientes:
+                    type: integer
+                    minimum: 0
+                    description: Incluido cuando la acción publicar está disponible. Cuenta solo indicadores DIGEMAPS pendientes de ejes y objetivos activos.
         '401': { description: Sesión requerida }
         '403': { $ref: '#/components/responses/SinPermiso' }
         '404': { description: Versión no encontrada }

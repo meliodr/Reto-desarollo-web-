@@ -41,6 +41,22 @@
         </div>
       } @else {
         <p>Confirma la publicación para dejar esta versión como oficial en la institución.</p>
+        @let pendientes = pendingDigemaps();
+        @if (pendientes === 0) {
+          <p>El mapa activo tiene 0 indicadores DIGEMAPS pendientes de configuración.</p>
+        } @else if (pendientes === 1) {
+          <p class="notice">
+            Queda <strong>1 indicador DIGEMAPS pendiente de configuración</strong> en el mapa
+            activo. Puedes publicar el PEI. El indicador seguirá sin admitir mediciones.
+          </p>
+        } @else if (pendientes !== null) {
+          <p class="notice">
+            Quedan
+            <strong>{{ pendientes }} indicadores DIGEMAPS pendientes de configuración</strong>
+            en el mapa activo. Puedes publicar el PEI. Esos indicadores seguirán sin admitir
+            mediciones.
+          </p>
+        }
         @if (session.poa()) {
           <p>El equipo podrá vincularle un POA desde Planes operativos.</p>
         }

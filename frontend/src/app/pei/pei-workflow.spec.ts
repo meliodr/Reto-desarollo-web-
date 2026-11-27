@@ -48,13 +48,19 @@ describe('Flujo del PEI en Angular', () => {
 
   afterEach(() => http.verify());
 
-  function openPlan(estado: Pei['estado'], acciones: string[]) {
+  function openPlan(
+    estado: Pei['estado'],
+    acciones: string[],
+    indicadoresDigemapsPendientes?: number,
+  ) {
     http
       .expectOne('/api/v1/peis/pei-1')
       .flush({ ...pei, estado }, { headers: { ETag: '"rev-1"' } });
     fixture.detectChanges();
     http.expectOne('/api/v1/peis/pei-1/ejes').flush([]);
-    http.expectOne({ method: 'GET', url: workflowUrl }).flush({ acciones });
+    http
+      .expectOne({ method: 'GET', url: workflowUrl })
+      .flush({ acciones, indicadoresDigemapsPendientes });
     fixture.detectChanges();
   }
 
@@ -112,6 +118,21 @@ describe('Flujo del PEI en Angular', () => {
     } finally {
       confirm.mockRestore();
     }
+  });
+
+  it.each([
+    [0, '0 indicadores DIGEMAPS pendientes de configuración'],
+    [1, '1 indicador DIGEMAPS pendiente de configuración'],
+    [4, '4 indicadores DIGEMAPS pendientes de configuración'],
+  ])('muestra %d indicadores pendientes antes de confirmar la publicación', (cantidad, texto) => {
+    openPlan('aprobado', ['publicar'], cantidad);
+    expect(view.textContent).not.toContain(texto);
+    click('Publicar PEI');
+    expect(view.textContent).toContain(texto);
+    expect(button('Confirmar publicación')?.disabled).toBe(false);
+    http.expectNone({ method: 'POST', url: workflowUrl });
+    click('Cancelar');
+    expect(view.textContent).not.toContain(texto);
   });
 
   it('pide confirmar la publicación y muestra los POA y sus cuatrimestres', () => {

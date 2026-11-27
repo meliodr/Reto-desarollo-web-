@@ -5,6 +5,20 @@ namespace Sisplan.Api;
 
 internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiRepository peis)
 {
+    private const string ActiveStructure = """
+        WITH activos AS (
+            SELECT e.id
+            FROM sisplan.eje e
+            JOIN LATERAL (
+                SELECT activo FROM sisplan.eje_version WHERE eje_id = e.id ORDER BY revision DESC LIMIT 1
+            ) v ON v.activo
+            WHERE e.pei_version_id = @id
+        ), objetivos_activos AS (
+            SELECT o.id, o.eje_id FROM sisplan.objetivo o JOIN activos e ON e.id = o.eje_id
+            WHERE o.activo
+        )
+        """;
+
     public async Task<FlujoPeiOpciones?> OptionsAsync(Guid versionId, FlujoPeiActor actor, CancellationToken ct)
     {
         var connection = source.Conexion;
@@ -24,7 +38,17 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
             command.Parameters.AddWithValue("id", versionId);
             returnReason = await command.ExecuteScalarAsync(ct) as string;
         }
-        return new FlujoPeiOpciones(actions, returnReason);
+        long? pendingDigemaps = null;
+        if (actions.Contains("publicar"))
+        {
+            await using var command = new NpgsqlCommand(ActiveStructure + "\n" + """
+                SELECT count(*) FROM objetivos_activos o JOIN sisplan.indicador i ON i.objetivo_id = o.id
+                WHERE i.origen_digemaps AND NOT i.listo_para_medir
+                """, connection);
+            command.Parameters.AddWithValue("id", versionId);
+            pendingDigemaps = (long)(await command.ExecuteScalarAsync(ct))!;
+        }
+        return new FlujoPeiOpciones(actions, returnReason, pendingDigemaps);
     }
 
     public async Task<IReadOnlyList<FlujoPeiTransicionDto>?> HistoryAsync(Guid versionId, CancellationToken ct)
@@ -227,18 +251,7 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
     private static async Task<FlujoPeiStatus?> CheckStructureAsync(Guid versionId, NpgsqlConnection connection,
         NpgsqlTransaction transaction, CancellationToken ct)
     {
-        const string sql = """
-            WITH activos AS (
-                SELECT e.id
-                FROM sisplan.eje e
-                JOIN LATERAL (
-                    SELECT activo FROM sisplan.eje_version WHERE eje_id = e.id ORDER BY revision DESC LIMIT 1
-                ) v ON v.activo
-                WHERE e.pei_version_id = @id
-            ), objetivos_activos AS (
-                SELECT o.id, o.eje_id FROM sisplan.objetivo o JOIN activos e ON e.id = o.eje_id
-                WHERE o.activo
-            )
+        const string sql = ActiveStructure + "\n" + """
             SELECT EXISTS (SELECT FROM activos)
                 AND NOT EXISTS (
                     SELECT FROM activos e

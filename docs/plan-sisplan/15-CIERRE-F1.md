@@ -15,11 +15,11 @@ El cotejo de **Hoja1, A4:E23** compara el eje, el objetivo completo, el resultad
 
 ## Reglas de formulación y publicación
 
-- Un eje activo necesita al menos un objetivo activo. Cada objetivo activo necesita un indicador vinculado. Los indicadores precargados pueden permanecer **Pendientes de configuración** y quedan fuera del registro de nuevas mediciones hasta estar listos. Para aprobar o publicar una nueva versión, completa los indicadores manuales de los objetivos activos, incluidos los creados antes de F1.
+- Un eje activo necesita al menos un objetivo activo. Cada objetivo activo necesita un indicador vinculado. Los indicadores precargados pueden permanecer **Pendientes de configuración** y quedan fuera del registro de nuevas mediciones hasta estar listos. Antes de confirmar la publicación, el Director ve cuántos indicadores de DIGEMAPS del mapa activo siguen pendientes. Para aprobar o publicar una nueva versión, completa los indicadores manuales de los objetivos activos, incluidos los creados antes de F1.
 - El método **Valor directo** admite una línea base vacía. **Variación absoluta** requiere línea base. **Variación porcentual** requiere una línea base distinta de cero. La fórmula, unidad, frecuencia, sentido y meta completan la configuración. F3 consume estos datos para el seguimiento y la evaluación.
 - Los riesgos se registran en el objetivo. La puntuación es probabilidad × impacto, con valores de uno a cinco. Un riesgo alto requiere tratamiento, acción, responsable, fecha y un enlace a la evidencia para cerrarse.
 - Al abrir una revisión de un PEI publicado, el analista registra el motivo y trabaja sobre una nueva versión con la vigencia de la oficial. La publicación anterior sigue disponible para consulta y para el POA durante la revisión. El historial permite consultar también los ejes, objetivos, riesgos, indicadores y mediciones de una versión publicada anterior. Las mediciones y los POA existentes siguen vinculados a la versión original. La sucesora pasa por el mismo flujo antes de convertirse en la versión oficial.
-- La fecha inicial y la final forman parte de la vigencia. Si sus intervalos coinciden siquiera en un día, dos PEI distintos de la misma institución no pueden quedar publicados a la vez.
+- La fecha inicial y la final forman parte de la vigencia. Al buscar un año de cuatro dígitos, el listado encuentra los PEI cuyo intervalo incluye ese año. Si sus intervalos coinciden siquiera en un día, dos PEI distintos de la misma institución no pueden quedar publicados a la vez.
 
 ## Verificación
 

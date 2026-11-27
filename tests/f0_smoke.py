@@ -254,14 +254,16 @@ def main():
     session, _ = api("04", "/sesion", 200)
     assert session["instituciones"][0]["modulos"] == {"pei": peis, "poa": poas}
     api("04", "/peis", 200 if peis else 403)
-    api("04", "/poas", 200 if poas else 403)
+    poa_list, _ = api("04", "/poas", 200 if poas else 403)
     check_organizacion(api)
     draft = {"nombre": "Plan institucional F0", "tipo": "ordinario",
              "fechaInicio": f"{args.year}-01-01", "fechaFin": f"{args.year+3}-12-31",
              "mision": "Atender solicitudes.", "vision": "Mejorar la atención.", "valores": "Servicio."}
     if not peis:
         api("04", "/peis", 403, "POST", draft)
-        api("04", "/poas", 201, "POST", {"anio": args.year + 15})
+        autonomous, _ = api("04", "/poas", 201, "POST", {"anio": args.year + 15})
+        for row in [*poa_list, autonomous]:
+            assert all(row[field] is None for field in ("peiId", "peiVersionId", "peiNombre"))
     if not poas:
         api("04", "/poas", 403, "POST", {"anio": args.year + 15})
         api("04", "/peis", 201, "POST", draft)

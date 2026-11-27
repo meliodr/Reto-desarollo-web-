@@ -51,6 +51,7 @@
     "fechaInicio": "2026-01-01",
     "fechaFin": "2026-12-31",
     "peiId": null,
+    "peiVersionId": null,
     "peiNombre": null,
     "presupuestoReferencia": null,
     "dependenciaId": "00000000-0000-4000-8000-000000000101"

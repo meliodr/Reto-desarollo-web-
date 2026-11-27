@@ -305,7 +305,7 @@ def comprobar_vinculos_poa(api, create, approve, load, transition, concurrent_po
     published_tag = transition(first, "publicar", "03", tag)
     assert api("07", path + "/poas", 200)[0] == []
     original, _ = api("04", "/poas", 201, "POST", {"anio": 2260, "peiId": plan["id"]})
-    assert original["peiNombre"] == plan["nombre"]
+    assert (original["peiVersionId"], original["peiNombre"]) == (plan["versionId"], plan["nombre"])
 
     revisions = path + "/versiones"
     request = {"motivo": "Actualizar el PEI después del primer POA vinculado."}
@@ -320,17 +320,24 @@ def comprobar_vinculos_poa(api, create, approve, load, transition, concurrent_po
     different_name = "PEI con programación posterior"
     revised, headers = api("04", current, 200, "PATCH", dict(draft, nombre=different_name), headers["ETag"])
     during_draft, _ = api("04", "/poas", 201, "POST", {"anio": 2261, "peiId": plan["id"]})
-    assert during_draft["peiNombre"] == plan["nombre"]
+    assert (during_draft["peiVersionId"], during_draft["peiNombre"]) == (plan["versionId"], plan["nombre"])
 
     current, tag = approve(revised, headers["ETag"])
     revised_tag = transition(current, "publicar", "03", tag)
     assert transition(first, "publicar", "03", published_tag) == published_tag
     assert transition(current, "publicar", "03", revised_tag) == revised_tag
-    after_publication, _ = api("04", "/poas", 201, "POST", {"anio": 2262, "peiId": plan["id"]})
-    assert after_publication["peiNombre"] == different_name
-    linked = {r["id"]: r["peiNombre"] for r in api("07", "/poas", 200)[0] if r["peiId"] == plan["id"]}
-    assert linked == {original["id"]: plan["nombre"], during_draft["id"]: plan["nombre"],
-                      after_publication["id"]: different_name}
+    after_publication, _ = api("04", "/poas", 201, "POST", {
+        "anio": 2262, "peiId": plan["id"], "presupuestoReferencia": "0",
+    })
+    assert (after_publication["peiVersionId"], after_publication["peiNombre"]) == (revised["versionId"], different_name)
+    assert after_publication["presupuestoReferencia"] == "0.00"
+    linked = {r["id"]: (r["peiVersionId"], r["peiNombre"], r["presupuestoReferencia"])
+              for r in api("07", "/poas", 200)[0] if r["peiId"] == plan["id"]}
+    assert linked == {
+        original["id"]: (plan["versionId"], plan["nombre"], None),
+        during_draft["id"]: (plan["versionId"], plan["nombre"], None),
+        after_publication["id"]: (revised["versionId"], different_name, "0.00"),
+    }
     assert {r["id"] for r in api("07", path + "/poas", 200)[0]} == set(linked)
     print("F1.4: los POA anteriores conservaron su versión y los nuevos usaron la oficial vigente.")
 

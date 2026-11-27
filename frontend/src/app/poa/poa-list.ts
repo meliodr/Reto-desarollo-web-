@@ -21,6 +21,7 @@ interface Poa {
   fechaInicio: string;
   fechaFin: string;
   peiId: string | null;
+  peiVersionId: string | null;
   peiNombre: string | null;
   presupuestoReferencia: string | null;
   dependenciaId: string | null;

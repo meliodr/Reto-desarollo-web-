@@ -9,14 +9,14 @@ internal static class PoaEndpoints
 {
     private sealed record Solicitud(int Anio, Guid? PeiId, string? PresupuestoReferencia, Guid? DependenciaId);
     private sealed record Poa(Guid Id, int Anio, string Estado, DateOnly FechaInicio, DateOnly FechaFin,
-        Guid? PeiId, string? PeiNombre, string? PresupuestoReferencia, Guid? DependenciaId);
+        Guid? PeiId, string? PeiNombre, string? PresupuestoReferencia, Guid? DependenciaId, Guid? PeiVersionId);
 
     public static void MapPoas(this RouteGroupBuilder api)
     {
         api.MapGet("/poas", async (SesionInstitucional source, CancellationToken ct) =>
         {
             const string sql = """
-                SELECT a.id, a.anio, a.estado, a.fecha_inicio, a.fecha_fin, v.pei_id, v.nombre, a.presupuesto_referencia, a.dependencia_id
+                SELECT a.id, a.anio, a.estado, a.fecha_inicio, a.fecha_fin, v.pei_id, v.nombre, a.presupuesto_referencia, a.dependencia_id, v.id
                 FROM sisplan.poa a LEFT JOIN sisplan.pei_version v ON @mostrarPei AND v.id = a.pei_version_id
                 ORDER BY a.anio DESC, a.id
                 """;
@@ -79,9 +79,9 @@ internal static class PoaEndpoints
                 FROM (SELECT 1) AS seed LEFT JOIN plan ON true
                 WHERE (@peiId IS NULL OR plan.id IS NOT NULL) AND (@dependencia IS NULL OR EXISTS (SELECT FROM area))
                 ON CONFLICT DO NOTHING
-                RETURNING id, anio, estado, fecha_inicio, fecha_fin, pei_id, presupuesto_referencia, dependencia_id
+                RETURNING id, anio, estado, fecha_inicio, fecha_fin, pei_id, presupuesto_referencia, dependencia_id, pei_version_id
             )
-            SELECT i.id, i.anio, i.estado, i.fecha_inicio, i.fecha_fin, i.pei_id, p.nombre, i.presupuesto_referencia, i.dependencia_id,
+            SELECT i.id, i.anio, i.estado, i.fecha_inicio, i.fecha_fin, i.pei_id, p.nombre, i.presupuesto_referencia, i.dependencia_id, i.pei_version_id,
                 @peiId IS NULL OR p.id IS NOT NULL AS vinculo_valido,
                 @dependencia IS NULL OR EXISTS (SELECT FROM area) AS area_valida
             FROM (SELECT 1) AS seed LEFT JOIN inserted i ON true LEFT JOIN plan p ON true
@@ -95,9 +95,9 @@ internal static class PoaEndpoints
         command.Parameters.AddWithValue("presupuesto", NpgsqlTypes.NpgsqlDbType.Numeric, (object?)presupuesto ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(ct);
         await reader.ReadAsync(ct);
-        if (!reader.GetBoolean(10))
+        if (!reader.GetBoolean(11))
             return DependenciaDenegada();
-        if (!reader.GetBoolean(9))
+        if (!reader.GetBoolean(10))
             return Results.Problem(statusCode: 409, title: "Elige un PEI publicado que cubra el año del POA.");
         if (reader.IsDBNull(0))
             return Results.Problem(statusCode: 409, title: "Ya existe un POA para ese año y esa modalidad.");
@@ -113,5 +113,6 @@ internal static class PoaEndpoints
             reader.IsDBNull(5) ? null : reader.GetGuid(5),
             reader.IsDBNull(6) ? null : reader.GetString(6),
             reader.IsDBNull(7) ? null : reader.GetDecimal(7).ToString("0.00", CultureInfo.InvariantCulture),
-            reader.IsDBNull(8) ? null : reader.GetGuid(8));
+            reader.IsDBNull(8) ? null : reader.GetGuid(8),
+            reader.IsDBNull(9) ? null : reader.GetGuid(9));
 }

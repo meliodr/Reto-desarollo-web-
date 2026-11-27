@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -15,6 +16,21 @@ WEB = "http://127.0.0.1:4200"
 KEYCLOAK = "http://127.0.0.1:8080"
 A = "00000000-0000-4000-8000-000000000001"
 B = "00000000-0000-4000-8000-000000000002"
+
+
+@contextmanager
+def etapa_chromium(descripcion: str):
+    try:
+        yield
+    except (Error, AssertionError) as error:
+        # El diagnóstico omite el registro de Playwright: puede contener URLs de OIDC.
+        mensaje = str(error).lower()
+        tipo = (
+            "control ambiguo" if "strict mode violation" in mensaje
+            else "tiempo de espera" if "timeout" in mensaje or "timed out" in mensaje
+            else type(error).__name__
+        )
+        raise SystemExit(f"Chromium falló al {descripcion} ({tipo}).") from None
 
 
 def sesion(response: Response) -> bool:
@@ -34,6 +50,20 @@ def captura(page: Page, directory: Path | None, name: str):
     if directory:
         directory.mkdir(parents=True, exist_ok=True)
         page.locator(".app-shell").screenshot(path=directory / name, animations="disabled")
+
+
+def cambiar_institucion(page: Page, institucion: str, rol: str):
+    selector = page.get_by_role("combobox", name="Institución activa", exact=True)
+    with etapa_chromium("seleccionar la institución y verificar su membresía"):
+        expect(selector).to_be_enabled()
+        with page.expect_response(
+            lambda r: sesion(r) and r.request.headers.get("x-institucion-id") == institucion
+        ) as cambio:
+            selector.select_option(value=institucion)
+        comprobar_rol(cambio.value, institucion, rol)
+    with etapa_chromium("confirmar la institución activa en el selector"):
+        expect(selector).to_have_value(institucion)
+        expect(selector).to_be_enabled()
 
 
 def entrar_como_multi(page: Page, password: str, semilla: str):
@@ -172,49 +202,51 @@ def verificar(page: Page, password: str, semilla: str, directory: Path | None, m
     expect(auditoria).to_have_count(0)
     expect(page.locator(".count-label")).to_be_visible()
     captura(page, directory, "01-horizonte-analista.png")
-    print("Angular: el analista de Horizonte puede formular un PEI.")
+    print("Angular: el analista de Horizonte puede formular un PEI.", flush=True)
 
-    with page.expect_response(sesion) as cambio:
-        selector.select_option(B)
-    comprobar_rol(cambio.value, B, "Auditor")
-    expect(selector).to_have_value(B)
-    expect(page.get_by_role("heading", name="Planes estratégicos institucionales")).to_be_visible()
-    expect(crear).to_have_count(0)
-    with page.expect_response(lambda r: r.url == WEB + "/api/v1/poas") as lista:
-        page.get_by_role("link", name="Planes operativos", exact=True).click()
-    assert lista.value.ok, "El Auditor no pudo consultar los POA de Bahía."
-    expect(page.get_by_text("Consultando POA…", exact=True)).to_have_count(0)
-    expect(page.get_by_role("heading", name="Planes operativos anuales")).to_be_visible()
-    expect(page.get_by_role("button", name="Crear POA")).to_have_count(0)
-    expect(page.get_by_role("cell", name="2243", exact=True)).to_have_count(0)
+    cambiar_institucion(page, B, "Auditor")
+    with etapa_chromium("consultar el listado de PEI como auditor"):
+        expect(page.get_by_role("heading", name="Planes estratégicos institucionales")).to_be_visible()
+        expect(crear).to_have_count(0)
+    with etapa_chromium("verificar el listado de POA del auditor"):
+        with page.expect_response(lambda r: r.url == WEB + "/api/v1/poas") as lista:
+            page.get_by_role("link", name="Planes operativos", exact=True).click()
+        assert lista.value.ok, "El Auditor no pudo consultar los POA de Bahía."
+        expect(page.get_by_text("Consultando POA…", exact=True)).to_have_count(0)
+        expect(page.get_by_role("heading", name="Planes operativos anuales")).to_be_visible()
+        expect(page.get_by_role("button", name="Crear POA")).to_have_count(0)
+        expect(page.get_by_role("cell", name="2243", exact=True)).to_have_count(0)
 
-    with page.expect_response(lambda r: r.url == WEB + "/api/v1/auditoria") as consulta:
-        auditoria.click()
-    response = consulta.value
-    assert response.ok, "El Auditor no pudo consultar su historial."
-    rows = response.json()
-    assert response.request.headers.get("x-institucion-id") == B
-    assert all(row["institucionId"] == B for row in rows)
-    expect(page.get_by_role("heading", name="Historial de auditoría")).to_be_visible()
-    if rows:
-        expect(page.locator("tbody tr")).to_have_count(len(rows))
-    else:
-        expect(page.get_by_text("Aún no se han registrado cambios en esta institución.")).to_be_visible()
-    captura(page, directory, "02-bahia-auditor.png")
-    print("Angular: la misma cuenta en Bahía sólo consulta planes y su auditoría.")
+    with etapa_chromium("abrir el historial y comprobar el alcance de su solicitud"):
+        with page.expect_response(lambda r: r.url == WEB + "/api/v1/auditoria") as consulta:
+            auditoria.click()
+        response = consulta.value
+        assert response.ok, "El Auditor no pudo consultar su historial."
+        assert response.request.headers.get("x-institucion-id") == B
 
-    page.get_by_role("button", name="Cerrar sesión", exact=True).click()
-    expect(entrar).to_be_visible()
-    # El cliente también oculta las pantallas al salir. Recargar comprueba la salida en Keycloak.
-    page.wait_for_url(lambda url: urlsplit(url).netloc == urlsplit(WEB).netloc
-                      and urlsplit(url).path in ("/", "/institucion", "/peis"))
-    page.reload()
-    expect(entrar).to_be_visible()
-    expect(selector).to_have_count(0)
-    entrar.click()
-    page.wait_for_url(KEYCLOAK + "/realms/sisplan/**")
-    expect(page.locator('[name="password"]')).to_be_visible()
-    print("Angular: salir termina la sesión y el proveedor vuelve a pedir credenciales.")
+    with etapa_chromium("verificar la tabla de auditoría de Bahía"):
+        expect(page.get_by_role("heading", name="Historial de auditoría", exact=True)).to_be_visible()
+        tabla = page.get_by_role("region", name="Cambios registrados", exact=True)
+        expect(tabla.locator("tbody tr").first).to_be_visible()
+        # La batería HTTP registra cambios con el analista de Bahía.
+        expect(tabla.get_by_text("30000000-0000-4000-8000-000000000010").first).to_be_visible()
+        expect(tabla.get_by_text("30000000-0000-4000-8000-000000000004")).to_have_count(0)
+        captura(page, directory, "02-bahia-auditor.png")
+        print("Angular: la misma cuenta en Bahía sólo consulta planes y su auditoría.", flush=True)
+
+    with etapa_chromium("cerrar sesión y volver al ingreso"):
+        page.get_by_role("button", name="Cerrar sesión", exact=True).click()
+        expect(entrar).to_be_visible()
+        # El cliente también oculta las pantallas al salir. Recargar comprueba la salida en Keycloak.
+        page.wait_for_url(lambda url: urlsplit(url).netloc == urlsplit(WEB).netloc
+                          and urlsplit(url).path in ("/", "/institucion", "/peis"))
+        page.reload()
+        expect(entrar).to_be_visible()
+        expect(selector).to_have_count(0)
+        entrar.click()
+        page.wait_for_url(KEYCLOAK + "/realms/sisplan/**")
+        expect(page.locator('[name="password"]')).to_be_visible()
+        print("Angular: salir termina la sesión y el proveedor vuelve a pedir credenciales.")
 
 
 def main():

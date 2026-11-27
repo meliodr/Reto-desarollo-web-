@@ -6,7 +6,7 @@
         type="button"
         class="button button-primary"
         (click)="startCreate()"
-        [disabled]="saving()"
+        [disabled]="saving() || loadingConfig()"
       >
         Agregar indicador
       </button>
@@ -16,6 +16,9 @@
   @if (notice()) {
     <p class="notice notice-success" role="status">{{ notice() }}</p>
   }
+  @if (loadingConfig()) {
+    <p class="indicadores-muted" role="status">Consultando la configuración…</p>
+  }
   @if (saveError()) {
     <p class="notice notice-error" role="alert">{{ saveError() }}</p>
   }
@@ -23,8 +26,7 @@
   @if (editing()) {
     <form [formGroup]="form" (ngSubmit)="saveIndicator()">
       <fieldset [disabled]="saving() || uncertain() || readOnly()">
-        <legend>Nuevo indicador</legend>
-        <p class="indicadores-muted">Todos los campos son obligatorios.</p>
+        <legend>{{ editTarget() ? 'Configurar indicador' : 'Nuevo indicador' }}</legend>
         <div class="field">
           <label [for]="formId() + '-nombre'">Nombre del indicador</label>
           <input
@@ -54,6 +56,42 @@
         </div>
         <div class="indicadores-fields">
           <div class="field">
+            <label [for]="formId() + '-metodo'">Método de cálculo</label>
+            <select
+              [id]="formId() + '-metodo'"
+              formControlName="metodoCalculo"
+              aria-required="true"
+              [attr.aria-invalid]="
+                form.controls.metodoCalculo.touched && form.controls.metodoCalculo.invalid
+              "
+            >
+              <option value="">Selecciona un método</option>
+              @for (method of metodoOptions; track method[0]) {
+                <option [value]="method[0]">{{ method[1] }}</option>
+              }
+            </select>
+            @if (form.controls.metodoCalculo.touched && form.controls.metodoCalculo.invalid) {
+              <p class="field-error">Selecciona un método de cálculo.</p>
+            }
+          </div>
+          <div class="field">
+            <label [for]="formId() + '-sentido'">Sentido esperado</label>
+            <select
+              [id]="formId() + '-sentido'"
+              formControlName="sentido"
+              aria-required="true"
+              [attr.aria-invalid]="form.controls.sentido.touched && form.controls.sentido.invalid"
+            >
+              <option value="">Selecciona un sentido</option>
+              @for (direction of sentidoOptions; track direction[0]) {
+                <option [value]="direction[0]">{{ direction[1] }}</option>
+              }
+            </select>
+            @if (form.controls.sentido.touched && form.controls.sentido.invalid) {
+              <p class="field-error">Selecciona el sentido esperado.</p>
+            }
+          </div>
+          <div class="field">
             <label [for]="formId() + '-unidad'">Unidad</label>
             <input
               [id]="formId() + '-unidad'"
@@ -82,18 +120,33 @@
             }
           </div>
           <div class="field">
-            <label [for]="formId() + '-base'">Línea base</label>
+            @let metodo = form.controls.metodoCalculo.value;
+            @let requiereLinea = metodo !== '' && metodo !== 'valor_directo';
+            <label [for]="formId() + '-base'">
+              Línea base{{ metodo === 'valor_directo' ? ' (opcional)' : '' }}
+            </label>
             <input
               [id]="formId() + '-base'"
               formControlName="lineaBase"
               inputmode="decimal"
-              aria-required="true"
+              [attr.aria-required]="requiereLinea ? 'true' : null"
               [attr.aria-invalid]="
-                form.controls.lineaBase.touched && form.controls.lineaBase.invalid
+                form.controls.lineaBase.touched &&
+                (form.controls.lineaBase.invalid ||
+                  form.hasError('lineaBaseRequerida') ||
+                  form.hasError('lineaBaseCero'))
               "
             />
-            @if (form.controls.lineaBase.touched && form.controls.lineaBase.invalid) {
-              <p class="field-error">Indica un número con hasta cuatro decimales.</p>
+            @if (form.controls.lineaBase.touched) {
+              @if (form.hasError('lineaBaseRequerida')) {
+                <p class="field-error">El método elegido requiere una línea base.</p>
+              } @else if (form.hasError('lineaBaseCero')) {
+                <p class="field-error">
+                  Usa una línea base distinta de cero para calcular la variación porcentual.
+                </p>
+              } @else if (form.controls.lineaBase.invalid) {
+                <p class="field-error">Indica un número con hasta cuatro decimales.</p>
+              }
             }
           </div>
           <div class="field">
@@ -118,12 +171,16 @@
           (click)="cancelIndicator()"
           [disabled]="saving()"
         >
-          {{ uncertain() ? 'Cerrar y consultar indicadores' : 'Cancelar indicador' }}
+          {{
+            uncertain() || configurationChanged()
+              ? 'Cerrar y consultar indicadores'
+              : 'Cancelar indicador'
+          }}
         </button>
         <button
           type="submit"
           class="button button-primary"
-          [disabled]="saving() || uncertain() || readOnly()"
+          [disabled]="saving() || uncertain() || configurationChanged() || readOnly()"
         >
           Guardar indicador
         </button>
@@ -145,17 +202,34 @@
       @for (indicador of indicadores(); track indicador.id) {
         <li>
           <div class="indicadores-row">
-            <strong>{{ indicador.nombre }}</strong>
-            <button
-              type="button"
-              class="button button-secondary"
-              (click)="select(indicador)"
-              [disabled]="saving() || editing()"
-              [attr.aria-expanded]="selected()?.id === indicador.id"
-            >
-              {{ selected()?.id === indicador.id ? 'Cerrar mediciones' : 'Ver mediciones'
-              }}<span class="sr-only"> de {{ indicador.nombre }}</span>
-            </button>
+            <div class="indicadores-heading">
+              <strong>{{ indicador.nombre }}</strong>
+              <span class="indicador-estado" [class.indicador-listo]="indicador.listoParaMedir">
+                {{ indicador.listoParaMedir ? 'Listo para medir' : 'Pendiente de configuración' }}
+              </span>
+            </div>
+            <div class="indicadores-row">
+              @if (!readOnly()) {
+                <button
+                  type="button"
+                  class="button button-secondary"
+                  (click)="startConfigure(indicador)"
+                  [disabled]="saving() || editing() || loadingConfig()"
+                >
+                  Configurar<span class="sr-only"> {{ indicador.nombre }}</span>
+                </button>
+              }
+              <button
+                type="button"
+                class="button button-secondary"
+                (click)="select(indicador)"
+                [disabled]="saving() || editing() || loadingConfig()"
+                [attr.aria-expanded]="selected()?.id === indicador.id"
+              >
+                {{ selected()?.id === indicador.id ? 'Cerrar mediciones' : 'Ver mediciones'
+                }}<span class="sr-only"> de {{ indicador.nombre }}</span>
+              </button>
+            </div>
           </div>
           <dl class="indicadores-fields">
             <div>
@@ -168,7 +242,12 @@
             </div>
             <div>
               <dt>Línea base</dt>
-              <dd>{{ indicador.lineaBase?.replace('.', ',') ?? 'Por definir' }}</dd>
+              <dd>
+                {{
+                  indicador.lineaBase?.replace('.', ',') ??
+                    (indicador.metodoCalculo === 'valor_directo' ? 'Opcional' : 'Por definir')
+                }}
+              </dd>
             </div>
             <div>
               <dt>Meta</dt>
@@ -177,6 +256,16 @@
             <div>
               <dt>Frecuencia</dt>
               <dd>{{ indicador.frecuencia ?? 'Por definir' }}</dd>
+            </div>
+            <div>
+              <dt>Método de cálculo</dt>
+              <dd>
+                {{ indicador.metodoCalculo ? metodos[indicador.metodoCalculo] : 'Por definir' }}
+              </dd>
+            </div>
+            <div>
+              <dt>Sentido esperado</dt>
+              <dd>{{ indicador.sentido ? sentidos[indicador.sentido] : 'Por definir' }}</dd>
             </div>
           </dl>
           @if (selected()?.id === indicador.id) {
@@ -219,7 +308,11 @@
                 } @else {
                   <p class="indicadores-muted">Todavía no hay mediciones.</p>
                 }
-                @if (!readOnly()) {
+                @if (!indicador.listoParaMedir) {
+                  <p class="indicadores-muted">
+                    La captura de mediciones se habilita al completar la configuración.
+                  </p>
+                } @else if (!readOnly()) {
                   <form [formGroup]="medicionForm" (ngSubmit)="saveMeasurement(indicador)">
                     <fieldset [disabled]="saving() || uncertain()">
                       <legend>Registrar medición</legend>

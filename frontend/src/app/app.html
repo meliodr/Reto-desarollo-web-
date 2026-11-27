@@ -32,7 +32,12 @@
         <div class="institution-context">
           @if (session.institutions().length > 1) {
             <label for="active-institution">Institución activa</label>
-            <select #institution id="active-institution" (change)="switchInstitution(institution)">
+            <select
+              #institution
+              id="active-institution"
+              [disabled]="switchingInstitution()"
+              (change)="switchInstitution(institution)"
+            >
               @for (item of session.institutions(); track item.id) {
                 <option [value]="item.id" [selected]="active.id === item.id">
                   {{ item.nombre }}

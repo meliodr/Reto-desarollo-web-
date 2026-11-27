@@ -5,12 +5,24 @@ namespace Sisplan.Api;
 
 internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiRepository peis)
 {
-    private const string Fields = "pei_id, id, nombre, tipo, fecha_inicio, fecha_fin, mision, vision, valores, estado, revision";
+    private const string ActiveStructure = """
+        WITH activos AS (
+            SELECT e.id
+            FROM sisplan.eje e
+            JOIN LATERAL (
+                SELECT activo FROM sisplan.eje_version WHERE eje_id = e.id ORDER BY revision DESC LIMIT 1
+            ) v ON v.activo
+            WHERE e.pei_version_id = @id
+        ), objetivos_activos AS (
+            SELECT o.id, o.eje_id FROM sisplan.objetivo o JOIN activos e ON e.id = o.eje_id
+            WHERE o.activo
+        )
+        """;
 
     public async Task<FlujoPeiOpciones?> OptionsAsync(Guid versionId, FlujoPeiActor actor, CancellationToken ct)
     {
         var connection = source.Conexion;
-        var snapshot = await FindCurrentAsync(versionId, connection, null, ct);
+        var snapshot = await FindForWorkflowAsync(versionId, includePublished: true, connection, null, ct);
         if (snapshot is null)
             return null;
 
@@ -26,7 +38,37 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
             command.Parameters.AddWithValue("id", versionId);
             returnReason = await command.ExecuteScalarAsync(ct) as string;
         }
-        return new FlujoPeiOpciones(actions, returnReason);
+        long? pendingDigemaps = null;
+        if (actions.Contains("publicar"))
+        {
+            await using var command = new NpgsqlCommand(ActiveStructure + "\n" + """
+                SELECT count(*) FROM objetivos_activos o JOIN sisplan.indicador i ON i.objetivo_id = o.id
+                WHERE i.origen_digemaps AND NOT i.listo_para_medir
+                """, connection);
+            command.Parameters.AddWithValue("id", versionId);
+            pendingDigemaps = (long)(await command.ExecuteScalarAsync(ct))!;
+        }
+        return new FlujoPeiOpciones(actions, returnReason, pendingDigemaps);
+    }
+
+    public async Task<IReadOnlyList<FlujoPeiTransicionDto>?> HistoryAsync(Guid versionId, CancellationToken ct)
+    {
+        if (await peis.FindVersionAsync(versionId, ct) is null)
+            return null;
+
+        const string sql = """
+            SELECT revision, accion, estado_anterior, estado_nuevo, emisor, sujeto, motivo, registrada_en
+            FROM sisplan.pei_transicion WHERE pei_version_id = @id ORDER BY revision
+            """;
+        await using var command = source.CreateCommand(sql);
+        command.Parameters.AddWithValue("id", versionId);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var history = new List<FlujoPeiTransicionDto>();
+        while (await reader.ReadAsync(ct))
+            history.Add(new FlujoPeiTransicionDto(reader.GetInt64(0), reader.GetString(1), reader.GetString(2),
+                reader.GetString(3), reader.GetString(4), reader.GetString(5),
+                reader.IsDBNull(6) ? null : reader.GetString(6), reader.GetDateTime(7)));
+        return history;
     }
 
     public async Task<FlujoPeiResult> ApplyAsync(Guid versionId, string expectedTag, string action, string? reason,
@@ -35,7 +77,8 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
         var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(ct);
 
-        var snapshot = await FindCurrentAsync(versionId, connection, transaction, ct);
+        var snapshot = await FindForWorkflowAsync(versionId, includePublished: action == "publicar",
+            connection, transaction, ct);
         if (snapshot is null)
             return new(FlujoPeiStatus.NotFound);
         if (!string.Equals(expectedTag, snapshot.ETag, StringComparison.Ordinal))
@@ -63,8 +106,9 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
 
         if (action is "aprobar" or "publicar")
         {
-            if (!await HasCompleteStructureAsync(versionId, connection, transaction, ct))
-                return new(FlujoPeiStatus.IncompleteStructure);
+            var structureIssue = await CheckStructureAsync(versionId, connection, transaction, ct);
+            if (structureIssue is { } issue)
+                return new(issue);
         }
 
         if (action == "publicar")
@@ -130,39 +174,26 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
         return poas;
     }
 
-    private static async Task<PeiSnapshot?> FindCurrentAsync(Guid versionId, NpgsqlConnection connection,
-        NpgsqlTransaction? transaction, CancellationToken ct)
+    private static async Task<PeiSnapshot?> FindForWorkflowAsync(Guid versionId, bool includePublished,
+        NpgsqlConnection connection, NpgsqlTransaction? transaction, CancellationToken ct)
     {
-        // Los cambios de ejes, objetivos e indicadores toman primero el bloqueo del PEI.
-        if (transaction is not null)
-        {
-            const string parentSql = """
-                SELECT p.id FROM sisplan.pei p
-                JOIN sisplan.pei_version v ON v.pei_id = p.id
-                WHERE v.id = @versionId FOR UPDATE OF p
-                """;
-            await using var parent = new NpgsqlCommand(parentSql, connection, transaction);
-            parent.Parameters.AddWithValue("versionId", versionId);
-            if (await parent.ExecuteScalarAsync(ct) is null)
-                return null;
-        }
+        if (transaction is not null && !await PeiRepository.LockParentAsync(versionId, connection, transaction, ct))
+            return null;
 
         var sql = $"""
-            SELECT {Fields} FROM sisplan.pei_version v WHERE id = @versionId
-            AND NOT EXISTS (SELECT 1 FROM sisplan.pei_version posterior
-                WHERE posterior.pei_id = v.pei_id AND posterior.numero > v.numero)
+            SELECT {PeiRepository.Fields} FROM sisplan.pei_version v WHERE id = @versionId
+            AND ((@includePublished AND v.estado = 'publicado') OR
+                NOT EXISTS (SELECT 1 FROM sisplan.pei_version posterior
+                    WHERE posterior.pei_id = v.pei_id AND posterior.numero > v.numero))
             """;
         if (transaction is not null)
             sql += " FOR UPDATE";
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("versionId", versionId);
+        command.Parameters.AddWithValue("includePublished", includePublished);
         await using var reader = await command.ExecuteReaderAsync(ct);
-        return await reader.ReadAsync(ct)
-            ? new PeiSnapshot(new PeiDto(reader.GetGuid(0), reader.GetGuid(1), reader.GetString(2), reader.GetString(3),
-                reader.GetFieldValue<DateOnly>(4), reader.GetFieldValue<DateOnly>(5), reader.GetString(6),
-                reader.GetString(7), reader.GetString(8), reader.GetString(9)), reader.GetInt64(10))
-            : null;
+        return await reader.ReadAsync(ct) ? PeiRepository.Read(reader) : null;
     }
 
     private static bool IsActionForState(string state, string action) => state switch
@@ -217,31 +248,31 @@ internal sealed class FlujoPeiRepository(SesionInstitucional source, PeiReposito
         };
     }
 
-    private static async Task<bool> HasCompleteStructureAsync(Guid versionId, NpgsqlConnection connection,
+    private static async Task<FlujoPeiStatus?> CheckStructureAsync(Guid versionId, NpgsqlConnection connection,
         NpgsqlTransaction transaction, CancellationToken ct)
     {
-        const string sql = """
-            WITH activos AS (
-                SELECT e.id
-                FROM sisplan.eje e
-                JOIN LATERAL (
-                    SELECT activo FROM sisplan.eje_version WHERE eje_id = e.id ORDER BY revision DESC LIMIT 1
-                ) v ON v.activo
-                WHERE e.pei_version_id = @id
-            )
-            SELECT EXISTS (SELECT 1 FROM activos)
+        const string sql = ActiveStructure + "\n" + """
+            SELECT EXISTS (SELECT FROM activos)
                 AND NOT EXISTS (
-                    SELECT 1 FROM activos e
-                    WHERE NOT EXISTS (SELECT 1 FROM sisplan.objetivo o WHERE o.eje_id = e.id)
-                    OR EXISTS (
-                        SELECT 1 FROM sisplan.objetivo o WHERE o.eje_id = e.id
-                        AND NOT EXISTS (SELECT 1 FROM sisplan.indicador i WHERE i.objetivo_id = o.id)
-                    )
+                    SELECT FROM activos e
+                    WHERE NOT EXISTS (SELECT FROM objetivos_activos o WHERE o.eje_id = e.id)
+                )
+                AND NOT EXISTS (
+                    SELECT FROM objetivos_activos o
+                    WHERE NOT EXISTS (SELECT FROM sisplan.indicador i WHERE i.objetivo_id = o.id)
+                ),
+                EXISTS (
+                    SELECT FROM objetivos_activos o JOIN sisplan.indicador i ON i.objetivo_id = o.id
+                    WHERE NOT i.listo_para_medir AND NOT i.origen_digemaps
                 )
             """;
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("id", versionId);
-        return await command.ExecuteScalarAsync(ct) is true;
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        await reader.ReadAsync(ct);
+        if (!reader.GetBoolean(0))
+            return FlujoPeiStatus.IncompleteStructure;
+        return reader.GetBoolean(1) ? FlujoPeiStatus.PendingManualIndicators : null;
     }
 
     private static async Task<bool> OverlapsAsync(PeiDto pei, NpgsqlConnection connection,

@@ -1,19 +1,42 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   Indicador,
   IndicadorWrite,
   Medicion,
   PeiIndicadoresApi,
   RutaObjetivo,
+  metodosIndicador,
+  sentidosIndicador,
 } from './pei-indicadores-api';
 import { trimmedMinLength, trimmedRequired } from './pei-validation';
 
 const decimalPattern = /^-?\d{1,12}(?:[.,]\d{1,4})?$/;
 const decimalValidators = [Validators.required, Validators.pattern(decimalPattern)];
 const maxText = (limit: number) => [trimmedRequired, Validators.maxLength(limit)];
+
+function lineaBaseSegunMetodo(form: AbstractControl) {
+  const metodo = form.get('metodoCalculo')?.value;
+  const linea = form.get('lineaBase')?.value as string;
+  if (!linea && (metodo === 'variacion_absoluta' || metodo === 'variacion_porcentual')) {
+    return { lineaBaseRequerida: true };
+  }
+  if (metodo === 'variacion_porcentual' && /^-?0+(?:[.,]0+)?$/.test(linea)) {
+    return { lineaBaseCero: true };
+  }
+  return null;
+}
 
 @Component({
   selector: 'app-pei-indicadores',
@@ -27,10 +50,14 @@ export class PeiIndicadores implements OnInit {
   private readonly builder = inject(FormBuilder).nonNullable;
   readonly ruta = input.required<RutaObjetivo>();
   readonly readOnly = input(false);
+  readonly structureChange = output<void>();
   readonly indicadores = signal<Indicador[]>([]);
   readonly loading = signal(false);
   readonly loadError = signal(false);
   readonly editing = signal(false);
+  readonly editTarget = signal<{ indicador: Indicador; tag: string } | null>(null);
+  readonly loadingConfig = signal(false);
+  readonly configurationChanged = signal(false);
   readonly selected = signal<Indicador | null>(null);
   readonly mediciones = signal<Medicion[]>([]);
   readonly loadingMediciones = signal(false);
@@ -39,14 +66,26 @@ export class PeiIndicadores implements OnInit {
   readonly saveError = signal('');
   readonly uncertain = signal(false);
   readonly notice = signal('');
-  readonly form = this.builder.group({
-    nombre: ['', [...maxText(200), trimmedMinLength(3)]],
-    formula: ['', maxText(4000)],
-    unidad: ['', maxText(100)],
-    lineaBase: ['', decimalValidators],
-    meta: ['', decimalValidators],
-    frecuencia: ['', maxText(100)],
-  });
+  readonly sentidos = sentidosIndicador;
+  readonly metodos = metodosIndicador;
+  readonly sentidoOptions = Object.entries(sentidosIndicador);
+  readonly metodoOptions = Object.entries(metodosIndicador);
+  readonly form = this.builder.group(
+    {
+      nombre: ['', [...maxText(200), trimmedMinLength(3)]],
+      formula: ['', maxText(4000)],
+      unidad: ['', maxText(100)],
+      lineaBase: ['', Validators.pattern(decimalPattern)],
+      meta: ['', decimalValidators],
+      frecuencia: ['', maxText(100)],
+      sentido: this.builder.control<IndicadorWrite['sentido'] | ''>('', Validators.required),
+      metodoCalculo: this.builder.control<IndicadorWrite['metodoCalculo'] | ''>(
+        '',
+        Validators.required,
+      ),
+    },
+    { validators: lineaBaseSegunMetodo },
+  );
   readonly medicionForm = this.builder.group({
     periodo: ['', Validators.required],
     valor: ['', decimalValidators],
@@ -80,22 +119,64 @@ export class PeiIndicadores implements OnInit {
   }
 
   startCreate() {
-    if (this.readOnly() || !this.closeMeasurements()) return;
+    if (this.readOnly() || this.loadingConfig() || !this.closeMeasurements()) return;
     this.notice.set('');
     this.editing.set(true);
   }
 
+  startConfigure(indicador: Indicador) {
+    if (this.readOnly() || this.loadingConfig() || !this.closeMeasurements()) return;
+    this.notice.set('');
+    this.loadingConfig.set(true);
+    this.api
+      .detail(this.ruta(), indicador.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.loadingConfig.set(false);
+          const actual = response.body;
+          const tag = response.headers.get('ETag');
+          if (!actual || !tag) {
+            this.saveError.set(
+              'No pudimos obtener la revisión del indicador. Vuelve a intentarlo.',
+            );
+            return;
+          }
+          this.editTarget.set({ indicador: actual, tag });
+          this.form.reset({
+            nombre: actual.nombre,
+            formula: actual.formula ?? '',
+            unidad: actual.unidad ?? '',
+            lineaBase: actual.lineaBase?.replace('.', ',') ?? '',
+            meta: actual.meta?.replace('.', ',') ?? '',
+            frecuencia: actual.frecuencia ?? '',
+            sentido: actual.sentido ?? '',
+            metodoCalculo: actual.metodoCalculo ?? '',
+          });
+          this.editing.set(true);
+        },
+        error: () => {
+          this.loadingConfig.set(false);
+          this.saveError.set(
+            'No pudimos consultar la configuración del indicador. Vuelve a intentarlo.',
+          );
+        },
+      });
+  }
+
   cancelIndicator() {
-    const reload = this.uncertain();
+    const reload = this.uncertain() || this.configurationChanged();
     this.form.reset();
+    this.editTarget.set(null);
     this.editing.set(false);
+    this.configurationChanged.set(false);
     this.clearError();
     if (reload) this.load();
   }
 
   select(indicador: Indicador) {
     const wasOpen = this.selected()?.id === indicador.id;
-    if (!this.closeMeasurements() || wasOpen) return;
+    if (this.loadingConfig() || !this.closeMeasurements() || wasOpen) return;
     this.notice.set('');
     this.selected.set(indicador);
     this.loadMediciones(indicador);
@@ -123,35 +204,56 @@ export class PeiIndicadores implements OnInit {
 
   saveIndicator() {
     this.form.markAllAsTouched();
-    if (this.readOnly() || this.form.invalid || this.saving() || this.uncertain()) return;
+    if (
+      this.readOnly() ||
+      this.form.invalid ||
+      this.saving() ||
+      this.uncertain() ||
+      this.configurationChanged()
+    )
+      return;
     const raw = this.form.getRawValue();
+    if (!raw.sentido || !raw.metodoCalculo) return;
     const value: IndicadorWrite = {
       nombre: raw.nombre.trim(),
       formula: raw.formula.trim(),
       unidad: raw.unidad.trim(),
-      lineaBase: raw.lineaBase.replace(',', '.'),
+      lineaBase: raw.lineaBase.replace(',', '.') || null,
       meta: raw.meta.replace(',', '.'),
       frecuencia: raw.frecuencia.trim(),
+      sentido: raw.sentido,
+      metodoCalculo: raw.metodoCalculo,
     };
+    const target = this.editTarget();
     this.saving.set(true);
     this.clearError();
-    this.api
-      .create(this.ruta(), value)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (saved) => {
-          this.saving.set(false);
-          this.indicadores.update((items) => [...items, saved]);
-          this.cancelIndicator();
-          this.notice.set(`Indicador «${saved.nombre}» guardado.`);
-        },
-        error: (error: HttpErrorResponse) => this.handleSaveError(error),
-      });
+    const request = target
+      ? this.api.update(this.ruta(), target.indicador.id, target.tag, value)
+      : this.api.create(this.ruta(), value);
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (saved) => {
+        this.saving.set(false);
+        this.indicadores.update((items) =>
+          target ? items.map((item) => (item.id === saved.id ? saved : item)) : [...items, saved],
+        );
+        this.cancelIndicator();
+        this.notice.set(`Indicador «${saved.nombre}» guardado.`);
+        this.structureChange.emit();
+      },
+      error: (error: HttpErrorResponse) => this.handleSaveError(error),
+    });
   }
 
   saveMeasurement(indicador: Indicador) {
     this.medicionForm.markAllAsTouched();
-    if (this.readOnly() || this.medicionForm.invalid || this.saving() || this.uncertain()) return;
+    if (
+      !indicador.listoParaMedir ||
+      this.readOnly() ||
+      this.medicionForm.invalid ||
+      this.saving() ||
+      this.uncertain()
+    )
+      return;
     const raw = this.medicionForm.getRawValue();
     this.saving.set(true);
     this.clearError();
@@ -197,6 +299,13 @@ export class PeiIndicadores implements OnInit {
 
   private handleSaveError(error: HttpErrorResponse) {
     this.saving.set(false);
+    if (error.status === 412 || error.status === 428) {
+      this.configurationChanged.set(true);
+      this.saveError.set(
+        'La revisión del indicador cambió. Cierra este formulario y consulta la versión vigente antes de volver a guardar.',
+      );
+      return;
+    }
     if (error.status === 0 || error.status >= 500) {
       this.uncertain.set(true);
       this.saveError.set(

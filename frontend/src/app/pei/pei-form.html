@@ -9,7 +9,9 @@
         isNew()
           ? 'Crear borrador de PEI'
           : isReadOnly()
-            ? 'Consultar PEI'
+            ? current()?.estado === 'publicado'
+              ? 'PEI oficial'
+              : 'Consultar PEI'
             : current()?.estado === 'observado'
               ? 'Corregir PEI observado'
               : 'Editar borrador de PEI'
@@ -191,11 +193,26 @@
                   (change)="clearFieldError('fechaFin')"
                 />
                 <p class="field-error" id="fechaFin-error">{{ fieldError('fechaFin') }}</p>
+                @if (form.controls.fechaFin.enabled && form.controls.fechaInicio.value) {
+                  <button
+                    type="button"
+                    class="text-button"
+                    [disabled]="workflowPending() || saving()"
+                    (click)="completePeriod()"
+                  >
+                    Completar fecha con {{ years() }} años calendario
+                  </button>
+                }
               </div>
             </div>
             <p class="field-hint period-hint" id="period-help">
-              <span aria-hidden="true">i</span>Este incremento cuenta {{ years() }} años calendario,
-              incluyendo el inicial y el final. Ejemplo ordinario: 2026–2029.
+              <span aria-hidden="true">i</span>
+              @if (current()?.versionOrigenId) {
+                Esta revisión conserva el tipo y las fechas de la versión de origen.
+              } @else {
+                El período abarca {{ years() }} años calendario, incluyendo el año inicial y el
+                final.
+              }
             </p>
           </div>
         </section>
@@ -304,29 +321,43 @@
             </div>
           </dl>
         </div>
-        <div class="help-card">
-          <p>
-            <strong>Sobre el período</strong><br />La interpretación de años inclusivos es una regla
-            de trabajo de este incremento, pendiente de validación institucional.
-          </p>
-        </div>
       </aside>
     </div>
   </form>
   @if (current(); as pei) {
-    @if (session.canRead() || session.canPlan()) {
-      <app-pei-workflow
-        [pei]="pei"
-        [etag]="etag()"
-        [dirty]="workflowBlocked()"
-        (changed)="applyTransition($event)"
-        (pendingChange)="setWorkflowPending($event)"
-        (refresh)="refreshWorkflow()"
-      />
-      @if (pei.estado === 'publicado' && session.poa()) {
-        <app-pei-poas [peiId]="pei.id" />
+    @for (version of [pei]; track version.versionId) {
+      @if (session.canRead() || session.canPlan()) {
+        <app-pei-workflow
+          [pei]="version"
+          [etag]="etag()"
+          [dirty]="workflowBlocked()"
+          (changed)="applyTransition($event)"
+          (pendingChange)="setWorkflowPending($event)"
+          (refresh)="refreshWorkflow()"
+        />
+        <app-pei-versiones
+          [pei]="version"
+          [refreshKey]="etag()"
+          (creating)="setWorkflowPending($event)"
+          (refreshPlan)="refreshWorkflow()"
+          (revisionCreated)="load()"
+        />
+        @if (version.estado === 'publicado' && session.poa()) {
+          <app-pei-poas [peiId]="version.id" />
+        }
       }
+      <app-pei-mapa
+        [peiId]="version.id"
+        [readOnly]="isReadOnly() || workflowPending()"
+        [refreshKey]="version.versionId + ':' + etag() + ':' + structureRevision()"
+        (structureChange)="refreshObjectives()"
+      />
+      <app-pei-ejes
+        [peiId]="version.id"
+        [readOnly]="isReadOnly() || workflowPending()"
+        [objectiveRevision]="objectiveRevision()"
+        (structureChange)="refreshStructure()"
+      />
     }
-    <app-pei-ejes [peiId]="pei.id" [readOnly]="isReadOnly() || workflowPending()" />
   }
 }

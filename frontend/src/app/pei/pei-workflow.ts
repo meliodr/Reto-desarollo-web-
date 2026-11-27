@@ -22,7 +22,7 @@ const successMessages: Record<PeiAction, string> = {
   validar_comite: 'Validación del comité registrada.',
   corregir: 'Corrección registrada.',
   devolver: 'PEI observado.',
-  publicar: 'PEI publicado. Puedes vincularle un POA desde Planes operativos.',
+  publicar: 'PEI publicado. La versión oficial está disponible para consulta.',
 };
 
 @Component({
@@ -32,7 +32,7 @@ const successMessages: Record<PeiAction, string> = {
 })
 export class PeiWorkflow {
   private readonly api = inject(PeiWorkflowApi);
-  private readonly session = inject(Session);
+  readonly session = inject(Session);
   private readonly destroyRef = inject(DestroyRef);
   readonly pei = input.required<Pei>();
   readonly etag = input.required<string | null>();
@@ -50,12 +50,14 @@ export class PeiWorkflow {
   readonly confirmAction = signal<PeiAction | null>(null);
   readonly reason = signal('');
   readonly returnReason = signal<string | null>(null);
+  readonly pendingDigemaps = signal<number | null>(null);
   readonly actionLabels = actionLabels;
 
   constructor() {
     effect((cleanup) => {
       const plan = this.pei();
       this.returnReason.set(null);
+      this.pendingDigemaps.set(null);
       if (!(this.session.canRead() || this.session.canPlan()) || plan.estado === 'publicado') {
         this.actions.set([]);
         this.loading.set(false);
@@ -68,6 +70,7 @@ export class PeiWorkflow {
         next: (response) => {
           this.actions.set(response.acciones);
           this.returnReason.set(response.motivoDevolucion ?? null);
+          this.pendingDigemaps.set(response.indicadoresDigemapsPendientes ?? null);
           this.loading.set(false);
         },
         error: () => {

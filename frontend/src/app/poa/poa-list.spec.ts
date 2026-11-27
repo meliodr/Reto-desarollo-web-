@@ -23,7 +23,7 @@ it('creates an independent POA and shows a linked plan only for a covered year',
   const component = fixture.componentInstance;
   http.expectOne('/api/v1/organizacion').flush({ dependencias: areas });
   http.expectOne('/api/v1/poas').flush([]);
-  http.expectOne('/api/v1/peis').flush([
+  http.expectOne('/api/v1/peis?oficiales=true').flush([
     {
       id: 'publicado',
       nombre: 'Plan estratégico',
@@ -84,7 +84,7 @@ it('validates the optional budget and saves cents exactly with a decimal comma',
   const http = TestBed.inject(HttpTestingController);
   http.expectOne('/api/v1/organizacion').flush({ dependencias: areas });
   http.expectOne('/api/v1/poas').flush([]);
-  http.expectOne('/api/v1/peis').flush([]);
+  http.expectOne('/api/v1/peis?oficiales=true').flush([]);
   fixture.componentInstance.showForm.set(true);
   fixture.componentInstance.year.set(2027);
   fixture.detectChanges();
@@ -130,7 +130,7 @@ it('abre un POA autónomo sin consultar ni ofrecer el módulo PEI deshabilitado'
   const http = TestBed.inject(HttpTestingController);
   http.expectOne('/api/v1/organizacion').flush({ dependencias: areas });
   http.expectOne('/api/v1/poas').flush([]);
-  http.expectNone('/api/v1/peis');
+  http.expectNone('/api/v1/peis?oficiales=true');
   fixture.componentInstance.showForm.set(true);
   fixture.detectChanges();
   expect(fixture.nativeElement.querySelector('#poa-pei')).toBeNull();
@@ -209,7 +209,7 @@ it('explica el año inválido, conserva el borrador y permite corregirlo antes d
   const http = TestBed.inject(HttpTestingController);
   http.expectOne('/api/v1/poas').flush([]);
   http.expectOne('/api/v1/organizacion').flush({ dependencias: areas });
-  http.expectOne('/api/v1/peis').flush([
+  http.expectOne('/api/v1/peis?oficiales=true').flush([
     {
       id: 'pei-vigente',
       nombre: 'Plan estratégico',

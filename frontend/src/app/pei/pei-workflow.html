@@ -22,7 +22,7 @@
     } @else if (loading()) {
       <p role="status">Consultando acciones…</p>
     } @else if (pei().estado === 'publicado') {
-      <p>El PEI está publicado. Puedes vincularle un POA desde Planes operativos.</p>
+      <p>La versión oficial del PEI está disponible en la sección de versiones e historial.</p>
     } @else if (!actions().length) {
       <p>En esta sesión no hay acciones disponibles para el estado del PEI.</p>
     } @else if (confirmAction(); as action) {
@@ -40,7 +40,26 @@
           ></textarea>
         </div>
       } @else {
-        <p>El PEI quedará disponible para vincularlo desde Planes operativos.</p>
+        <p>Confirma la publicación para dejar esta versión como oficial en la institución.</p>
+        @let pendientes = pendingDigemaps();
+        @if (pendientes === 0) {
+          <p>El mapa activo tiene 0 indicadores DIGEMAPS pendientes de configuración.</p>
+        } @else if (pendientes === 1) {
+          <p class="notice">
+            Queda <strong>1 indicador DIGEMAPS pendiente de configuración</strong> en el mapa
+            activo. Puedes publicar el PEI. El indicador seguirá sin admitir mediciones.
+          </p>
+        } @else if (pendientes !== null) {
+          <p class="notice">
+            Quedan
+            <strong>{{ pendientes }} indicadores DIGEMAPS pendientes de configuración</strong>
+            en el mapa activo. Puedes publicar el PEI. Esos indicadores seguirán sin admitir
+            mediciones.
+          </p>
+        }
+        @if (session.poa()) {
+          <p>El equipo podrá vincularle un POA desde Planes operativos.</p>
+        }
       }
       <div class="workflow-actions">
         <button

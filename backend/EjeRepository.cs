@@ -12,7 +12,6 @@ internal sealed class EjeRepository(SesionInstitucional source, PeiRepository pe
             SELECT nombre, descripcion, activo, revision, actualizado_en
             FROM sisplan.eje_version WHERE eje_id = e.id ORDER BY revision DESC LIMIT 1
         ) v ON true
-        WHERE e.pei_version_id = @peiVersionId
         """;
 
     public async Task<IReadOnlyList<EjeDto>?> ListAsync(Guid peiId, CancellationToken cancellationToken)
@@ -21,38 +20,34 @@ internal sealed class EjeRepository(SesionInstitucional source, PeiRepository pe
         if (pei is null)
             return null;
 
-        await using var command = source.CreateCommand(LatestEjes + "\nORDER BY e.creado_en, e.id");
+        await using var command = source.CreateCommand(LatestEjes + "\nWHERE e.pei_version_id = @peiVersionId ORDER BY e.creado_en, e.id");
         command.Parameters.AddWithValue("peiVersionId", pei.Pei.VersionId);
         return await ReadListAsync(command, cancellationToken);
     }
 
     public async Task<EjeDto?> FindAsync(Guid peiId, Guid ejeId, CancellationToken cancellationToken)
     {
-        var pei = await peis.FindAsync(peiId, cancellationToken);
-        if (pei is null)
-            return null;
-
-        await using var command = source.CreateCommand(LatestEjes + "\nAND e.id = @ejeId");
-        command.Parameters.AddWithValue("peiVersionId", pei.Pei.VersionId);
+        await using var command = source.CreateCommand(LatestEjes + "\n" + """
+            JOIN sisplan.pei_version p ON p.id = e.pei_version_id
+            WHERE p.pei_id = @peiId AND e.id = @ejeId
+            """);
+        command.Parameters.AddWithValue("peiId", peiId);
         command.Parameters.AddWithValue("ejeId", ejeId);
         return (await ReadListAsync(command, cancellationToken)).SingleOrDefault();
     }
 
     public async Task<IReadOnlyList<EjeDto>?> HistoryAsync(Guid peiId, Guid ejeId, CancellationToken cancellationToken)
     {
-        var pei = await peis.FindAsync(peiId, cancellationToken);
-        if (pei is null)
-            return null;
-
         const string sql = """
             SELECT e.id, v.nombre, v.descripcion, v.activo, v.revision, v.actualizado_en
             FROM sisplan.eje e
             JOIN sisplan.eje_version v ON v.eje_id = e.id
-            WHERE e.pei_version_id = @peiVersionId AND e.id = @ejeId
+            JOIN sisplan.pei_version p ON p.id = e.pei_version_id
+            WHERE p.pei_id = @peiId AND e.id = @ejeId
             ORDER BY v.revision DESC
             """;
         await using var command = source.CreateCommand(sql);
-        command.Parameters.AddWithValue("peiVersionId", pei.Pei.VersionId);
+        command.Parameters.AddWithValue("peiId", peiId);
         command.Parameters.AddWithValue("ejeId", ejeId);
         var versions = await ReadListAsync(command, cancellationToken);
         return versions.Count > 0 ? versions : null;
@@ -113,7 +108,8 @@ internal sealed class EjeRepository(SesionInstitucional source, PeiRepository pe
     internal static async Task<EjeDto?> FindCurrentAsync(Guid peiVersionId, Guid ejeId,
         NpgsqlConnection connection, NpgsqlTransaction transaction, CancellationToken cancellationToken)
     {
-        await using var lookup = new NpgsqlCommand(LatestEjes + "\nAND e.id = @ejeId", connection, transaction);
+        await using var lookup = new NpgsqlCommand(
+            LatestEjes + "\nWHERE e.pei_version_id = @peiVersionId AND e.id = @ejeId", connection, transaction);
         lookup.Parameters.AddWithValue("peiVersionId", peiVersionId);
         lookup.Parameters.AddWithValue("ejeId", ejeId);
         return (await ReadListAsync(lookup, cancellationToken)).SingleOrDefault();

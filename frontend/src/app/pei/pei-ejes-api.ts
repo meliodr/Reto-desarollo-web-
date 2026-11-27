@@ -19,10 +19,12 @@ export class PeiEjesApi {
   private readonly http = inject(HttpClient);
 
   importDigemaps(peiId: string) {
-    return this.http.post<{ ejes: number; objetivos: number; indicadores: number }>(
-      `/api/v1/peis/${encodeURIComponent(peiId)}/catalogo-digemaps`,
-      {},
-    );
+    return this.http.post<{
+      ejes: number;
+      objetivos: number;
+      indicadores: number;
+      yaCargado?: boolean;
+    }>(`/api/v1/peis/${encodeURIComponent(peiId)}/catalogo-digemaps`, {});
   }
 
   list(peiId: string) {

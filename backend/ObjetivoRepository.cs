@@ -2,9 +2,9 @@ using Npgsql;
 
 namespace Sisplan.Api;
 
-internal sealed class ObjetivoRepository(NpgsqlDataSource source, EjeRepository ejes)
+internal sealed class ObjetivoRepository(SesionInstitucional source, EjeRepository ejes)
 {
-    private const string Fields = "id, codigo, nombre, descripcion, resultado_esperado, linea_accion";
+    internal const string Fields = "id, codigo, nombre, descripcion, resultado_esperado, linea_accion, activo, revision";
 
     public async Task<IReadOnlyList<ObjetivoDto>?> ListAsync(Guid peiId, Guid ejeId, CancellationToken cancellationToken)
     {
@@ -33,7 +33,7 @@ internal sealed class ObjetivoRepository(NpgsqlDataSource source, EjeRepository 
 
     public async Task<ObjetivoCreateResult> CreateAsync(Guid peiId, Guid ejeId, ObjetivoDto fields, CancellationToken cancellationToken)
     {
-        await using var connection = await source.OpenConnectionAsync(cancellationToken);
+        var connection = source.Conexion;
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var parent = await EjeRepository.LockCurrentPeiVersionAsync(peiId, connection, transaction, cancellationToken);
         if (parent is null)
@@ -71,12 +71,85 @@ internal sealed class ObjetivoRepository(NpgsqlDataSource source, EjeRepository 
         return new(ObjetivoCreateStatus.Saved, saved);
     }
 
+    public Task<ObjetivoUpdateResult> SetActiveAsync(Guid peiId, Guid ejeId, Guid objetivoId, string expectedTag,
+        bool active, CancellationToken ct) => ChangeAsync(peiId, ejeId, objetivoId, expectedTag, null, active, ct);
+
+    public Task<ObjetivoUpdateResult> UpdateAsync(Guid peiId, Guid ejeId, ObjetivoDto fields, string expectedTag,
+        CancellationToken ct) => ChangeAsync(peiId, ejeId, fields.Id, expectedTag, fields, null, ct);
+
+    private async Task<ObjetivoUpdateResult> ChangeAsync(Guid peiId, Guid ejeId, Guid objetivoId, string expectedTag,
+        ObjetivoDto? fields, bool? active, CancellationToken ct)
+    {
+        var connection = source.Conexion;
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+        var parent = await EjeRepository.LockCurrentPeiVersionAsync(peiId, connection, transaction, ct);
+        if (parent is null)
+            return new(ObjetivoUpdateStatus.NotFound);
+        var axis = await EjeRepository.FindCurrentAsync(parent.Value.Id, ejeId, connection, transaction, ct);
+        if (axis is null)
+            return new(ObjetivoUpdateStatus.NotFound);
+
+        await using var find = new NpgsqlCommand($"SELECT {Fields} FROM sisplan.objetivo WHERE eje_id=@eje AND id=@id",
+            connection, transaction);
+        find.Parameters.AddWithValue("eje", ejeId);
+        find.Parameters.AddWithValue("id", objetivoId);
+        var current = await ReadOneAsync(find, ct);
+        if (current is null)
+            return new(ObjetivoUpdateStatus.NotFound);
+        if (expectedTag != current.ETag())
+            return new(ObjetivoUpdateStatus.Stale);
+        if (!PeiEstados.Editable(parent.Value.State))
+            return new(ObjetivoUpdateStatus.ReadOnlyPei);
+        if (!axis.Activo && (fields is not null || active is true))
+            return new(ObjetivoUpdateStatus.InactiveAxis);
+        if (fields is not null && !current.Activo)
+            return new(ObjetivoUpdateStatus.InactiveObjective);
+
+        var updated = (fields ?? current) with { Activo = active ?? current.Activo, Revision = current.Revision };
+        if (updated == current)
+            return new(ObjetivoUpdateStatus.Saved, current);
+
+        if (updated.Codigo != current.Codigo)
+        {
+            // El bloqueo del PEI abarca también las altas y los demás cambios de código de sus objetivos.
+            await using var duplicate = new NpgsqlCommand("""
+                SELECT EXISTS (SELECT 1 FROM sisplan.objetivo WHERE eje_id=@eje AND codigo=@codigo AND id<>@id)
+                """, connection, transaction);
+            duplicate.Parameters.AddWithValue("eje", ejeId);
+            duplicate.Parameters.AddWithValue("codigo", updated.Codigo);
+            duplicate.Parameters.AddWithValue("id", objetivoId);
+            if (await duplicate.ExecuteScalarAsync(ct) is true)
+                return new(ObjetivoUpdateStatus.DuplicateCode);
+        }
+
+        await using var update = new NpgsqlCommand($"""
+            UPDATE sisplan.objetivo SET codigo=@codigo, nombre=@nombre, descripcion=@descripcion,
+                resultado_esperado=@resultado, linea_accion=@linea, activo=@activo, revision=revision+1
+            WHERE eje_id=@eje AND id=@id RETURNING {Fields}
+            """, connection, transaction);
+        update.Parameters.AddWithValue("codigo", updated.Codigo);
+        update.Parameters.AddWithValue("nombre", updated.Nombre);
+        update.Parameters.AddWithValue("descripcion", updated.Descripcion);
+        update.Parameters.AddWithValue("resultado", updated.ResultadoEsperado);
+        update.Parameters.AddWithValue("linea", updated.LineaAccion);
+        update.Parameters.AddWithValue("activo", updated.Activo);
+        update.Parameters.AddWithValue("eje", ejeId);
+        update.Parameters.AddWithValue("id", objetivoId);
+        var saved = await ReadOneAsync(update, ct);
+        if (saved is null)
+            return new(ObjetivoUpdateStatus.NotFound);
+        await transaction.CommitAsync(ct);
+        return new(ObjetivoUpdateStatus.Saved, saved);
+    }
+
     private static async Task<ObjetivoDto?> ReadOneAsync(NpgsqlCommand command, CancellationToken cancellationToken)
     {
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? Read(reader) : null;
     }
 
-    private static ObjetivoDto Read(NpgsqlDataReader reader) => new(
-        reader.GetGuid(0), reader.GetString(1), reader.GetString(2), reader.GetString(3), reader.GetString(4), reader.GetString(5));
+    internal static ObjetivoDto Read(NpgsqlDataReader reader, int offset = 0) => new(
+        reader.GetGuid(offset), reader.GetString(offset + 1), reader.GetString(offset + 2),
+        reader.GetString(offset + 3), reader.GetString(offset + 4), reader.GetString(offset + 5),
+        reader.GetBoolean(offset + 6), reader.GetInt64(offset + 7));
 }

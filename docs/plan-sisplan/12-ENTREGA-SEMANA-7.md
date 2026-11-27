@@ -1,6 +1,6 @@
 # Entrega de SISPLAN para la semana 7
 
-La **semana 4 está en curso**. Al terminar empieza la semana 5. La meta es llegar **al inicio de la semana 7** con un candidato que haya pasado la aceptación, con accesos, documentación y demo listos. La semana 7 queda para presentar y atender incidencias de entrega. La consigna anterior registraba el 2 de diciembre de 2026 a las 23:59. La fecha oficial vigente debe verificarse en el aula durante la semana 4. Si se mantiene una fecha anterior a la meta interna, se escala al equipo y al maestro en cuanto se confirme.
+La **semana 4 está en curso**. Al terminar empieza la semana 5. La meta es llegar **al inicio de la semana 7** con un candidato que haya pasado la aceptación, con accesos, documentación y demo listos. La semana 7 queda para presentar y atender incidencias de entrega. El 26 de noviembre se comprobó que el [Campus Virtual](https://campusvirtual.intec.edu.do/mod/assign/view.php?id=1260918) abre el envío el 1 de diciembre a las 00:00 y lo cierra el **2 de diciembre a las 23:59**. Este plazo llega antes de la meta interna y requiere que el equipo ajuste su corte de entrega.
 
 [Plan por fases y pruebas](11-PLAN-POR-FASES-SRS-V2.md) · [Avance comprobado del PR](10-ADAPTACION-SRS-V2.md)
 
@@ -45,7 +45,7 @@ Para la primera demo, la administración institucional puede partir de datos con
 
 ### Roles, publicación y MFA
 
-En F0.1, confirmar con la rúbrica o el maestro los cuatro puntos de decisión: alcance obligatorio, rol del Comité, permiso para publicar y política de MFA. Como base para preparar los casos, conservar el flujo PEI que ya tiene el PR: Director revisa, Comité valida, Máxima Autoridad aprueba y Director publica después de esa aprobación. Para POA, preparar revisión de área, consolidación de Planificación y aprobación institucional, con publicación posterior según el permiso que se confirme. Preparar el caso con segundo factor para las cuentas que aprueban o publican en el entorno de entrega. Registrar si la rúbrica lo exige, con qué roles y qué evidencia se necesita. Un smoke test con token prueba autorización de API. La comprobación de MFA requiere un inicio de sesión real con segundo factor.
+En el PEI, el Director de Planificación revisa, un representante del Comité valida, Máxima Autoridad aprueba y el Director publica. El representante debe ser una persona distinta de quienes enviaron y revisaron en ese ciclo. En el POA se mantienen la aprobación de Máxima Autoridad y la publicación por el Director. F2 implementa ese flujo. Las 15 cuentas ficticias de demostración ingresan con contraseña y un segundo factor individual. Las pruebas comprueban el desafío en Chromium y la autorización de cada rol en la API. [Matriz y decisiones de F0](14-CONTRATO-F0.md#decisiones-operativas-para-el-cierre-de-f0)
 
 ### Indicadores y publicación del PEI
 
@@ -74,7 +74,7 @@ Casos iniciales para acordar en F3.1 y F4.1. Vincular cada resultado a su perío
 
 ### Contrato común de evidencias
 
-Acordarlo en F0.1 antes de que F3.2 y F4.2 consuman el servicio. Definir identificador, institución, entidad vinculada, período, autor, tipo, fuente (archivo o URL), acceso, límites, versiones e historial de reemplazos. Ambos módulos comparten los controles de permisos e historial. Se puede preparar el almacenamiento con datos de prueba. Para cerrar el recorrido, probar acceso autorizado, otro rol, otra institución, reintento o reemplazo, y la apertura de la URL o archivo. Una URL de prueba basta para el ensayo de semana 5. La entrega debe verificar todos los formatos que confirme la rúbrica.
+F0.1 define el [contrato común](14-CONTRATO-F0.md#evidencia-compartida-para-f32-y-f42) que consumirán F3.2 y F4.2. Incluye identificador, institución, entidad vinculada, período, autor, tipo, fuente (archivo o URL), acceso, límites, versiones e historial de reemplazos. Ambos módulos comparten los controles de permisos e historial. Se puede preparar el almacenamiento con datos de prueba. Para cerrar el recorrido, probar acceso autorizado, otro rol, otra institución, reintento o reemplazo, y la apertura de la URL o archivo. Una URL de prueba basta para el ensayo de semana 5. La entrega debe verificar todos los formatos que confirme la rúbrica.
 
 ### Alineación y aporte estratégico
 

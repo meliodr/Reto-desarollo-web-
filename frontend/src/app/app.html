@@ -1,47 +1,86 @@
-<a class="skip-link" href="#main-content">Saltar al contenido</a>
+<a class="skip-link" href="#main-content" (click)="$event.preventDefault(); mainContent.focus()"
+  >Saltar al contenido</a
+>
 <div class="app-shell">
   <header class="institutional-header">
     <div class="institutional-header-inner">
-      <a class="brand" routerLink="/peis">
+      <a class="brand" [routerLink]="session.home()">
         <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
         <span>SISPLAN<small>Sistema de Planificación Institucional</small></span>
       </a>
       <nav aria-label="Navegación principal">
-        <a class="institutional-nav-link" routerLink="/peis">Planes estratégicos</a>
-        @if (session.enabled() && session.authenticated()) {
+        @if (session.pei()) {
+          <a class="institutional-nav-link" routerLink="/peis">Planes estratégicos</a>
+        }
+        @if (session.poa()) {
+          <a class="institutional-nav-link" routerLink="/poas">Planes operativos</a>
+        }
+        @if (session.canAudit()) {
+          <a class="institutional-nav-link" routerLink="/auditoria">Auditoría</a>
+        }
+        @if (session.authenticated()) {
           <button class="button button-secondary" type="button" (click)="session.logout()">
             Cerrar sesión
           </button>
         }
-        <a class="institutional-nav-link" routerLink="/poas">Planes operativos</a>
       </nav>
     </div>
   </header>
   <div class="workspace">
-    <main id="main-content" tabindex="-1">
-      @if (feedback.message()) {
-        <div class="notice notice-success global-notice" role="status">
-          <span><strong>Guardado correctamente.</strong> {{ feedback.message() }}</span
-          ><button
-            class="icon-button"
-            type="button"
-            (click)="feedback.message.set('')"
-            aria-label="Cerrar confirmación"
-          >
-            ×
-          </button>
+    <main #mainContent id="main-content" tabindex="-1">
+      @if (session.active(); as active) {
+        <div class="institution-context">
+          @if (session.institutions().length > 1) {
+            <label for="active-institution">Institución activa</label>
+            <select
+              #institution
+              id="active-institution"
+              [disabled]="switchingInstitution()"
+              (change)="switchInstitution(institution)"
+            >
+              @for (item of session.institutions(); track item.id) {
+                <option [value]="item.id" [selected]="active.id === item.id">
+                  {{ item.nombre }}
+                </option>
+              }
+            </select>
+          } @else {
+            <span>Institución activa</span><strong>{{ active.nombre }}</strong>
+          }
         </div>
-      }
-      @if (session.error()) {
-        <p class="notice notice-error" role="alert">{{ session.error() }}</p>
-      }
-      @if (!session.enabled() || session.canRead()) {
+        @if (feedback.message()) {
+          <div class="notice notice-success global-notice" role="status">
+            <span><strong>Guardado correctamente.</strong> {{ feedback.message() }}</span>
+            <button
+              class="icon-button"
+              type="button"
+              (click)="feedback.message.set('')"
+              aria-label="Cerrar confirmación"
+            >
+              ×
+            </button>
+          </div>
+        }
         <router-outlet />
-      } @else if (!session.error()) {
+      } @else {
         <section class="panel empty-state" aria-labelledby="session-title">
           <h1 id="session-title">Acceso a SISPLAN</h1>
-          @if (session.authenticated()) {
-            <p>La cuenta {{ session.name() }} no tiene acceso a los planes institucionales.</p>
+          @if (session.error()) {
+            <p class="notice notice-error" role="alert">{{ session.error() }}</p>
+          }
+          @if (session.loading()) {
+            <p role="status">Verificando acceso institucional…</p>
+          } @else if (session.authenticated()) {
+            @if (!session.error()) {
+              <p>La cuenta {{ session.name() }} no tiene una institución disponible.</p>
+            }
+            <button
+              class="button button-secondary"
+              type="button"
+              (click)="session.selectInstitution()"
+            >
+              Volver a consultar accesos
+            </button>
           } @else {
             <p>Inicia sesión con tu cuenta institucional para consultar y gestionar planes.</p>
             <button class="button button-primary" type="button" (click)="session.login()">
@@ -54,7 +93,8 @@
     <footer class="footer">
       <span
         >SISPLAN <span class="footer-separator">/</span> Sistema de Gestión de Planificación</span
-      ><span>{{ session.enabled() ? 'Acceso institucional' : 'Entorno local de borradores' }}</span>
+      >
+      <span>Acceso institucional</span>
     </footer>
   </div>
 </div>

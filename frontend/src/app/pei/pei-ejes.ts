@@ -1,6 +1,15 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, OnInit, ViewChild, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  ViewChild,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Eje, EjeWrite, PeiEjesApi } from './pei-ejes-api';
@@ -18,6 +27,8 @@ export class PeiEjes implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   readonly peiId = input.required<string>();
   readonly readOnly = input(false);
+  readonly objectiveRevision = input(0);
+  readonly structureChange = output<void>();
   readonly ejes = signal<Eje[]>([]);
   readonly loading = signal(false);
   readonly importing = signal(false);
@@ -85,8 +96,11 @@ export class PeiEjes implements OnInit {
         next: (result) => {
           this.importing.set(false);
           this.notice.set(
-            `DIGEMAPS cargado con ${result.ejes} ejes, ${result.objetivos} objetivos y ${result.indicadores} indicadores.`,
+            result.yaCargado
+              ? 'La estructura DIGEMAPS ya está cargada.'
+              : `DIGEMAPS cargado con ${result.ejes} ejes, ${result.objetivos} objetivos y ${result.indicadores} indicadores.`,
           );
+          this.structureChange.emit();
           this.load();
         },
         error: (error: HttpErrorResponse) => {
@@ -174,10 +188,12 @@ export class PeiEjes implements OnInit {
   }
 
   toggleObjetivos(ejeId: string) {
-    if (this.objetivos?.saving()) return;
+    if (this.objetivos?.hasPendingWrite()) return;
     if (
       this.objetivos?.hasPendingChanges() &&
-      !window.confirm('Tienes un objetivo sin guardar. ¿Quieres descartar sus cambios?')
+      !window.confirm(
+        'Tienes cambios de objetivos o indicadores sin guardar. ¿Quieres descartarlos?',
+      )
     )
       return;
     this.objetivosEjeId.update((current) => (current === ejeId ? null : ejeId));
@@ -196,6 +212,7 @@ export class PeiEjes implements OnInit {
       next: (saved) => {
         this.saving.set(false);
         this.updateList(saved);
+        this.structureChange.emit();
         this.resetEditor();
         this.notice.set(
           activo ? `Eje «${saved.nombre}» guardado.` : `Eje «${saved.nombre}» inactivado.`,

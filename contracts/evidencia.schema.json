@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Evidencia institucional de PEI o POA",
+  "description": "DTO de lectura acordado en F0 para los servicios de mediciones y avances de F3 y F4.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "institucionId", "vinculo", "periodoId", "versiones"],
+  "properties": {
+    "id": {"$ref": "#/$defs/id"},
+    "institucionId": {"$ref": "#/$defs/id"},
+    "vinculo": {
+      "type": "object", "additionalProperties": false,
+      "required": ["modulo", "entidad", "entidadId"],
+      "properties": {
+        "modulo": {"enum": ["pei", "poa"]},
+        "entidad": {"enum": ["medicion", "avance"]},
+        "entidadId": {"$ref": "#/$defs/id"}
+      },
+      "oneOf": [
+        {"properties": {"modulo": {"const": "pei"}, "entidad": {"const": "medicion"}}},
+        {"properties": {"modulo": {"const": "poa"}, "entidad": {"const": "avance"}}}
+      ]
+    },
+    "periodoId": {"$ref": "#/$defs/id"},
+    "versiones": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/version"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "format": "uuid"},
+    "version": {
+      "type": "object", "additionalProperties": false,
+      "required": ["numero", "descripcion", "categoria", "estado", "fecha", "autor", "fuente"],
+      "properties": {
+        "numero": {"type": "integer", "minimum": 1},
+        "descripcion": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "categoria": {"enum": ["soporte", "acta", "contrato"]},
+        "estado": {"enum": ["pendiente", "validada", "observada"]},
+        "fecha": {"type": "string", "format": "date-time"},
+        "autor": {
+          "type": "object", "additionalProperties": false,
+          "required": ["emisor", "sujeto"],
+          "properties": {"emisor": {"type": "string", "format": "uri"}, "sujeto": {"type": "string", "minLength": 1}}
+        },
+        "fuente": {"oneOf": [{"$ref": "#/$defs/url"}, {"$ref": "#/$defs/archivo"}]}
+      }
+    },
+    "url": {
+      "type": "object", "additionalProperties": false, "required": ["tipo", "url"],
+      "properties": {"tipo": {"const": "url"}, "url": {"type": "string", "format": "uri", "pattern": "^https://", "maxLength": 2048}}
+    },
+    "archivo": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tipo", "archivoId", "nombre", "mime", "bytes"],
+      "properties": {
+        "tipo": {"const": "archivo"}, "archivoId": {"$ref": "#/$defs/id"},
+        "nombre": {"type": "string", "minLength": 1, "maxLength": 255},
+        "mime": {"enum": ["application/pdf", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image/jpeg", "image/png"]},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 10485760}
+      }
+    }
+  }
+}

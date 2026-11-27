@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import uuid
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -9,6 +10,10 @@ from urllib.request import Request, urlopen
 
 def request(base, path, expected, method="GET", payload=None, etag=None):
     headers = {"Accept": "application/json"}
+    if token := os.getenv("SISPLAN_ANALISTA_TOKEN"):
+        headers["Authorization"] = f"Bearer {token}"
+    if institution := os.getenv("SISPLAN_INSTITUCION_ID"):
+        headers["X-Institucion-Id"] = institution
     body = None
     if payload is not None:
         headers["Content-Type"] = "application/json"

@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  DestroyRef,
   ElementRef,
   HostListener,
   OnInit,
@@ -8,8 +9,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import {
   Pei,
   PeiApi,
@@ -26,9 +29,11 @@ import { PeiEjes } from './pei-ejes';
 import { Session } from '../auth/session';
 import { PeiWorkflow } from './pei-workflow';
 import { PeiPoas } from './pei-poas';
+import { PeiMapa } from './pei-mapa';
+import { PeiVersiones } from './pei-versiones';
 
 @Component({
-  imports: [RouterLink, ReactiveFormsModule, PeiEjes, PeiWorkflow, PeiPoas],
+  imports: [RouterLink, ReactiveFormsModule, PeiEjes, PeiWorkflow, PeiPoas, PeiMapa, PeiVersiones],
   templateUrl: './pei-form.html',
 })
 export class PeiForm implements OnInit {
@@ -37,8 +42,13 @@ export class PeiForm implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly feedback = inject(Feedback);
+  private readonly destroy = inject(DestroyRef);
+  private readonly cancelReads = new Subject<void>();
   @ViewChild('errorSummary') errorSummary?: ElementRef<HTMLElement>;
   @ViewChild(PeiEjes) private ejes?: PeiEjes;
+  @ViewChild(PeiMapa) private mapa?: PeiMapa;
+  @ViewChild(PeiWorkflow) private workflow?: PeiWorkflow;
+  @ViewChild(PeiVersiones) private versions?: PeiVersiones;
   readonly form = this.fb.group(
     {
       nombre: ['', [trimmedRequired, trimmedMinLength(3), Validators.maxLength(200)]],
@@ -54,6 +64,8 @@ export class PeiForm implements OnInit {
   readonly session = inject(Session);
   readonly current = signal<Pei | null>(null);
   readonly workflowPending = signal(false);
+  readonly structureRevision = signal(0);
+  readonly objectiveRevision = signal(0);
   readonly stateLabels = peiStateLabels;
   readonly etag = signal<string | null>(null);
   readonly loading = signal(false);
@@ -71,27 +83,37 @@ export class PeiForm implements OnInit {
   readonly narrativeFields: PeiField[] = ['mision', 'vision', 'valores'];
   private id: string | null = null;
   ngOnInit() {
-    this.id = this.route.snapshot.paramMap.get('id');
-    if (this.id) this.load();
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
+      this.id = params.get('id');
+      this.current.set(null);
+      this.etag.set(null);
+      this.saved.set(false);
+      this.load();
+    });
   }
   load() {
+    this.cancelReads.next();
+    this.checkingLatest.set(false);
     if (!this.id) return;
     this.loading.set(true);
     this.loadError.set('');
-    this.api.get(this.id).subscribe({
-      next: (value) => {
-        this.apply(value);
-        this.loading.set(false);
-      },
-      error: (error: HttpErrorResponse) => {
-        this.loadError.set(
-          error.status === 404
-            ? 'Este PEI no existe o ya no está disponible.'
-            : 'No pudimos abrir el PEI. Comprueba la API local y vuelve a intentarlo.',
-        );
-        this.loading.set(false);
-      },
-    });
+    this.api
+      .get(this.id)
+      .pipe(takeUntil(this.cancelReads), takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: (value) => {
+          this.apply(value);
+          this.loading.set(false);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.loadError.set(
+            error.status === 404
+              ? 'Este PEI no existe o ya no está disponible.'
+              : 'No pudimos abrir el PEI. Comprueba la API local y vuelve a intentarlo.',
+          );
+          this.loading.set(false);
+        },
+      });
   }
   private apply(value: VersionedPei) {
     this.current.set(value.data);
@@ -122,7 +144,7 @@ export class PeiForm implements OnInit {
     const current = this.current();
     return (
       (current !== null && !['borrador', 'observado'].includes(current.estado)) ||
-      (this.session.enabled() && !this.session.canPlan())
+      !this.session.canPlan()
     );
   }
   workflowBlocked() {
@@ -131,7 +153,8 @@ export class PeiForm implements OnInit {
       this.saving() ||
       this.conflict() ||
       this.requestUncertain() ||
-      !!this.ejes?.hasPendingChanges()
+      !!this.ejes?.hasPendingChanges() ||
+      !!this.mapa?.hasPendingChanges()
     );
   }
   applyTransition(value: VersionedPei) {
@@ -144,7 +167,7 @@ export class PeiForm implements OnInit {
   }
   refreshWorkflow() {
     if (
-      !this.workflowBlocked() ||
+      !this.navigationBlocked() ||
       window.confirm('Actualiza el estado del PEI y descarta los cambios sin guardar. ¿Continuar?')
     ) {
       this.load();
@@ -155,6 +178,11 @@ export class PeiForm implements OnInit {
       this.form.disable({ emitEvent: false });
     } else {
       this.form.enable({ emitEvent: false });
+      if (this.current()?.versionOrigenId) {
+        this.form.controls.tipo.disable({ emitEvent: false });
+        this.form.controls.fechaInicio.disable({ emitEvent: false });
+        this.form.controls.fechaFin.disable({ emitEvent: false });
+      }
     }
   }
   isNew() {
@@ -162,6 +190,26 @@ export class PeiForm implements OnInit {
   }
   years() {
     return this.form.controls.tipo.value === 'ordinario' ? 4 : 5;
+  }
+
+  completePeriod() {
+    const { fechaInicio } = this.form.getRawValue();
+    const firstYear = Number(fechaInicio.slice(0, 4));
+    const lastYear = firstYear + this.years() - 1;
+    if (this.form.controls.fechaFin.disabled || !fechaInicio || firstYear < 1 || lastYear > 9999)
+      return;
+    const end = this.form.controls.fechaFin;
+    end.setValue(`${String(lastYear).padStart(4, '0')}-12-31`);
+    end.markAsDirty();
+    this.clearFieldError('fechaFin');
+  }
+
+  refreshStructure() {
+    this.structureRevision.update((value) => value + 1);
+  }
+
+  refreshObjectives() {
+    this.objectiveRevision.update((value) => value + 1);
   }
   periodLabel() {
     const { fechaInicio, fechaFin } = this.form.getRawValue();
@@ -233,7 +281,7 @@ export class PeiForm implements OnInit {
     const request = existing
       ? this.api.update(existing.versionId, this.form.getRawValue(), etag!)
       : this.api.create(this.form.getRawValue());
-    request.subscribe({
+    request.pipe(takeUntilDestroyed(this.destroy)).subscribe({
       next: (value) => {
         this.saving.set(false);
         this.syncFormDisabled();
@@ -281,7 +329,8 @@ export class PeiForm implements OnInit {
             error.status === 403
               ? 'No tienes permiso para guardar este registro.'
               : error.status === 409
-                ? 'El estado del PEI cambió y ya no permite esta operación. Consulta la versión actual.'
+                ? (error.error?.detail ??
+                  'El PEI cambió. Consulta el estado y el período del plan.')
                 : 'No fue posible guardar el borrador. Tus datos permanecen en el formulario.',
           );
         }
@@ -292,23 +341,28 @@ export class PeiForm implements OnInit {
   fetchLatest() {
     if (!this.id) return;
     this.checkingLatest.set(true);
-    this.api.get(this.id).subscribe({
-      next: (value) => {
-        this.latest.set(value);
-        this.checkingLatest.set(false);
-      },
-      error: () => {
-        this.saveError.set(
-          'No pudimos consultar la versión actual. Tus cambios se conservan; inténtalo de nuevo.',
-        );
-        this.checkingLatest.set(false);
-      },
-    });
+    this.api
+      .get(this.id)
+      .pipe(takeUntil(this.cancelReads), takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: (value) => {
+          this.latest.set(value);
+          this.checkingLatest.set(false);
+        },
+        error: () => {
+          this.saveError.set(
+            'No pudimos consultar la versión actual. Tus cambios se conservan; inténtalo de nuevo.',
+          );
+          this.checkingLatest.set(false);
+        },
+      });
   }
   replaceWithLatest() {
     const latest = this.latest();
     if (
       latest &&
+      !this.saving() &&
+      !this.workflowPending() &&
       window.confirm(
         'Se reemplazarán los campos de este formulario por la versión guardada en el servidor. Tus cambios sin guardar se descartarán. ¿Continuar?',
       )
@@ -338,14 +392,22 @@ export class PeiForm implements OnInit {
       this.saveError.set('');
     }
   }
+  private navigationBlocked() {
+    return (
+      this.workflowPending() ||
+      this.workflowBlocked() ||
+      (this.workflow?.confirmAction() === 'devolver' && !!this.workflow.reason().trim()) ||
+      (!!this.versions?.editRevision() && !!this.versions.reason().trim())
+    );
+  }
   canLeave() {
     return (
-      (!this.workflowPending() && !this.form.dirty && !this.ejes?.hasPendingChanges()) ||
+      !this.navigationBlocked() ||
       window.confirm('Tienes cambios sin guardar. ¿Quieres salir y descartarlos?')
     );
   }
   @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent) {
-    if (this.workflowPending() || this.form.dirty || this.ejes?.hasPendingChanges()) {
+    if (this.navigationBlocked()) {
       event.preventDefault();
       event.returnValue = '';
     }

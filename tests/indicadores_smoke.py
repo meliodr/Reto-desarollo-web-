@@ -50,6 +50,8 @@ def main():
         "lineaBase": "0",
         "meta": "999999999999.0003",
         "frecuencia": "Cuatrimestral",
+        "sentido": "ascendente",
+        "metodoCalculo": "valor_directo",
     }
     errors, _ = request(base, path, 422, "POST", dict(fields, frecuencia=" ", meta=1.00001))
     assert {"frecuencia", "meta"} <= errors["errors"].keys()
@@ -93,7 +95,7 @@ def main():
     request(base, measurements, 409, "POST", dict(measurement, periodo="2027-02-01"))
     assert request(base, path, 200)[0] == [indicator]
     assert request(base, measurements, 200)[0] == [second, first]
-    print("Indicadores: seis campos, mediciones fechadas, vínculos, duplicados e historial verificados.")
+    print("Indicadores: configuración, mediciones fechadas, vínculos, duplicados e historial verificados.")
 
 
 if __name__ == "__main__":

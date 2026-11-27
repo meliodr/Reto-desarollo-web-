@@ -24,6 +24,7 @@ export const peiStateLabels: Record<PeiState, string> = {
 export interface Pei extends PeiWrite {
   id: string;
   versionId: string;
+  versionOrigenId?: string | null;
   estado: PeiState;
 }
 export interface VersionedPei {
@@ -63,8 +64,10 @@ export function writePayload(value: PeiWrite): PeiWrite {
 @Injectable({ providedIn: 'root' })
 export class PeiApi {
   private readonly http = inject(HttpClient);
-  list() {
-    return this.http.get<Pei[]>('/api/v1/peis');
+  list(officialOnly = false) {
+    return this.http.get<Pei[]>('/api/v1/peis', {
+      params: officialOnly ? { oficiales: true } : {},
+    });
   }
   get(id: string) {
     return this.http

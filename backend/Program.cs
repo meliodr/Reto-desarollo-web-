@@ -18,10 +18,10 @@ if (!builder.Environment.IsDevelopment())
     return 1;
 }
 
-var connectionString = builder.Configuration.GetConnectionString("Sisplan");
+var connectionString = builder.Configuration.GetConnectionString(migrate ? "SisplanMigraciones" : "Sisplan");
 if (string.IsNullOrWhiteSpace(connectionString))
 {
-    Console.Error.WriteLine("Configura ConnectionStrings__Sisplan con la conexión PostgreSQL del entorno local.");
+    Console.Error.WriteLine(migrate ? "Configura ConnectionStrings__SisplanMigraciones." : "Configura ConnectionStrings__Sisplan.");
     return 1;
 }
 
@@ -62,14 +62,24 @@ builder.WebHost.ConfigureKestrel(options =>
 var oidc = AccesoInstitucional.From(builder.Configuration);
 AccesoInstitucional.Configure(builder, oidc);
 builder.Services.AddProblemDetails();
-builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
-builder.Services.AddSingleton<PeiRepository>();
-builder.Services.AddSingleton<EjeRepository>();
-builder.Services.AddSingleton<ObjetivoRepository>();
-builder.Services.AddSingleton<IndicadorRepository>();
-builder.Services.AddSingleton<FlujoPeiRepository>();
+var pool = new NpgsqlConnectionStringBuilder(connectionString);
+if (pool.NoResetOnClose || pool.Multiplexing)
+{
+    Console.Error.WriteLine("La API requiere conexiones con reinicio de sesión y sin multiplexación.");
+    return 1;
+}
+builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(pool.ConnectionString));
+builder.Services.AddScoped<SesionInstitucional>();
+builder.Services.AddScoped<PeiRepository>();
+builder.Services.AddScoped<EjeRepository>();
+builder.Services.AddScoped<ObjetivoRepository>();
+builder.Services.AddScoped<RiesgoEstrategicoRepository>();
+builder.Services.AddScoped<MapaEstrategicoRepository>();
+builder.Services.AddScoped<IndicadorRepository>();
+builder.Services.AddScoped<FlujoPeiRepository>();
 
 var app = builder.Build();
+await SesionInstitucional.VerificarCuentaAsync(app.Services.GetRequiredService<NpgsqlDataSource>());
 app.UseExceptionHandler();
 app.Use(async (context, next) =>
 {
@@ -88,6 +98,10 @@ app.Use(async (context, next) =>
     {
         await next(context);
     }
+    catch (PostgresException error) when (error.SqlState == PostgresErrorCodes.InsufficientPrivilege && !context.Response.HasStarted)
+    {
+        await Results.Problem(statusCode: 403, title: "La operación excede los permisos del ámbito activo.").ExecuteAsync(context);
+    }
     catch (NpgsqlException) when (!context.Response.HasStarted)
     {
         app.Logger.LogWarning("No se pudo completar una operación PostgreSQL de SISPLAN.");
@@ -96,30 +110,24 @@ app.Use(async (context, next) =>
 });
 
 app.UseAuthentication();
+app.UseMiddleware<ContextoInstitucionalMiddleware>();
 app.UseAuthorization();
 app.MapGet("/api/configuracion", () => Results.Ok(new
 {
-    Oidc = oidc is null ? null : new { oidc.Url, oidc.Realm, oidc.ClientId },
+    Oidc = new { oidc.Url, oidc.Realm, oidc.ClientId },
 }));
-var api = app.MapGroup("/api/v1");
-if (oidc is not null)
-    api.RequireAuthorization("LeerPlanes");
-var estrategia = api.MapGroup("");
-if (oidc is not null)
-    ((IEndpointConventionBuilder)estrategia).Add(endpoint =>
-    {
-        var methods = endpoint.Metadata.OfType<IHttpMethodMetadata>().LastOrDefault()?.HttpMethods;
-        if (methods?.Any(method => method is not ("GET" or "HEAD")) == true)
-            endpoint.Metadata.Add(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute("EditarPei"));
-    });
-estrategia.MapEjes();
-estrategia.MapCatalogoPei();
-api.MapPoas(oidc is not null);
-api.MapFlujoPei();
-api.MapGet("/peis", async (PeiRepository repository, CancellationToken cancellationToken) =>
-    Results.Ok(await repository.ListAsync(cancellationToken)));
+var api = app.MapGroup("/api/v1").RequireAuthorization("LeerPlanes");
+api.MapInstitucional();
+var pei = api.MapGroup("").WithMetadata(new RequiereModulo(Pei: true));
+pei.MapEjes();
+pei.MapMapaEstrategico();
+pei.MapCatalogoPei();
+api.MapGroup("").WithMetadata(new RequiereModulo(Poa: true)).MapPoas();
+pei.MapFlujoPei();
+pei.MapGet("/peis", async (bool? oficiales, PeiRepository repository, CancellationToken cancellationToken) =>
+    Results.Ok(await repository.ListAsync(oficiales is true, cancellationToken)));
 
-api.MapGet("/peis/{id:guid}", async (Guid id, HttpResponse response, PeiRepository repository, CancellationToken cancellationToken) =>
+pei.MapGet("/peis/{id:guid}", async (Guid id, HttpResponse response, PeiRepository repository, CancellationToken cancellationToken) =>
 {
     var snapshot = await repository.FindAsync(id, cancellationToken);
     if (snapshot is null)
@@ -128,7 +136,7 @@ api.MapGet("/peis/{id:guid}", async (Guid id, HttpResponse response, PeiReposito
     return Results.Ok(snapshot.Pei);
 });
 
-estrategia.MapPost("/peis", async (HttpRequest request, HttpResponse response, PeiRepository repository, CancellationToken cancellationToken) =>
+pei.MapPost("/peis", async (HttpRequest request, HttpResponse response, PeiRepository repository, CancellationToken cancellationToken) =>
 {
     var (fields, error) = await ReadFieldsAsync(request, cancellationToken);
     if (error is not null)
@@ -137,9 +145,9 @@ estrategia.MapPost("/peis", async (HttpRequest request, HttpResponse response, P
     var snapshot = await repository.CreateAsync(fields!, cancellationToken);
     response.Headers.ETag = snapshot.ETag;
     return Results.Created($"/api/v1/peis/{snapshot.Pei.Id:D}", snapshot.Pei);
-});
+}).RequireAuthorization("EditarPei");
 
-estrategia.MapPatch("/pei-versiones/{versionId:guid}", async (Guid versionId, HttpRequest request, HttpResponse response,
+pei.MapPatch("/pei-versiones/{versionId:guid}", async (Guid versionId, HttpRequest request, HttpResponse response,
     PeiRepository repository, CancellationToken cancellationToken) =>
 {
     var expected = request.Headers.IfMatch.ToString();
@@ -159,6 +167,20 @@ estrategia.MapPatch("/pei-versiones/{versionId:guid}", async (Guid versionId, Ht
     if (error is not null)
         return error;
 
+    if (current.Pei.VersionOrigenId is not null)
+    {
+        const string fixedPeriod = "Una revisión conserva el tipo y las fechas de vigencia del PEI oficial.";
+        var errors = new Dictionary<string, string[]>();
+        if (fields!.Tipo != current.Pei.Tipo)
+            errors["tipo"] = [fixedPeriod];
+        if (fields.FechaInicio != current.Pei.FechaInicio)
+            errors["fechaInicio"] = [fixedPeriod];
+        if (fields.FechaFin != current.Pei.FechaFin)
+            errors["fechaFin"] = [fixedPeriod];
+        if (errors.Count > 0)
+            return Results.ValidationProblem(errors, statusCode: 422);
+    }
+
     PeiSnapshot? saved;
     try
     {
@@ -177,7 +199,7 @@ estrategia.MapPatch("/pei-versiones/{versionId:guid}", async (Guid versionId, Ht
         return StaleVersion();
     response.Headers.ETag = saved.ETag;
     return Results.Ok(saved.Pei);
-});
+}).RequireAuthorization("EditarPei");
 
 await app.RunAsync();
 return 0;

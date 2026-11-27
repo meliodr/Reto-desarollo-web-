@@ -8,10 +8,12 @@ from urllib.request import Request, urlopen
 from uuid import uuid4
 
 
-def call(base, path, expected, method="GET", body=None, token=None, etag=None):
+def call(base, path, expected, method="GET", body=None, token=None, etag=None, institution=None):
     headers = {"Accept": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    if institution:
+        headers["X-Institucion-Id"] = institution
     if etag:
         headers["If-Match"] = etag
     if body is not None:
@@ -86,7 +88,7 @@ def main():
     call(base, "/poas", 409, "POST", {"anio": year, "peiId": pei_id}, analyst)
     loaded, _ = call(base, load_path, 201, "POST", {}, analyst)
     assert loaded == {"ejes": 6, "objetivos": 20, "indicadores": 20}
-    call(base, load_path, 409, "POST", {}, analyst)
+    assert call(base, load_path, 200, "POST", {}, analyst)[0] == loaded
     axes, _ = call(base, f"/peis/{pei_id}/ejes", 200, token=analyst)
     assert len(axes) == 6
     axis = next(axis for axis in axes if axis["nombre"] == "Conducción")

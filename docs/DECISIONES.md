@@ -36,7 +36,7 @@ SISPLAN identifica el sistema en el SRS. La base v1.0 usa SISPLAN como nombre pa
 
 ## D-05. Preparar el candidato para la semana 7
 
-La semana 4 está en curso. El primer ensayo está previsto para la semana 5 y la validación del candidato para el cierre de la semana 6. La entrega y presentación se programan para la semana 7. El cierre del 2 de diciembre a las 23:59 correspondía a la consigna anterior y se debe verificar en el aula durante la semana 4. [Hitos, capacidad y criterio de entrega](plan-sisplan/12-ENTREGA-SEMANA-7.md)
+La semana 4 está en curso. El primer ensayo está previsto para la semana 5 y la validación del candidato para el cierre de la semana 6. La entrega y presentación se programan para la semana 7. El 26 de noviembre se verificó en el [aula](https://campusvirtual.intec.edu.do/mod/assign/view.php?id=1260918) que el envío cierra el 2 de diciembre a las 23:59. Para la entrega se aplica ese plazo. El reparto del trabajo restante requiere confirmación del equipo. [Hitos, capacidad y criterio de entrega](plan-sisplan/12-ENTREGA-SEMANA-7.md)
 
 ## D-06. Separar la preparación de la implementación
 

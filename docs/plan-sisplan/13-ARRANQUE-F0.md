@@ -1,10 +1,37 @@
-# Preparación de F0 · Base institucional de SISPLAN
+# Base institucional de SISPLAN · Criterios de cierre de F0
 
-**Semana 4 · Base revisada en PR #1, commit `904e1fa`**
+**Semana 4 · Implementación en el PR #2 sobre el primer incremento PEI–POA**
+
+La [implementación F0](14-CONTRATO-F0.md) y el [arranque vigente](../../backend/README.md#arranque-local-de-f0) actualizan los pasos y las decisiones. La línea base de este documento corresponde al incremento anterior.
 
 El primer objetivo de F0 es que PEI y POA puedan trabajar con un contrato común y datos aislados. El recorrido de semana 5 necesita dos instituciones, permisos efectivos y trazabilidad de las escrituras que se van a demostrar. El [plan completo](11-PLAN-POR-FASES-SRS-V2.md#subfases-de-f0) mantiene los criterios de cierre de F0 y el [calendario](12-ENTREGA-SEMANA-7.md) sitúa el candidato al final de la semana 6.
 
-## Punto de partida comprobado
+## Cierre por subfase
+
+| Subfase | Qué debe poder reproducir el equipo |
+|---|---|
+| F0.1 · Contratos | Validar el documento OpenAPI 3.1 completo, la evidencia compartida y los ejemplos. La [matriz de roles y decisiones](14-CONTRATO-F0.md) fija el segundo factor, la representación del Comité, la aprobación y la publicación. |
+| F0.2 · Organización | Abrir las dos instituciones con sus dependencias, períodos y catálogos. Probar solo PEI, solo POA y ambos módulos. |
+| F0.3 · Permisos | Ingresar con las cuentas ficticias de los ocho actores y del Comité, comprobar el segundo factor de cada cuenta y recorrer la matriz de permisos y denegaciones. |
+| F0.4 · Migración y trazabilidad | Aplicar y repetir las migraciones desde cero y sobre datos históricos asignados. Verificar IDs, relaciones, auditoría y aislamiento entre instituciones con el login de la aplicación. |
+
+Para el cierre se usa el resultado de ambos controles sobre el mismo commit del PR. El trabajo F1/F2 puede consumir los contratos y los datos de demostración documentados. [Controles de la revisión actual](https://github.com/meliodr/Reto-desarollo-web-/pull/2/checks)
+
+## Verificación anterior
+
+El [PR #2](https://github.com/meliodr/Reto-desarollo-web-/pull/2) contiene el cambio completo sobre el primer incremento. La [ejecución del 26 de noviembre](https://github.com/meliodr/Reto-desarollo-web-/actions/runs/45904335830) verificó lo siguiente en un entorno desechable.
+
+| Caso | Comprobación ejecutada |
+|---|---|
+| F0-01 y F0-08 | Quince identidades de Keycloak, acceso con PKCE, token expirado, cierre de sesión y segundo factor TOTP de Máxima Autoridad en Chromium. |
+| F0-02 | Ocho actores y Comité. Acciones concedidas y denegadas en las transiciones PEI, escritura POA por área, consulta del auditor y rechazo de una dependencia inactiva. |
+| F0-03 a F0-05 | Dos POA del mismo año, duplicado institucional rechazado, relaciones y detalles en su ámbito. Solicitudes A y B alternadas con una sola conexión en el grupo de la API. |
+| F0-06 | Instalación limpia y actualización del ejecutable anterior con datos. Segunda ejecución de migraciones, conservación de IDs, vínculos y presupuestos y verificación del historial de escrituras. |
+| F0-07 | PEI y POA por separado y juntos. El cambio de institución en Angular actualiza las acciones y el historial visible. |
+
+Angular pasó 26 pruebas y la compilación de producción. Los cinco recorridos HTTP del primer incremento también pasaron. Las dos capturas del recorrido en navegador están en el artefacto **capturas-f0** de la ejecución. Los [controles de la revisión actual](https://github.com/meliodr/Reto-desarollo-web-/pull/2/checks) vuelven a ejecutar la matriz con cada cambio del PR.
+
+## Punto de partida anterior a F0
 
 | Área | Evidencia del 26 de noviembre | Implicación para F0 |
 |---|---|---|
@@ -14,7 +41,7 @@ El primer objetivo de F0 es que PEI y POA puedan trabajar con un contrato común
 | Instituciones | La base actual no identifica la institución de los planes ni aplica políticas de seguridad por fila a sus datos. El índice del POA independiente es único por año a nivel global. | Al incorporar instituciones, conservar la unicidad dentro de cada una. Probar dos POA independientes del mismo año, uno por institución. |
 | Entorno | La configuración actual de la API requiere `Development` y conexiones por loopback. | La verificación inicial se hace en local. Registrar como pendiente de entrega la configuración del entorno candidato y sus pruebas de acceso. |
 
-## Secuencia de arranque
+## Secuencia utilizada para la implementación
 
 | Subfase | Primer cambio verificable | Criterio para revisarlo |
 |---|---|---|
@@ -38,18 +65,12 @@ Usar dos instituciones ficticias, A y B, y al menos dos dependencias en A. Prepa
 | **F0-05 · Contexto en base de datos** | Con la cuenta de la API, las consultas respetan la institución activa. Alternar solicitudes A/B sobre el conjunto compartido de conexiones mantiene separados ambos contextos. Una solicitud sin contexto institucional no recupera datos protegidos. |
 | **F0-06 · Migración y auditoría** | Una base con datos previos conserva IDs, vínculos PEI–POA y el presupuesto nulo o informado. Aplicar dos veces produce el mismo resultado. Las escrituras auditables conservan actor, institución, acción, fecha y referencia. |
 | **F0-07 · Módulos** | Las configuraciones solo PEI, solo POA y ambos funcionan según el contrato. Deshabilitar un módulo no afecta la consulta autorizada del otro. |
-| **F0-08 · MFA** | Si la rúbrica o la política acordada lo exige, comprobar el segundo factor con un inicio de sesión real para los perfiles definidos y guardar evidencia sin credenciales. |
+| **F0-08 · MFA** | Cada identidad de demostración debe completar el segundo factor en Keycloak. El recorrido debe comprobar que un código incorrecto no permite acceder. Registrar el resultado sin credenciales. |
 
 Estos casos son el punto de partida de la matriz. El cierre de F0 requiere **cero accesos indebidos**, los dos recorridos de migración y evidencia de los permisos de todos los actores acordados.
 
-## Decisiones para cerrar F0.1
+## Decisiones aplicables
 
-| Decisión | Estado al preparar F0 |
-|---|---|
-| Rúbrica y fecha del aula | Pendientes de verificación. La semana 7 es la meta de trabajo. |
-| Comité y publicación | El PR usa Comité para validar el PEI. El Director de Planificación publica después de la aprobación de Máxima Autoridad. Confirmar este reparto y el permiso de publicación del POA. |
-| MFA | Pendiente de confirmar para la entrega y por perfil. Los tokens de prueba comprueban autorización de API. |
-| Datos históricos | Acordar la institución que recibe cada registro previo. Usar solo datos ficticios para las pruebas locales. |
-| Capacidad | Asignar responsables y revisores y registrar las horas disponibles de los cinco integrantes. |
+La [política vigente de F0](14-CONTRATO-F0.md#decisiones-operativas-para-el-cierre-de-f0) fija el MFA de las cuentas de demostración y las responsabilidades del Comité, el Director y Máxima Autoridad. La asignación de datos históricos requiere un destino explícito por PEI y por POA independiente. Un POA vinculado hereda la institución del PEI. La migración rechaza correspondencias ausentes o sobrantes antes de modificar los planes.
 
-Para repetir la base, seguir el [arranque local](06-PRIMER-INCREMENTO.md#arranque-local) y la [verificación con Keycloak](10-ADAPTACION-SRS-V2.md#verificación-del-incremento). Ejecutar `npm test -- --watch=false` y `npm run build` en `frontend`. Usar una base desechable para los scripts HTTP de `tests/` y para la prueba de actualización.
+La [guía de ejecución](../../backend/README.md#arranque-local-de-f0) explica cómo preparar una instalación limpia y cómo actualizar datos anteriores. Para reproducir los casos HTTP y de navegador se utiliza una base desechable con los datos ficticios del repositorio.

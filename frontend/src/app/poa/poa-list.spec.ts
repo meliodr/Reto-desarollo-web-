@@ -209,7 +209,7 @@ it('explica el año inválido, conserva el borrador y permite corregirlo antes d
   const http = TestBed.inject(HttpTestingController);
   http.expectOne('/api/v1/poas').flush([]);
   http.expectOne('/api/v1/organizacion').flush({ dependencias: areas });
-  http.expectOne('/api/v1/peis').flush([
+  http.expectOne('/api/v1/peis?oficiales=true').flush([
     {
       id: 'pei-vigente',
       nombre: 'Plan estratégico',

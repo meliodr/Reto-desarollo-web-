@@ -1,0 +1,95 @@
+:host {
+  display: block;
+  margin-top: 24px;
+}
+
+.eje-heading,
+.eje-list > li,
+.eje-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 16px;
+}
+
+.eje-heading,
+.eje-list > li {
+  justify-content: space-between;
+}
+
+.eje-list > li > div:first-child {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.eje-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.eje-list > li {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+
+.eje-list > li:first-child {
+  padding-top: 0;
+}
+
+.eje-list > li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.eje-list h3,
+.eje-history h4 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.eje-muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.eje-description {
+  margin-top: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.eje-editor,
+.eje-history {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--blue);
+  padding: clamp(12px, 3vw, 20px);
+}
+
+.eje-editor {
+  margin: 0 0 20px;
+}
+
+.eje-history {
+  margin-top: 20px;
+}
+
+.eje-editor h3,
+.eje-history > div:first-child {
+  margin-bottom: 16px;
+}
+
+.eje-editor fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.eje-editor .eje-actions {
+  margin-top: 12px;
+}
+
+.notice {
+  margin-bottom: 12px;
+}

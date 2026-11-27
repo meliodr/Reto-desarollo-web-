@@ -1,0 +1,485 @@
+<section class="panel form-section mapa-panel" aria-labelledby="mapa-encabezado">
+  <header class="mapa-cabecera">
+    <h2 id="mapa-encabezado">Mapa estratégico</h2>
+    <button
+      class="button button-secondary"
+      type="button"
+      aria-controls="mapa-contenido"
+      [attr.aria-expanded]="abierto()"
+      [disabled]="abierto() && (operacion() || !!edicion() || !!pendienteConfirmar())"
+      (click)="alternar()"
+    >
+      {{ abierto() ? 'Ocultar mapa' : 'Consultar mapa' }}
+    </button>
+  </header>
+
+  <div id="mapa-contenido" class="mapa-cuerpo" [hidden]="!abierto()">
+    @if (abierto()) {
+      @if (cargando()) {
+        <p role="status" class="muted">Consultando el mapa estratégico…</p>
+      } @else if (errorConsulta()) {
+        <p class="notice notice-error" role="alert">{{ errorConsulta() }}</p>
+        <button class="button button-secondary" type="button" (click)="cargar()">
+          Reintentar consulta
+        </button>
+      } @else if (mapa(); as mapa) {
+        <div class="mapa-filtros">
+          <div class="field">
+            <label for="mapa-buscar">Buscar en el mapa</label>
+            <input
+              #buscar
+              id="mapa-buscar"
+              type="search"
+              [value]="texto()"
+              [disabled]="operacion() || !!edicion() || !!pendienteConfirmar()"
+              placeholder="Eje, objetivo, indicador o riesgo"
+              (input)="texto.set(buscar.value)"
+            />
+          </div>
+          <div class="field">
+            <label for="mapa-ejes">Eje</label>
+            <select
+              #filtroEjeSelect
+              id="mapa-ejes"
+              [value]="filtroEje()"
+              [disabled]="operacion() || !!edicion() || !!pendienteConfirmar()"
+              (change)="filtroEje.set(filtroEjeSelect.value)"
+            >
+              <option value="">Todos los ejes</option>
+              @for (eje of mapa.ejes; track eje.id) {
+                <option [value]="eje.id">{{ eje.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label for="mapa-filtro">Estado</label>
+            <select
+              id="mapa-filtro"
+              [value]="filtro()"
+              [disabled]="operacion() || !!edicion() || !!pendienteConfirmar()"
+              (change)="cambiarFiltro($event)"
+            >
+              <option value="todos">Todos</option>
+              <option value="activos">Objetivos activos</option>
+              <option value="inactivos">Objetivos inactivos</option>
+              <option value="pendientes">Con indicadores pendientes</option>
+            </select>
+          </div>
+          <button
+            class="text-button"
+            type="button"
+            [disabled]="operacion() || !!edicion() || !!pendienteConfirmar()"
+            (click)="cargar()"
+          >
+            Actualizar mapa
+          </button>
+        </div>
+
+        @if (aviso()) {
+          <p class="notice notice-success" role="status">{{ aviso() }}</p>
+        }
+        @if (errorCambios() && !edicion()) {
+          <p class="notice notice-error" role="alert">{{ errorCambios() }}</p>
+        }
+
+        @for (eje of nodos(); track eje.id) {
+          <details class="mapa-eje" [open]="!!texto() || filtro() !== 'todos' || !!filtroEje()">
+            <summary>
+              <span class="mapa-eje-titulo">{{ eje.nombre }}</span>
+              @if (!eje.activo) {
+                <span class="mapa-etiqueta">Eje inactivo</span>
+              }
+              <span class="mapa-cantidad">
+                {{ eje.objetivos.length }}
+                {{ eje.objetivos.length === 1 ? 'objetivo' : 'objetivos' }}
+              </span>
+            </summary>
+            @if (eje.descripcion) {
+              <p class="mapa-texto">{{ eje.descripcion }}</p>
+            }
+            @for (objetivo of eje.objetivos; track objetivo.id) {
+              <article class="mapa-objetivo">
+                <header class="mapa-objetivo-cabecera">
+                  <div>
+                    <span class="mapa-codigo">{{ objetivo.codigo }}</span>
+                    <h3>{{ objetivo.nombre }}</h3>
+                  </div>
+                  <span class="mapa-etiqueta" [class.mapa-listo]="eje.activo && objetivo.activo">{{
+                    eje.activo && objetivo.activo ? 'Objetivo activo' : 'Objetivo inactivo'
+                  }}</span>
+                  @if (editable() && eje.activo) {
+                    <button
+                      class="text-button"
+                      type="button"
+                      [disabled]="operacion() || !!edicion() || !!pendienteConfirmar()"
+                      (click)="pendienteConfirmar.set({ eje, objetivo })"
+                    >
+                      {{ objetivo.activo ? 'Desactivar objetivo' : 'Activar objetivo' }}
+                    </button>
+                  }
+                </header>
+                @if (pendienteConfirmar()?.objetivo?.id === objetivo.id) {
+                  <div
+                    class="mapa-confirmacion"
+                    role="group"
+                    aria-label="Confirmar estado del objetivo"
+                  >
+                    <p>
+                      {{
+                        objetivo.activo
+                          ? 'El objetivo y sus indicadores se conservarán en el mapa como inactivos.'
+                          : 'El objetivo volverá a estar activo en el plan.'
+                      }}
+                    </p>
+                    <div class="mapa-acciones">
+                      <button class="button button-primary" type="button" (click)="cambiarEstado()">
+                        {{ objetivo.activo ? 'Confirmar desactivación' : 'Confirmar activación' }}
+                      </button>
+                      <button
+                        class="button button-secondary"
+                        type="button"
+                        (click)="pendienteConfirmar.set(null)"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                }
+                <p class="mapa-texto">{{ objetivo.descripcion }}</p>
+                <dl class="mapa-relaciones">
+                  <div>
+                    <dt>Resultado esperado</dt>
+                    <dd>{{ objetivo.resultadoEsperado || 'Pendiente de definir' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Línea de acción</dt>
+                    <dd>{{ objetivo.lineaAccion || 'Pendiente de definir' }}</dd>
+                  </div>
+                </dl>
+
+                <h4>Indicadores y metas</h4>
+                @if (objetivo.indicadores.length) {
+                  <ul class="mapa-indicadores">
+                    @for (indicador of objetivo.indicadores; track indicador.id) {
+                      <li>
+                        <div class="mapa-elemento">
+                          <strong>{{ indicador.nombre }}</strong>
+                          <span
+                            class="mapa-etiqueta"
+                            [class.mapa-listo]="
+                              eje.activo && objetivo.activo && indicador.listoParaMedir
+                            "
+                            [class.mapa-pendiente]="
+                              eje.activo && objetivo.activo && !indicador.listoParaMedir
+                            "
+                          >
+                            {{
+                              !eje.activo || !objetivo.activo
+                                ? 'Indicador en estructura inactiva'
+                                : indicador.listoParaMedir
+                                  ? 'Listo para medir'
+                                  : 'Pendiente de configuración'
+                            }}
+                          </span>
+                        </div>
+                        <dl class="mapa-datos">
+                          <div>
+                            <dt>Meta</dt>
+                            <dd>
+                              {{ indicador.meta ?? 'Pendiente' }} {{ indicador.unidad ?? '' }}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Frecuencia</dt>
+                            <dd>{{ indicador.frecuencia ?? 'Pendiente' }}</dd>
+                          </div>
+                          <div>
+                            <dt>Método</dt>
+                            <dd>
+                              {{
+                                indicador.metodoCalculo
+                                  ? metodos[indicador.metodoCalculo]
+                                  : 'Pendiente'
+                              }}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Sentido</dt>
+                            <dd>
+                              {{ indicador.sentido ? sentidos[indicador.sentido] : 'Pendiente' }}
+                            </dd>
+                          </div>
+                          @if (indicador.lineaBase !== null) {
+                            <div>
+                              <dt>Línea base</dt>
+                              <dd>{{ indicador.lineaBase }}</dd>
+                            </div>
+                          }
+                          @if (indicador.formula) {
+                            <div>
+                              <dt>Fórmula de referencia</dt>
+                              <dd>{{ indicador.formula }}</dd>
+                            </div>
+                          }
+                        </dl>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="muted">Este objetivo todavía no tiene indicadores.</p>
+                }
+
+                <div class="mapa-elemento mapa-riesgos-cabecera">
+                  <h4>Riesgos estratégicos</h4>
+                  @if (esEditable(eje, objetivo)) {
+                    <button
+                      type="button"
+                      class="text-button"
+                      [disabled]="operacion() || !!edicion() || !!pendienteConfirmar()"
+                      (click)="prepararRiesgo(eje, objetivo)"
+                    >
+                      Registrar riesgo
+                    </button>
+                  }
+                </div>
+                @if (objetivo.riesgos.length) {
+                  <ul class="mapa-riesgos">
+                    @for (riesgo of objetivo.riesgos; track riesgo.id) {
+                      <li>
+                        <div class="mapa-elemento">
+                          <strong>{{ riesgo.nombre }}</strong>
+                          <span
+                            class="mapa-etiqueta"
+                            [class.mapa-alto]="riesgo.nivel === 'alto'"
+                            [class.mapa-pendiente]="riesgo.nivel === 'medio'"
+                            [class.mapa-listo]="riesgo.nivel === 'bajo'"
+                            >Riesgo {{ riesgo.nivel }} · {{ riesgo.probabilidad }} ×
+                            {{ riesgo.impacto }} = {{ riesgo.puntuacion }}</span
+                          >
+                          <span class="mapa-etiqueta">{{
+                            riesgo.cerrado ? 'Cerrado' : 'Abierto'
+                          }}</span>
+                          @if (esEditable(eje, objetivo)) {
+                            <button
+                              type="button"
+                              class="text-button"
+                              [disabled]="operacion() || !!edicion() || !!pendienteConfirmar()"
+                              (click)="prepararRiesgo(eje, objetivo, riesgo)"
+                            >
+                              Editar riesgo
+                            </button>
+                          }
+                        </div>
+                        <p class="mapa-texto">{{ riesgo.descripcion }}</p>
+                        <dl class="mapa-datos">
+                          @if (riesgo.tratamiento) {
+                            <div>
+                              <dt>Tratamiento</dt>
+                              <dd>{{ riesgo.tratamiento }}</dd>
+                            </div>
+                          }
+                          @if (riesgo.accionMitigacion) {
+                            <div>
+                              <dt>Acción de mitigación</dt>
+                              <dd>{{ riesgo.accionMitigacion }}</dd>
+                            </div>
+                          }
+                          @if (riesgo.responsable) {
+                            <div>
+                              <dt>Responsable</dt>
+                              <dd>{{ riesgo.responsable }}</dd>
+                            </div>
+                          }
+                          @if (riesgo.fechaRevision) {
+                            <div>
+                              <dt>Fecha de revisión</dt>
+                              <dd>{{ riesgo.fechaRevision }}</dd>
+                            </div>
+                          }
+                          @if (riesgo.evidenciaUrl) {
+                            <div>
+                              <dt>Evidencia</dt>
+                              <dd>
+                                <a
+                                  [href]="riesgo.evidenciaUrl"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Abrir evidencia
+                                </a>
+                              </dd>
+                            </div>
+                          }
+                        </dl>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="muted">Este objetivo todavía no tiene riesgos registrados.</p>
+                }
+
+                @if (edicion(); as edicion) {
+                  @if (edicion.ruta.objetivoId === objetivo.id) {
+                    <form
+                      class="mapa-formulario"
+                      [formGroup]="form"
+                      (ngSubmit)="guardarRiesgo()"
+                      novalidate
+                    >
+                      <h4>{{ edicion.existente ? 'Editar riesgo' : 'Registrar riesgo' }}</h4>
+                      @if (errorCambios()) {
+                        <p class="notice notice-error" role="alert">{{ errorCambios() }}</p>
+                      }
+                      <fieldset [disabled]="operacion() || !editable()">
+                        <div class="field">
+                          <label for="riesgo-nombre">Nombre del riesgo</label>
+                          <input
+                            id="riesgo-nombre"
+                            formControlName="nombre"
+                            type="text"
+                            maxlength="200"
+                            required
+                            [attr.aria-invalid]="!!mensajeCampo('nombre')"
+                            aria-describedby="riesgo-nombre-error"
+                          />
+                          <p id="riesgo-nombre-error" class="field-error">
+                            {{ mensajeCampo('nombre') }}
+                          </p>
+                        </div>
+                        <div class="field">
+                          <label for="riesgo-descripcion">Descripción del riesgo</label>
+                          <textarea
+                            id="riesgo-descripcion"
+                            formControlName="descripcion"
+                            maxlength="4000"
+                            rows="3"
+                            required
+                            [attr.aria-invalid]="!!mensajeCampo('descripcion')"
+                            aria-describedby="riesgo-descripcion-error"
+                          ></textarea>
+                          <p id="riesgo-descripcion-error" class="field-error">
+                            {{ mensajeCampo('descripcion') }}
+                          </p>
+                        </div>
+                        <div class="mapa-riesgo-grid">
+                          <div class="field">
+                            <label for="riesgo-probabilidad">Probabilidad</label>
+                            <select id="riesgo-probabilidad" formControlName="probabilidad">
+                              @for (valor of escalas; track valor) {
+                                <option [ngValue]="valor">{{ valor }}</option>
+                              }
+                            </select>
+                          </div>
+                          <div class="field">
+                            <label for="riesgo-impacto">Impacto</label>
+                            <select id="riesgo-impacto" formControlName="impacto">
+                              @for (valor of escalas; track valor) {
+                                <option [ngValue]="valor">{{ valor }}</option>
+                              }
+                            </select>
+                          </div>
+                        </div>
+                        <p class="mapa-puntuacion" role="status">
+                          Riesgo {{ nivel() }} · {{ puntuacion() }} de 25
+                        </p>
+                        <div class="mapa-riesgo-grid">
+                          <div class="field">
+                            <label for="riesgo-tratamiento">Tratamiento</label>
+                            <input
+                              id="riesgo-tratamiento"
+                              formControlName="tratamiento"
+                              maxlength="200"
+                            />
+                            <p class="field-error">{{ mensajeCampo('tratamiento') }}</p>
+                          </div>
+                          <div class="field">
+                            <label for="riesgo-responsable">Responsable</label>
+                            <input
+                              id="riesgo-responsable"
+                              formControlName="responsable"
+                              maxlength="200"
+                            />
+                            <p class="field-error">{{ mensajeCampo('responsable') }}</p>
+                          </div>
+                        </div>
+                        <div class="field">
+                          <label for="riesgo-accion">Acción de mitigación</label>
+                          <textarea
+                            id="riesgo-accion"
+                            formControlName="accionMitigacion"
+                            maxlength="4000"
+                            rows="3"
+                          ></textarea>
+                          <p class="field-error">{{ mensajeCampo('accionMitigacion') }}</p>
+                        </div>
+                        <div class="mapa-riesgo-grid">
+                          <div class="field">
+                            <label for="riesgo-fecha">Fecha de revisión</label>
+                            <input id="riesgo-fecha" type="date" formControlName="fechaRevision" />
+                            <p class="field-error">{{ mensajeCampo('fechaRevision') }}</p>
+                          </div>
+                          <div class="field">
+                            <label for="riesgo-evidencia">Enlace HTTPS a la evidencia</label>
+                            <input
+                              id="riesgo-evidencia"
+                              type="url"
+                              formControlName="evidenciaUrl"
+                              maxlength="2048"
+                              [attr.aria-invalid]="!!mensajeCampo('evidenciaUrl')"
+                              aria-describedby="riesgo-evidencia-error"
+                            />
+                            <p class="field-error" id="riesgo-evidencia-error">
+                              {{ mensajeCampo('evidenciaUrl') }}
+                            </p>
+                          </div>
+                        </div>
+                        <label class="mapa-checkbox">
+                          <input type="checkbox" formControlName="cerrado" />
+                          Marcar riesgo como cerrado
+                        </label>
+                        @if (nivel() === 'alto') {
+                          <p class="muted">
+                            Para cerrar un riesgo alto, registra su tratamiento y el sustento de la
+                            mitigación.
+                          </p>
+                        }
+                      </fieldset>
+                      <div class="mapa-acciones">
+                        <button
+                          type="submit"
+                          class="button button-primary"
+                          [disabled]="operacion() || incierto() || !editable()"
+                        >
+                          {{ operacion() ? 'Guardando…' : 'Guardar riesgo' }}
+                        </button>
+                        <button
+                          type="button"
+                          class="button button-secondary"
+                          [disabled]="operacion()"
+                          (click)="cancelarRiesgo()"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
+                  }
+                }
+              </article>
+            } @empty {
+              <p class="mapa-texto muted">Este eje todavía no tiene objetivos.</p>
+            }
+          </details>
+        } @empty {
+          @if (mapa.ejes.length) {
+            <p class="muted" role="status">No encontramos resultados con los filtros indicados.</p>
+            <button type="button" class="text-button" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          } @else {
+            <p class="muted">El mapa estará disponible cuando el plan tenga ejes estratégicos.</p>
+          }
+        }
+      }
+    }
+  </div>
+</section>

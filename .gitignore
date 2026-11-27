@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+**/node_modules/
+**/.angular/
+**/dist/
+**/bin/
+**/obj/
+**/__pycache__/
+*.user
+*.log

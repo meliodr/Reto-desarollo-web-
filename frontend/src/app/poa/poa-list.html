@@ -1,0 +1,196 @@
+<div class="page-heading">
+  <div><h1>Planes operativos anuales</h1></div>
+  @if (session.canFormulatePoa() && !loading() && !loadError() && !showForm()) {
+    <button
+      class="button button-primary"
+      type="button"
+      (click)="showForm.set(true); notice.set('')"
+    >
+      Crear POA
+    </button>
+  }
+</div>
+@if (notice()) {
+  <p class="notice notice-success" role="status">{{ notice() }}</p>
+}
+@if (showForm()) {
+  <form class="panel form-section-body poa-form" #form="ngForm" (ngSubmit)="save()">
+    <div class="field">
+      <label for="poa-year">Año del POA</label>
+      <input
+        id="poa-year"
+        name="year"
+        type="number"
+        required
+        min="1"
+        max="9999"
+        step="1"
+        [attr.aria-invalid]="yearError() ? 'true' : null"
+        [attr.aria-describedby]="yearError() ? 'poa-year-error' : null"
+        [ngModel]="year()"
+        [disabled]="saving()"
+        (ngModelChange)="year.set($event)"
+        (blur)="comprobarVigenciaPei()"
+      />
+      @if (yearError(); as message) {
+        <p id="poa-year-error" class="field-error" role="alert">{{ message }}</p>
+      }
+    </div>
+    <div class="field">
+      @if (dependenciaAsignada(); as asignada) {
+        <span>Dependencia</span>
+        <strong>{{ nombresDependencias().get(asignada) ?? 'Tu dependencia asignada' }}</strong>
+      } @else {
+        <label for="poa-dependencia">Dependencia</label>
+        <select
+          id="poa-dependencia"
+          name="dependencia"
+          [ngModel]="dependenciaElegida()"
+          [disabled]="saving() || cargandoDependencias() || errorDependencias()"
+          (ngModelChange)="dependenciaElegida.set($event)"
+        >
+          <option value="">Institucional</option>
+          @for (area of dependenciasActivas(); track area.id) {
+            <option [value]="area.id">{{ area.nombre }}</option>
+          }
+        </select>
+      }
+      @if (cargandoDependencias()) {
+        <p role="status">Consultando dependencias…</p>
+      } @else if (errorDependencias()) {
+        <p role="alert">
+          No pudimos cargar las dependencias.
+          {{
+            dependenciaAsignada()
+              ? 'El POA se guardará en tu área.'
+              : 'El POA se guardará con alcance institucional.'
+          }}
+        </p>
+        <button type="button" class="text-button" (click)="cargarDependencias()">Reintentar</button>
+      }
+    </div>
+    @if (session.pei()) {
+      <div class="field">
+        <label for="poa-pei">Plan estratégico</label>
+        <select
+          id="poa-pei"
+          name="peiId"
+          [ngModel]="peiId()"
+          [disabled]="saving()"
+          (ngModelChange)="peiId.set($event)"
+        >
+          <option value="">POA independiente</option>
+          @for (pei of candidates(); track pei.id) {
+            <option [value]="pei.id">{{ pei.nombre }}</option>
+          }
+        </select>
+        @if (peiLoadError()) {
+          <p role="status">
+            No pudimos consultar los PEI para vincular. Puedes crear un POA independiente.
+          </p>
+        }
+      </div>
+    }
+    <div class="field">
+      <label for="poa-budget">Presupuesto de referencia (RD$, opcional)</label>
+      <input
+        id="poa-budget"
+        name="budget"
+        type="text"
+        inputmode="decimal"
+        aria-describedby="poa-budget-help"
+        [ngModel]="budget()"
+        [disabled]="saving()"
+        (ngModelChange)="budget.set($event)"
+      />
+      <p id="poa-budget-help">
+        Puedes dejarlo vacío o indicar un estimado con hasta dos decimales.
+      </p>
+    </div>
+    @if (error()) {
+      <p role="alert" class="notice notice-error">{{ error() }}</p>
+    }
+    <button
+      class="button button-secondary"
+      type="button"
+      [disabled]="saving()"
+      (click)="cerrarFormulario()"
+    >
+      Cancelar
+    </button>
+    <button
+      class="button button-primary"
+      type="submit"
+      [disabled]="saving() || cargandoDependencias() || form.invalid || !!yearError()"
+    >
+      {{ saving() ? 'Guardando…' : 'Guardar POA' }}
+    </button>
+  </form>
+}
+@if (loading()) {
+  <p role="status">Consultando POA…</p>
+} @else if (loadError()) {
+  <p role="alert">No pudimos consultar los planes operativos.</p>
+  <button class="button button-secondary" type="button" (click)="load()">Reintentar</button>
+} @else if (!plans().length) {
+  <p>Aún no hay planes operativos registrados.</p>
+} @else {
+  <div class="panel table-scroll">
+    <table aria-label="Planes operativos registrados">
+      <thead>
+        <tr>
+          <th scope="col">Año</th>
+          <th scope="col">Período</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Dependencia</th>
+          @if (session.pei()) {
+            <th scope="col">Plan estratégico</th>
+          }
+          <th scope="col">Presupuesto de referencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (poa of plans(); track poa.id) {
+          <tr>
+            <td>{{ poa.anio }}</td>
+            <td>
+              {{ poa.fechaInicio | date: 'dd/MM/yyyy' }} – {{ poa.fechaFin | date: 'dd/MM/yyyy' }}
+            </td>
+            <td>
+              {{
+                poa.estado === 'borrador'
+                  ? 'Borrador'
+                  : poa.estado === 'formulacion'
+                    ? 'En formulación'
+                    : poa.estado
+              }}
+            </td>
+            <td>
+              {{
+                poa.dependenciaId
+                  ? (nombresDependencias().get(poa.dependenciaId) ?? poa.dependenciaId)
+                  : 'Institucional'
+              }}
+            </td>
+            @if (session.pei()) {
+              <td>
+                @if (poa.peiId) {
+                  <a [routerLink]="['/peis', poa.peiId]">{{ poa.peiNombre }}</a>
+                } @else {
+                  Independiente
+                }
+              </td>
+            }
+            <td>
+              @if (poa.presupuestoReferencia; as budget) {
+                RD$ {{ budget }}
+              } @else {
+                Sin registrar
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

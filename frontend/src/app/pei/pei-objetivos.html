@@ -1,0 +1,166 @@
+<section class="objetivos-panel" aria-labelledby="pei-objetivos-heading">
+  <div class="objetivos-heading">
+    <h4 id="pei-objetivos-heading">Objetivos de {{ eje().nombre }}</h4>
+    @if (!readOnly() && eje().activo && !editing() && !loading() && !loadError()) {
+      <button
+        type="button"
+        class="button button-primary"
+        [disabled]="!canStart()"
+        (click)="startCreate()"
+      >
+        Agregar objetivo
+      </button>
+    }
+  </div>
+
+  @if (notice()) {
+    <p class="notice notice-success" role="status">{{ notice() }}</p>
+  }
+
+  @if (saveError()) {
+    <p class="notice notice-error" role="alert">{{ saveError() }}</p>
+  }
+  @if (loadingEdit()) {
+    <p role="status">Consultando la revisión del objetivo…</p>
+  }
+  @if (editing()) {
+    @if (targetInactive()) {
+      <p class="notice" role="status">
+        El objetivo quedó inactivo. Tu edición sigue en el formulario.
+      </p>
+    }
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <fieldset
+        [disabled]="saving() || uncertain() || !eje().activo || readOnly() || targetInactive()"
+      >
+        <legend>{{ editTarget() ? 'Editar objetivo' : 'Nuevo objetivo' }}</legend>
+        <p class="objetivos-muted">Todos los campos son obligatorios.</p>
+        @for (field of fields; track field.key) {
+          <div class="field">
+            <label [for]="'objetivo-' + field.key">{{ field.label }}</label>
+            @if (field.max > 200) {
+              <textarea
+                [id]="'objetivo-' + field.key"
+                [formControlName]="field.key"
+                [maxlength]="field.max"
+                rows="2"
+                aria-required="true"
+                [attr.aria-invalid]="!!fieldError(field)"
+                [attr.aria-describedby]="'objetivo-error-' + field.key"
+              ></textarea>
+            } @else {
+              <input
+                [id]="'objetivo-' + field.key"
+                [formControlName]="field.key"
+                [maxlength]="field.max"
+                aria-required="true"
+                [attr.aria-invalid]="!!fieldError(field)"
+                [attr.aria-describedby]="'objetivo-error-' + field.key"
+              />
+            }
+            <p class="field-error" [id]="'objetivo-error-' + field.key">{{ fieldError(field) }}</p>
+          </div>
+        }
+      </fieldset>
+      <div class="objetivos-actions">
+        <button
+          type="button"
+          class="button button-secondary"
+          [disabled]="saving()"
+          (click)="cancel()"
+        >
+          {{ uncertain() ? 'Cerrar y consultar objetivos' : 'Cancelar objetivo' }}
+        </button>
+        <button
+          type="submit"
+          class="button button-primary"
+          [disabled]="
+            saving() ||
+            uncertain() ||
+            !eje().activo ||
+            readOnly() ||
+            targetInactive() ||
+            loading() ||
+            !!loadError()
+          "
+        >
+          {{ saving() ? 'Guardando…' : 'Guardar objetivo' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (!eje().activo) {
+    <p class="objetivos-muted">Este eje está inactivo. Puedes consultar sus objetivos.</p>
+  }
+  @if (loading()) {
+    <p role="status">Cargando objetivos…</p>
+  } @else if (loadError()) {
+    <p class="notice notice-error" role="alert">{{ loadError() }}</p>
+    <button type="button" class="button button-secondary" (click)="load()">
+      Reintentar objetivos
+    </button>
+  } @else if (!objetivos().length && !editing()) {
+    <p class="objetivos-muted">Este eje todavía no tiene objetivos.</p>
+  }
+  @if (objetivos().length) {
+    <ul class="objetivos-list">
+      @for (objetivo of objetivos(); track objetivo.id) {
+        <li>
+          <div class="objetivos-heading">
+            <h5>{{ objetivo.codigo }} · {{ objetivo.nombre }}</h5>
+            @if (objetivo.activo === false) {
+              <span class="objetivos-muted">Objetivo inactivo</span>
+            }
+            @if (!readOnly() && eje().activo && objetivo.activo !== false) {
+              <button
+                type="button"
+                class="button button-secondary"
+                [disabled]="!canStart()"
+                (click)="startEdit(objetivo)"
+              >
+                Editar objetivo<span class="sr-only"> {{ objetivo.codigo }} · {{ objetivo.nombre }}</span>
+              </button>
+            }
+            <button
+              type="button"
+              class="button button-secondary"
+              (click)="toggleIndicators(objetivo.id)"
+              [attr.aria-expanded]="selectedObjective() === objetivo.id"
+            >
+              {{ selectedObjective() === objetivo.id ? 'Cerrar indicadores' : 'Ver indicadores'
+              }}<span class="sr-only"> de {{ objetivo.nombre }}</span>
+            </button>
+          </div>
+          <dl>
+            <div>
+              <dt>Descripción</dt>
+              <dd>{{ objetivo.descripcion }}</dd>
+            </div>
+            <div>
+              <dt>Resultado esperado</dt>
+              <dd>{{ objetivo.resultadoEsperado }}</dd>
+            </div>
+            <div>
+              <dt>Línea de acción</dt>
+              <dd>{{ objetivo.lineaAccion }}</dd>
+            </div>
+          </dl>
+          @if (selectedObjective() === objetivo.id) {
+            <app-pei-indicadores
+              [ruta]="{ peiId: peiId(), ejeId: eje().id, objetivoId: objetivo.id }"
+              [readOnly]="
+                readOnly() ||
+                !eje().activo ||
+                objetivo.activo === false ||
+                loading() ||
+                !!loadError()
+              "
+              (structureChange)="structureChange.emit()"
+            />
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

@@ -1,0 +1,53 @@
+:host {
+  display: block;
+  margin-top: 24px;
+}
+.poa-list,
+.poa-detail ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.poa-list > li + li {
+  border-top: 1px solid var(--line);
+}
+summary {
+  padding: 10px 4px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.poa-year {
+  font-weight: 700;
+}
+.poa-state,
+.poa-current {
+  margin-left: 8px;
+  font-size: 0.875rem;
+}
+.poa-state {
+  color: var(--muted);
+}
+.poa-current {
+  color: #275842;
+}
+.poa-detail {
+  margin: 0 0 12px;
+  border-left: 3px solid var(--blue);
+  padding: 12px;
+  background: #edf4fc;
+}
+.poa-detail h3 {
+  margin-top: 12px;
+  font-size: 1rem;
+}
+.poa-detail li {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 155px), 1fr));
+  gap: 4px 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.875rem;
+}
+.notice {
+  margin-bottom: 12px;
+}

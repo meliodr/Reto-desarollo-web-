@@ -1,0 +1,100 @@
+:host {
+  display: block;
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.objetivos-panel {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--blue);
+  padding: clamp(12px, 3vw, 20px);
+  overflow-wrap: anywhere;
+}
+
+.objetivos-heading,
+.objetivos-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.objetivos-heading {
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.objetivos-heading h4,
+.objetivos-list h5,
+.objetivos-list dd {
+  margin: 0;
+}
+
+.objetivos-heading h4 {
+  font-size: 16px;
+}
+
+.objetivos-muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.objetivos-panel form {
+  margin: 12px 0;
+}
+
+.objetivos-panel fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.objetivos-panel legend {
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+.objetivos-panel .field {
+  margin-top: 12px;
+}
+
+.objetivos-actions {
+  margin-top: 12px;
+}
+
+.objetivos-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.objetivos-list li + li {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.objetivos-list h5 {
+  font-size: 14px;
+}
+
+.objetivos-list dl {
+  margin: 8px 0 0;
+}
+
+.objetivos-list dl > div + div {
+  margin-top: 6px;
+}
+
+.objetivos-list dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.objetivos-list dd {
+  font-size: 14px;
+  white-space: pre-wrap;
+}

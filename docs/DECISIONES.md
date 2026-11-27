@@ -34,19 +34,15 @@ SISPLAN identifica el sistema en el SRS. La base v1.0 usa SISPLAN como nombre pa
 
 **Motivo:** conservar el mismo nombre en el SRS, la aplicación y el paquete de entrega.
 
-## D-05. Conciliar la semana 6 con el plazo del aula
+## D-05. Preparar el candidato para la semana 7
 
-**Estado:** pendiente de conciliación.
-
-La consigna disponible establece cierre el **2 de diciembre de 2026 a las 23:59**. También se ha planteado un objetivo de trabajo para la **semana 6**, al que todavía no se asigna una fecha.
-
-**Motivo:** evitar calendarios contradictorios. El plazo del aula se conserva como referencia actual hasta aclarar cómo se relaciona con ese objetivo.
+La semana 4 está en curso. El primer ensayo está previsto para la semana 5 y la validación del candidato para el cierre de la semana 6. La entrega y presentación se programan para la semana 7. El 26 de noviembre se verificó en el [aula](https://campusvirtual.intec.edu.do/mod/assign/view.php?id=1260918) que el envío cierra el 2 de diciembre a las 23:59. Para la entrega se aplica ese plazo. El reparto del trabajo restante requiere confirmación del equipo. [Hitos, capacidad y criterio de entrega](plan-sisplan/12-ENTREGA-SEMANA-7.md)
 
 ## D-06. Separar la preparación de la implementación
 
 **Estado:** criterio de seguimiento.
 
-El portal de trabajo está publicado y cuenta con una revisión funcional y visual registrada. El prototipo institucional de borradores PEI está en [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1). La cobertura se mide sobre la entrega integrada.
+El portal de trabajo está publicado y cuenta con una revisión funcional y visual registrada. El prototipo institucional del PEI y la apertura del POA está en [PR #1](https://github.com/meliodr/Reto-desarollo-web-/pull/1). La cobertura se mide sobre la entrega integrada.
 
 **Motivo:** comunicar el estado real del proyecto. La documentación, el simulador del portal y las pruebas históricas de FuelTrack no representan funcionalidades construidas de este sistema.
 
@@ -57,6 +53,10 @@ El equipo confirmó Angular el 12 de noviembre de 2026. La base v1.0 fija Angula
 ## D-08. Adoptar la base de trabajo v1.0
 
 El plan del 12 de noviembre fija el orden de implementación, las reglas operativas y las herramientas. El PR de borradores queda disponible para revisión. Las decisiones que cambien por indicación del maestro se actualizan junto con el contrato y el caso de prueba. [Plan base](plan-sisplan/01-PLAN-DE-CONSTRUCCION.md)
+
+## D-09. Adoptar el SRS v2 y el presupuesto opcional
+
+La aclaración del maestro del 26 de noviembre de 2026 permite dejar vacío el presupuesto o consignar un valor de referencia. El incremento lo captura en RD$ a nivel del POA anual, tanto independiente como vinculado. El tratamiento por producto o actividad podrá precisarse al implementar la programación. [Alcance y pruebas vigentes](plan-sisplan/10-ADAPTACION-SRS-V2.md)
 
 ## Actualizaciones
 
